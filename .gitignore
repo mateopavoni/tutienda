@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+web/node_modules/
+
+# Build output
+web/.svelte-kit/
+web/build/
+services/bin/
+*.exe
+*.tsbuildinfo
+
+# Go
+vendor/
+
+# Env / secrets
+.env
+.env.local
+*.env
+!.env.example
+
+# Test / coverage
+coverage/
+web/coverage/
+*.out
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Factory / portfolio meta — NO publicar
+.claude/
+PORTFOLIO.md
+TASKS.md
+commit-plan.md
+commit-plan.ps1
+commit-plan.sh
+build-history.*
+docs/design/stitch/
+memory/

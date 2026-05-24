@@ -1,0 +1,198 @@
+# Full stack: data stores + five Go services + storefront.
+#   docker compose up --build         start everything
+#   docker compose run --rm loadtest  concurrency demo (no oversell)
+#   docker compose run --rm backend-test   go test -race ./...
+name: archive-commerce
+
+services:
+  mongo:
+    image: mongo:7
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Object store for merchant-uploaded images (S3-compatible, self-hosted). The API is on :9000; the web
+  # console on :9001 is handy in dev. In prod this sits behind Nginx and the bucket is served read-only.
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    ports:
+      - "${MINIO_HOST_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # One-shot: create the media bucket and make it anonymously readable (product images are public), so the
+  # storefront can <img src> them directly without signing. Idempotent — safe to re-run on every up.
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio: { condition: service_healthy }
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY} &&
+      mc mb --ignore-existing local/${MINIO_BUCKET} &&
+      mc anonymous set download local/${MINIO_BUCKET} &&
+      echo 'media bucket ready'
+      "
+    restart: on-failure
+
+  catalog:
+    build:
+      context: ./services
+      args:
+        SERVICE: catalog
+    environment:
+      MONGO_URI: ${MONGO_URI}
+      REDIS_ADDR: ${REDIS_ADDR}
+      CATALOG_ADDR: ":8081"
+      # Object store for merchant-uploaded images.
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_BUCKET: ${MINIO_BUCKET}
+      PUBLIC_MEDIA_BASE: ${PUBLIC_MEDIA_BASE}
+    depends_on:
+      mongo: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      minio-init: { condition: service_completed_successfully }
+    restart: on-failure
+
+  inventory:
+    build:
+      context: ./services
+      args:
+        SERVICE: inventory
+    environment:
+      MONGO_URI: ${MONGO_URI}
+      INVENTORY_ADDR: ":8082"
+      RESERVATION_TTL_SECONDS: ${RESERVATION_TTL_SECONDS}
+      JANITOR_INTERVAL_SECONDS: "15"
+    depends_on:
+      mongo: { condition: service_healthy }
+    restart: on-failure
+
+  orders:
+    build:
+      context: ./services
+      args:
+        SERVICE: orders
+    environment:
+      MONGO_URI: ${MONGO_URI}
+      ORDERS_ADDR: ":8083"
+      INVENTORY_URL: ${INVENTORY_URL}
+      CATALOG_URL: ${CATALOG_URL}
+    depends_on:
+      mongo: { condition: service_healthy }
+    restart: on-failure
+
+  accounts:
+    build:
+      context: ./services
+      args:
+        SERVICE: accounts
+    environment:
+      MONGO_URI: ${MONGO_URI}
+      ACCOUNTS_ADDR: ":8084"
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      mongo: { condition: service_healthy }
+    restart: on-failure
+
+  gateway:
+    build:
+      context: ./services
+      args:
+        SERVICE: gateway
+    ports:
+      - "${GATEWAY_HOST_PORT:-8080}:8080"
+    environment:
+      REDIS_ADDR: ${REDIS_ADDR}
+      GATEWAY_ADDR: ":8080"
+      CATALOG_URL: ${CATALOG_URL}
+      INVENTORY_URL: ${INVENTORY_URL}
+      ORDERS_URL: ${ORDERS_URL}
+      ACCOUNTS_URL: ${ACCOUNTS_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      WEB_ORIGIN: ${WEB_ORIGIN}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX}
+      RATE_LIMIT_WINDOW_SECONDS: ${RATE_LIMIT_WINDOW_SECONDS}
+    depends_on:
+      redis: { condition: service_healthy }
+      accounts: { condition: service_started }
+    restart: on-failure
+
+  web:
+    build:
+      context: ./web
+    ports:
+      - "${WEB_HOST_PORT:-3000}:3000"
+    environment:
+      # Browser-reachable gateway URL (mutations, live stock).
+      PUBLIC_API_BASE: ${PUBLIC_API_BASE}
+      # Gateway URL reachable from inside the container (SSR reads).
+      INTERNAL_API_BASE: ${INTERNAL_API_BASE}
+      # Default store slug when the host has no subdomain (single-store dev/demo).
+      PUBLIC_STORE_SLUG: ${PUBLIC_STORE_SLUG}
+      PORT: "3000"
+    depends_on:
+      - gateway
+
+  # On-demand concurrency demo. Talks to orders + inventory directly so the result reflects the
+  # no-oversell guarantee rather than the gateway rate limiter.
+  loadtest:
+    build:
+      context: ./services
+      args:
+        SERVICE: loadtest
+    environment:
+      ORDERS_URL: ${ORDERS_URL}
+      INVENTORY_URL: ${INVENTORY_URL}
+    profiles: ["tools"]
+    depends_on:
+      - orders
+      - inventory
+
+  # On-demand test runner. Uses the full golang image (C toolchain) so `-race` works.
+  backend-test:
+    image: golang:1.22
+    working_dir: /src
+    command: sh -c "go mod tidy && go test -race ./..."
+    environment:
+      MONGO_URI: ${MONGO_URI}
+    volumes:
+      - ./services:/src
+    profiles: ["tools"]
+    depends_on:
+      mongo: { condition: service_healthy }
+
+volumes:
+  mongo_data:
+  redis_data:
+  minio_data:
