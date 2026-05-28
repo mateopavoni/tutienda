@@ -1,0 +1,116 @@
+// English is the source of truth; other locales mirror this shape (enforced by `Messages = typeof en`).
+export const en = {
+	nav: { shop: 'Shop', collection: 'Collection', about: 'About', journal: 'Journal', bag: 'Bag', catalog: 'Catalog' },
+	common: {
+		addToBag: 'Add to bag',
+		checkout: 'Checkout',
+		outOfStock: 'Out of stock',
+		inStock: 'In stock',
+		lowStock: 'Only {n} left',
+		loading: 'Loading',
+		retry: 'Retry',
+		total: 'Total',
+		subtotal: 'Subtotal',
+		quantity: 'Quantity',
+		close: 'Close',
+		remove: 'Remove'
+	},
+	catalog: {
+		title: 'Dynamic Catalog',
+		heading: 'Catalog',
+		filter: 'Filter',
+		season: 'Season 04 // Industrial Logic',
+		showing: 'Showing {n} items',
+		all: 'All',
+		footwear: 'Footwear',
+		outerwear: 'Outerwear',
+		accessories: 'Accessories',
+		apparel: 'Apparel',
+		errorLoad: 'The catalog could not be loaded.',
+		emptyTitle: 'Nothing here',
+		emptyBody: 'No products match this category.'
+	},
+	product: {
+		sku: 'SKU',
+		size: 'Size',
+		color: 'Color',
+		selectSize: 'Select a size',
+		description: 'Description',
+		back: 'Back to catalog',
+		reserveNote: 'Stock is held the moment you check out, never oversold.',
+		notFound: 'Product not found.'
+	},
+	cart: {
+		title: 'Cart',
+		subtitle: 'Your selection',
+		empty: 'Cart is empty',
+		checkoutNow: 'Checkout now',
+		processing: 'Processing',
+		confirmedTitle: 'Order confirmed',
+		failedTitle: 'Checkout failed',
+		soldOut: 'Some items sold out before checkout completed.',
+		orderId: 'Order',
+		continue: 'Continue shopping'
+	},
+	theme: { label: 'Theme', system: 'System', light: 'Light', dark: 'Dark' },
+	drop: {
+		badge: 'Drop',
+		dropsIn: 'Drops in',
+		liveNow: 'Live now',
+		comingSoon: 'Coming soon',
+		remaining: '{n} left',
+		live: 'Live stock',
+		notReleased: "This drop hasn't opened yet."
+	},
+	footer: { poweredBy: 'Powered by {brand}' },
+	auth: {
+		login: 'Sign in',
+		loginTitle: 'Sign in',
+		loginSubtitle: 'Merchant console — manage your store',
+		signupTitle: 'Create your store',
+		signupSubtitle: 'One account, one store, online in minutes',
+		email: 'Email',
+		password: 'Password',
+		storeName: 'Store name',
+		storeSlug: 'Subdomain',
+		toSignup: "Need an account? Create your store",
+		toLogin: 'Have an account? Sign in',
+		failed: 'Authentication failed'
+	},
+	settings: { title: 'Settings', language: 'Language', theme: 'Appearance' },
+	landing: {
+		kicker: 'Multi-store ecommerce builder',
+		tagline: 'Launch your store. Never oversell.',
+		subtitle:
+			'Spin up an editorial storefront in minutes, load your products, and sell with stock that stays honest under any load. Multi-tenant from day one.',
+		cta: 'Create your store',
+		seeDemo: 'See a live store',
+		subdomainNote: 'Every store gets its own {domain} subdomain.',
+		feat1Title: 'Your own storefront',
+		feat1Body: 'A polished editorial storefront per store. Set your name, logo and accent — the rest is handled.',
+		feat2Title: 'Make it yours',
+		feat2Body: 'Logo, brand colour and products from a single dashboard. No code, no theme wrangling.',
+		feat3Title: 'Never oversell',
+		feat3Body: 'Atomic stock guarantees: the last unit sells exactly once, even under a flash crowd.',
+		feat4Title: 'Built to scale',
+		feat4Body: 'Isolated per store, cached at the edge, rate-limited at the gateway. Many stores, one platform.',
+		coreKicker: 'The core guarantee',
+		coreTitle: 'Zero oversell under concurrent load',
+		coreBody:
+			'When N buyers race for the last K units, exactly K succeed and nobody is oversold. We enforce it with atomic MongoDB operations and compensated reservations — no distributed locks, scoped per store so one shop never touches another.',
+		pricingTitle: 'Simple pricing',
+		plan_free_name: 'Starter',
+		plan_free_price: 'Free',
+		plan_free_desc: 'One store, full storefront, the no-oversell engine included.',
+		plan_pro_name: 'Pro',
+		plan_pro_price: '$29/mo',
+		plan_pro_desc: 'Custom subdomain, priority cache and analytics for a growing store.',
+		plan_scale_name: 'Scale',
+		plan_scale_price: 'Talk to us',
+		plan_scale_desc: 'Multiple stores, higher rate limits and dedicated support.',
+		finalTitle: 'Your store, online in minutes.',
+		footerNote: 'Built for merchants who refuse to oversell.'
+	}
+};
+
+export type Messages = typeof en;
