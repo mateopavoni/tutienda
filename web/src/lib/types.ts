@@ -1,0 +1,54 @@
+// Shared API types, mirroring the JSON shapes the gateway returns.
+
+export interface Variant {
+	sku: string;
+	label: string;
+	color?: string;
+}
+
+export interface Product {
+	id: string;
+	name: string;
+	category: string;
+	description: string;
+	priceCents: number;
+	currency: string;
+	/** Primary image (grid card + cart thumbnail). Always equals images[0] when a gallery exists. */
+	imageUrl: string;
+	/** Full image gallery shown on the product detail page. */
+	images?: string[];
+	variants: Variant[];
+	createdAt: string;
+	/** ISO release time for a scheduled drop. Absent/null = on sale now. */
+	dropAt?: string | null;
+}
+
+export interface Stock {
+	sku: string;
+	available: number;
+	reserved: number;
+}
+
+export interface OrderItem {
+	sku: string;
+	qty: number;
+	name: string;
+	priceCents: number;
+}
+
+export interface Order {
+	id: string;
+	items: OrderItem[];
+	currency: string;
+	totalCents: number;
+	status: 'PENDING' | 'CONFIRMED' | 'FAILED';
+	reservationId: string;
+	failureReason?: string;
+	createdAt: string;
+}
+
+export interface ApiError {
+	error: string;
+	detail?: string;
+	sku?: string;
+}
