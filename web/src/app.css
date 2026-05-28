@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Semantic tokens as RGB triplets. Light is the Stitch "Alabaster/Onyx" base; dark is the derived
+   high-contrast counterpart. Components only ever reference semantic names, never raw hex. */
+:root {
+	--bg: 250 249 249;
+	--surface: 255 255 255;
+	--surface-variant: 227 226 226;
+	--border: 27 28 28;
+	--text: 27 28 28;
+	--text-muted: 68 71 72;
+	--outline: 116 120 120;
+	--primary: 0 0 0;
+	--on-primary: 255 255 255;
+	--accent: 27 3 234;
+	--on-accent: 255 255 255;
+	--error: 186 26 26;
+	/* The cart drawer is a constant high-contrast onyx surface in both themes (per the design). */
+	--inverse: 0 0 0;
+	--on-inverse: 242 240 240;
+}
+
+.dark {
+	--bg: 17 17 17;
+	--surface: 27 27 27;
+	--surface-variant: 38 38 38;
+	--border: 196 199 199;
+	--text: 242 240 240;
+	--text-muted: 168 171 171;
+	--outline: 95 94 94;
+	--primary: 255 255 255;
+	--on-primary: 17 17 17;
+	--accent: 112 115 255;
+	--on-accent: 255 255 255;
+	--error: 255 180 171;
+	--inverse: 0 0 0;
+	--on-inverse: 242 240 240;
+}
+
+@layer base {
+	body {
+		font-family: 'Inter', system-ui, sans-serif;
+		-webkit-font-smoothing: antialiased;
+	}
+	/* Hard-edge rule: no rounded corners anywhere in the system. */
+	* {
+		border-radius: 0;
+	}
+	/* Minimal, monochrome scrollbar in keeping with the flat language. */
+	::-webkit-scrollbar {
+		width: 6px;
+		height: 6px;
+	}
+	::-webkit-scrollbar-thumb {
+		background: rgb(var(--outline));
+	}
+	/* Visible keyboard focus everywhere. Previously inputs used `focus:outline-none` with no replacement,
+	   which hid focus entirely (an accessibility/contrast defect). This restores a legible accent ring. */
+	:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+		outline: 2px solid rgb(var(--accent));
+		outline-offset: 2px;
+	}
+}
+
+@layer components {
+	/* The 1px onyx separator that defines the grid. */
+	.brutal-border {
+		border: 1px solid rgb(var(--border));
+	}
+	/* Primary action: solid block, caps label, colour inversion on hover. */
+	.btn-primary {
+		@apply bg-primary text-on-primary font-sans uppercase tracking-[0.1em] text-label-caps
+			px-6 py-4 transition-colors brutal-border hover:bg-bg hover:text-text;
+	}
+	/* Conversion action: the single chromatic disruption, reserved for checkout. */
+	.btn-accent {
+		@apply bg-accent text-on-accent font-sans uppercase tracking-[0.1em] text-label-caps
+			px-6 py-4 transition-opacity hover:opacity-90;
+	}
+	.btn-ghost {
+		@apply bg-bg text-text font-sans uppercase tracking-[0.1em] text-label-caps
+			px-6 py-4 transition-colors brutal-border hover:bg-primary hover:text-on-primary;
+	}
+	/* Inputs opt into this instead of a bare `focus:outline-none`: focus stays visible via the ring above. */
+	.focus-ring {
+		@apply focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+	}
+}
