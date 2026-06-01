@@ -1,0 +1,81 @@
+package accounts
+
+import (
+	"context"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
+	"github.com/mateopavoni/archive-commerce/internal/platform/authx"
+	"github.com/mateopavoni/archive-commerce/internal/platform/plan"
+	"github.com/mateopavoni/archive-commerce/internal/platform/tenant"
+)
+
+// Demo credentials for the seeded showcase. The merchant owns the SYSTEM ARCHIVE store; the admin is
+// the SaaS super-admin (RoleAdmin) used to reach the cross-tenant console at /admin. Documented so both
+// are loginable out of the box; override in any real deployment.
+const (
+	demoEmail    = "demo@system-archive.store"
+	demoPassword = "demo-archive-2026"
+
+	adminEmail    = "admin@tutienda.store"
+	adminPassword = "admin-tutienda-2026"
+)
+
+// SeedDemoIfEmpty creates the demo merchant and the "SYSTEM ARCHIVE" store (under tenant.DemoID) when
+// no merchants exist yet, so the showcase storefront resolves and the demo is manageable out of the
+// box. Idempotent and a no-op once any merchant exists.
+func (s *Service) SeedDemoIfEmpty(ctx context.Context) (bool, error) {
+	n, err := s.repo.countMerchants(ctx)
+	if err != nil {
+		return false, err
+	}
+	if n > 0 {
+		return false, nil
+	}
+
+	hash, err := authx.HashPassword(demoPassword)
+	if err != nil {
+		return false, err
+	}
+	merchant := &Merchant{
+		ID:           primitive.NewObjectID(),
+		Email:        demoEmail,
+		PasswordHash: hash,
+		Role:         authx.RoleMerchant,
+		CreatedAt:    time.Now().UTC(),
+	}
+	merchant, err = s.repo.upsertMerchant(ctx, merchant)
+	if err != nil {
+		return false, err
+	}
+
+	// Seed the platform super-admin so the cross-tenant console at /admin is reachable out of the box.
+	adminHash, err := authx.HashPassword(adminPassword)
+	if err != nil {
+		return false, err
+	}
+	if _, err := s.repo.upsertMerchant(ctx, &Merchant{
+		ID:           primitive.NewObjectID(),
+		Email:        adminEmail,
+		PasswordHash: adminHash,
+		Role:         authx.RoleAdmin,
+		CreatedAt:    time.Now().UTC(),
+	}); err != nil {
+		return false, err
+	}
+
+	store := &Store{
+		ID:          tenant.DemoID,
+		Slug:        tenant.DemoSlug,
+		OwnerID:     merchant.ID.Hex(),
+		DisplayName: tenant.DemoName,
+		Settings:    Settings{AccentColor: "#1b03ea", Currency: "USD"},
+		Plan:        string(plan.Scale), // the showcase runs on the top tier so every tool (drops, etc.) is live
+		CreatedAt:   time.Now().UTC(),
+	}
+	if err := s.repo.upsertStore(ctx, store); err != nil {
+		return false, err
+	}
+	return true, nil
+}
