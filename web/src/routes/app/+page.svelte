@@ -1,0 +1,798 @@
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import { session } from '$lib/admin/session';
+	import {
+		listStores,
+		createStore,
+		selectStore,
+		updateStore,
+		changePlan,
+		listProducts,
+		createProduct,
+		deleteProduct,
+		setStock,
+		listStock,
+		uploadImage,
+		type Store
+	} from '$lib/admin/api';
+	import type { ApiError, Product } from '$lib/types';
+	import { PLANS, TIERS, hasFeature, productLimit, normalizeTier, UNLIMITED } from '$lib/plan';
+	import {
+		normalizeLayout,
+		SECTION_META,
+		type Section,
+		type SectionType,
+		type ContentField
+	} from '$lib/layout';
+	import { ExternalLink, Lock, ArrowUp, ArrowDown } from 'lucide-svelte';
+
+	let stores = $state<Store[]>([]);
+	let active = $state(session.activeStore());
+	let products = $state<Product[]>([]);
+	let error = $state('');
+	let notice = $state('');
+
+	// The active store's full record (with its plan) lives in `stores`; `active` only holds id/slug/name.
+	const activeStore = $derived(stores.find((s) => s.id === active?.id));
+	const tier = $derived(normalizeTier(activeStore?.plan));
+	const canDrops = $derived(hasFeature(tier, 'drops'));
+	const canLogo = $derived(hasFeature(tier, 'customLogo'));
+	const limit = $derived(productLimit(tier));
+	const atProductLimit = $derived(limit !== UNLIMITED && products.length >= limit);
+
+	// New-store form
+	let newSlug = $state('');
+	let newName = $state('');
+
+	// New-product form
+	let pName = $state('');
+	let pCategory = $state('apparel');
+	let pPrice = $state(0);
+	let pImages = $state<string[]>([]); // gallery for the new product; first is the primary image
+	let pSku = $state('');
+	let pDrop = $state(''); // datetime-local; empty = on sale now, a future value schedules a drop
+	let uploading = $state(false); // true while a product image is being uploaded to the object store
+
+	// Stock form
+	let sSku = $state('');
+	let sQty = $state(0);
+	// Current on-hand per SKU across the active store's products, for the inline per-variant stock editor.
+	let stockMap = $state<Record<string, number>>({});
+
+	// Settings form
+	let setName = $state('');
+	let setAccent = $state('#1b03ea');
+	let setLogo = $state('');
+	// Storefront layout: the normalized, full list of sections (every known block exactly once, in order).
+	// The merchant toggles, reorders and edits copy here; only enabled sections render on the storefront.
+	let setLayout = $state<Section[]>(normalizeLayout());
+
+	// loadStoreSettings hydrates the settings form (including layout) from a store record.
+	function loadStoreSettings(s: Store) {
+		setName = s.displayName;
+		setAccent = s.settings.accentColor ?? '#1b03ea';
+		setLogo = s.settings.logoUrl ?? '';
+		setLayout = normalizeLayout(s.settings.layout);
+	}
+
+	// A section can move up/down within the list; the mandatory grid stays in the flow but can be reordered.
+	function moveSection(i: number, dir: -1 | 1) {
+		const j = i + dir;
+		if (j < 0 || j >= setLayout.length) return;
+		const next = [...setLayout];
+		[next[i], next[j]] = [next[j], next[i]];
+		setLayout = next;
+	}
+
+	function toggleSection(i: number) {
+		const next = [...setLayout];
+		next[i] = { ...next[i], enabled: !next[i].enabled };
+		setLayout = next;
+	}
+
+	function editSection(i: number, field: ContentField, value: string) {
+		const next = [...setLayout];
+		next[i] = { ...next[i], [field]: value };
+		setLayout = next;
+	}
+
+	// Section image upload: same object-store flow as product images, but writes the returned URL into the
+	// section's imageUrl field. uploadingSection holds the index being uploaded so only that row shows a
+	// spinner and disables its picker.
+	let uploadingSection = $state<number | null>(null);
+	async function onPickSectionImage(i: number, e: Event) {
+		const input = e.currentTarget as HTMLInputElement;
+		const file = input.files?.[0];
+		if (!file) return;
+		uploadingSection = i;
+		try {
+			editSection(i, 'imageUrl', await uploadImage(file));
+			ok('Image uploaded');
+		} catch (err) {
+			fail(err);
+		} finally {
+			uploadingSection = null;
+			input.value = '';
+		}
+	}
+
+	const fieldLabels: Record<ContentField, string> = {
+		heading: 'Heading',
+		body: 'Text',
+		imageUrl: 'Image URL',
+		ctaLabel: 'Button label'
+	};
+
+	// --- Repeatable items (gallery images / FAQ Q&A) inside an item-based section ---
+	type ItemField = 'heading' | 'body' | 'imageUrl';
+
+	function editItem(si: number, ii: number, field: ItemField, value: string) {
+		const next = [...setLayout];
+		const items = [...(next[si].items ?? [])];
+		items[ii] = { ...items[ii], [field]: value };
+		next[si] = { ...next[si], items };
+		setLayout = next;
+	}
+	function addItem(si: number) {
+		const next = [...setLayout];
+		next[si] = { ...next[si], items: [...(next[si].items ?? []), {}] };
+		setLayout = next;
+	}
+	function removeItem(si: number, ii: number) {
+		const next = [...setLayout];
+		next[si] = { ...next[si], items: (next[si].items ?? []).filter((_, k) => k !== ii) };
+		setLayout = next;
+	}
+
+	// Per-item image upload (gallery). uploadingItem holds "si:ii" so only that row shows the spinner.
+	let uploadingItem = $state<string | null>(null);
+	async function onPickItemImage(si: number, ii: number, e: Event) {
+		const input = e.currentTarget as HTMLInputElement;
+		const file = input.files?.[0];
+		if (!file) return;
+		uploadingItem = `${si}:${ii}`;
+		try {
+			editItem(si, ii, 'imageUrl', await uploadImage(file));
+			ok('Image uploaded');
+		} catch (err) {
+			fail(err);
+		} finally {
+			uploadingItem = null;
+			input.value = '';
+		}
+	}
+
+	function fail(err: unknown) {
+		error = (err as ApiError)?.error ?? 'Request failed';
+		notice = '';
+	}
+	function ok(msg: string) {
+		notice = msg;
+		error = '';
+	}
+
+	onMount(async () => {
+		try {
+			stores = await listStores();
+		} catch (err) {
+			fail(err);
+		}
+		if (active && session.storeToken()) {
+			await refreshProducts();
+			const s = stores.find((x) => x.id === active?.id);
+			if (s) loadStoreSettings(s);
+		}
+	});
+
+	async function refreshProducts() {
+		try {
+			products = await listProducts();
+			await refreshStock();
+		} catch (err) {
+			fail(err);
+		}
+	}
+
+	// refreshStock loads on-hand for every variant SKU across the store's products, for the inline editor.
+	async function refreshStock() {
+		const skus = products.flatMap((p) => p.variants.map((v) => v.sku));
+		if (skus.length === 0) {
+			stockMap = {};
+			return;
+		}
+		try {
+			const stocks = await listStock(skus);
+			const m: Record<string, number> = {};
+			for (const s of stocks) m[s.sku] = s.available;
+			stockMap = m;
+		} catch {
+			/* non-fatal: the inline stock just shows as unknown */
+		}
+	}
+
+	// doSetVariantStock saves a single variant's on-hand from the inline editor and reflects it locally.
+	async function doSetVariantStock(sku: string, available: number) {
+		try {
+			await setStock(sku, available);
+			stockMap = { ...stockMap, [sku]: available };
+			ok('Stock set for ' + sku);
+		} catch (err) {
+			fail(err);
+		}
+	}
+
+	async function doCreateStore() {
+		try {
+			const s = await createStore(newSlug, newName);
+			stores = [...stores, s];
+			newSlug = '';
+			newName = '';
+			ok('Store created');
+		} catch (err) {
+			fail(err);
+		}
+	}
+
+	async function doSelectStore(store: Store) {
+		try {
+			await selectStore(store);
+			active = session.activeStore();
+			loadStoreSettings(store);
+			await refreshProducts();
+			ok('Managing ' + store.displayName);
+		} catch (err) {
+			fail(err);
+		}
+	}
+
+	async function doChangePlan(toTier: string) {
+		if (!activeStore) return;
+		try {
+			const updated = await changePlan(activeStore.id, toTier);
+			stores = stores.map((s) => (s.id === updated.id ? updated : s));
+			// The plan is signed into the store token, so re-mint it for the gateway to honor the new tier.
+			await selectStore(updated);
+			active = session.activeStore();
+			ok('Plan changed to ' + PLANS[normalizeTier(toTier)].label);
+		} catch (err) {
+			fail(err);
+		}
+	}
+
+	async function doCreateProduct(e: SubmitEvent) {
+		e.preventDefault();
+		try {
+			await createProduct({
+				name: pName,
+				category: pCategory,
+				priceCents: Math.round(pPrice * 100),
+				currency: 'USD',
+				imageUrl: pImages[0] ?? '',
+				images: pImages,
+				variants: pSku ? [{ sku: pSku, label: 'Default' }] : [],
+				// A future drop date schedules a drop (storefront countdown + server-side checkout gate).
+				dropAt: pDrop ? new Date(pDrop).toISOString() : undefined
+			});
+			pName = '';
+			pPrice = 0;
+			pImages = [];
+			pSku = '';
+			pDrop = '';
+			await refreshProducts();
+			ok('Product created');
+		} catch (err) {
+			fail(err);
+		}
+	}
+
+	// onPickProductImage uploads the chosen file(s) to the object store and appends the returned public
+	// link(s) to the new product's gallery, so the merchant builds a multi-image product by uploading photos
+	// instead of hosting and pasting URLs. Supports selecting several files at once.
+	async function onPickProductImage(e: Event) {
+		const input = e.currentTarget as HTMLInputElement;
+		const files = Array.from(input.files ?? []);
+		if (files.length === 0) return;
+		uploading = true;
+		try {
+			for (const file of files) {
+				pImages = [...pImages, await uploadImage(file)];
+			}
+			ok(files.length > 1 ? files.length + ' images uploaded' : 'Image uploaded');
+		} catch (err) {
+			fail(err);
+		} finally {
+			uploading = false;
+			input.value = ''; // allow re-picking the same file after an error
+		}
+	}
+
+	function removeProductImage(i: number) {
+		pImages = pImages.filter((_, k) => k !== i);
+	}
+
+	async function doDeleteProduct(id: string) {
+		try {
+			await deleteProduct(id);
+			products = products.filter((p) => p.id !== id);
+			ok('Product deleted');
+		} catch (err) {
+			fail(err);
+		}
+	}
+
+	async function doSetStock(e: SubmitEvent) {
+		e.preventDefault();
+		try {
+			await setStock(sSku, sQty);
+			ok('Stock set for ' + sSku);
+		} catch (err) {
+			fail(err);
+		}
+	}
+
+	async function doSaveSettings(e: SubmitEvent) {
+		e.preventDefault();
+		if (!active) return;
+		try {
+			const updated = await updateStore(active.id, setName, {
+				accentColor: setAccent,
+				logoUrl: setLogo,
+				currency: 'USD',
+				layout: setLayout
+			});
+			stores = stores.map((s) => (s.id === updated.id ? updated : s));
+			loadStoreSettings(updated);
+			ok('Settings saved');
+		} catch (err) {
+			fail(err);
+		}
+	}
+
+	const inputClass =
+		'brutal-border bg-surface px-4 py-3 font-sans text-body-md text-text focus-ring';
+	const labelClass = 'font-mono text-metadata-sm uppercase tracking-[0.05em] text-text-muted';
+</script>
+
+<div class="mb-8 flex flex-wrap items-center justify-between gap-4">
+	<div class="flex items-center gap-3">
+		<h1 class="font-sans text-headline-lg tracking-tighter">Dashboard</h1>
+		{#if activeStore}
+			<span class="brutal-border bg-accent px-2 py-1 font-mono text-metadata-sm uppercase tracking-[0.1em] text-on-accent">
+				{PLANS[tier].label}
+			</span>
+		{/if}
+	</div>
+	{#if active}
+		<a href="/store/{active.slug}" target="_blank" rel="noopener" class="btn-ghost flex items-center gap-2">
+			Ver mi tienda
+			<ExternalLink size={14} />
+		</a>
+	{/if}
+</div>
+
+{#if error}
+	<p class="mb-6 brutal-border border-error px-4 py-3 font-mono text-metadata-sm text-error">{error}</p>
+{/if}
+{#if notice}
+	<p class="mb-6 brutal-border px-4 py-3 font-mono text-metadata-sm text-text-muted">{notice}</p>
+{/if}
+
+<!-- Stores -->
+<section class="mb-12">
+	<h2 class="mb-4 font-sans text-headline-md tracking-tight">Your stores</h2>
+	<div class="grid gap-px brutal-border bg-border sm:grid-cols-2 lg:grid-cols-3">
+		{#each stores as store (store.id)}
+			<div class="flex flex-col gap-2 bg-bg p-4">
+				<span class="font-sans text-body-lg">{store.displayName}</span>
+				<span class={labelClass}>{store.slug}</span>
+				<button
+					onclick={() => doSelectStore(store)}
+					class="mt-2 {active?.id === store.id ? 'btn-accent' : 'btn-ghost'}"
+				>
+					{active?.id === store.id ? 'Active' : 'Manage'}
+				</button>
+			</div>
+		{:else}
+			<p class="bg-bg p-4 font-mono text-metadata-sm text-text-muted">No stores yet — create one below.</p>
+		{/each}
+	</div>
+
+	<div class="mt-6 flex flex-wrap items-end gap-3">
+		<label class="flex flex-col gap-1">
+			<span class={labelClass}>Slug</span>
+			<input bind:value={newSlug} placeholder="acme" class={inputClass} />
+		</label>
+		<label class="flex flex-col gap-1">
+			<span class={labelClass}>Display name</span>
+			<input bind:value={newName} placeholder="ACME" class={inputClass} />
+		</label>
+		<button onclick={doCreateStore} class="btn-primary">Create store</button>
+	</div>
+</section>
+
+{#if active && session.storeToken()}
+	<!-- Membership -->
+	<section class="mb-12">
+		<h2 class="mb-4 font-sans text-headline-md tracking-tight">Membership</h2>
+		<div class="grid gap-px brutal-border bg-border md:grid-cols-3">
+			{#each TIERS as t (t)}
+				<div class="flex flex-col gap-3 bg-bg p-4 {t === tier ? 'ring-2 ring-inset ring-accent' : ''}">
+					<div class="flex items-baseline justify-between">
+						<span class="font-sans text-body-lg">{PLANS[t].label}</span>
+						<span class="font-mono text-metadata-sm text-text-muted">{PLANS[t].price}/mo</span>
+					</div>
+					<ul class="flex flex-col gap-1 font-mono text-metadata-sm text-text-muted">
+						<li>{PLANS[t].productLimit === UNLIMITED ? 'Unlimited' : PLANS[t].productLimit} products</li>
+						<li class={PLANS[t].features.includes('drops') ? 'text-text' : ''}>
+							{PLANS[t].features.includes('drops') ? '✓' : '·'} Timed drops
+						</li>
+						<li class={PLANS[t].features.includes('customLogo') ? 'text-text' : ''}>
+							{PLANS[t].features.includes('customLogo') ? '✓' : '·'} Custom logo
+						</li>
+						<li class={PLANS[t].features.includes('removeBranding') ? 'text-text' : ''}>
+							{PLANS[t].features.includes('removeBranding') ? '✓' : '·'} Remove platform mark
+						</li>
+					</ul>
+					{#if t === tier}
+						<span class="mt-auto font-mono text-metadata-sm uppercase tracking-[0.1em] text-accent">Current plan</span>
+					{:else}
+						<button onclick={() => doChangePlan(t)} class="mt-auto {TIERS.indexOf(t) > TIERS.indexOf(tier) ? 'btn-accent' : 'btn-ghost'}">
+							{TIERS.indexOf(t) > TIERS.indexOf(tier) ? 'Upgrade' : 'Downgrade'}
+						</button>
+					{/if}
+				</div>
+			{/each}
+		</div>
+	</section>
+
+	<!-- Products -->
+	<section class="mb-12">
+		<h2 class="mb-4 font-sans text-headline-md tracking-tight">
+			Products — {active.displayName}
+			<span class="ml-2 font-mono text-metadata-sm text-text-muted">
+				{products.length}{limit === UNLIMITED ? '' : '/' + limit}
+			</span>
+		</h2>
+
+		<div class="mb-6 flex flex-col gap-px brutal-border bg-border">
+			{#each products as product (product.id)}
+				<div class="flex flex-col gap-3 bg-bg p-4">
+					<div class="flex items-start justify-between gap-4">
+						<div class="flex items-center gap-3">
+							{#if product.imageUrl}
+								<img src={product.imageUrl} alt="" class="brutal-border h-10 w-10 object-cover" />
+							{/if}
+							<div class="flex flex-col">
+								<span class="font-sans text-body-md">
+									{product.name}
+									{#if product.images && product.images.length > 1}
+										<span class="ml-2 font-mono text-metadata-sm text-text-muted">{product.images.length} imgs</span>
+									{/if}
+								</span>
+								<span class={labelClass}>
+									{product.category} · {(product.priceCents / 100).toFixed(2)} {product.currency}
+								</span>
+							</div>
+						</div>
+						<button
+							onclick={() => doDeleteProduct(product.id)}
+							class="font-mono text-metadata-sm uppercase tracking-[0.05em] text-text-muted hover:text-error"
+						>
+							Delete
+						</button>
+					</div>
+					{#if product.variants.length}
+						<div class="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-3">
+							<span class={labelClass}>Stock</span>
+							{#each product.variants as v (v.sku)}
+								<label class="flex items-center gap-2">
+									<span class="font-mono text-metadata-sm text-text-muted">{v.label || v.sku}</span>
+									<input
+										type="number"
+										min="0"
+										value={stockMap[v.sku] ?? 0}
+										onchange={(e) =>
+											doSetVariantStock(v.sku, Math.max(0, parseInt(e.currentTarget.value, 10) || 0))}
+										class="{inputClass} w-20 py-1"
+									/>
+								</label>
+							{/each}
+						</div>
+					{/if}
+				</div>
+			{:else}
+				<p class="bg-bg p-4 font-mono text-metadata-sm text-text-muted">No products yet.</p>
+			{/each}
+		</div>
+
+		<form onsubmit={doCreateProduct} class="flex flex-wrap items-end gap-3">
+			<label class="flex flex-col gap-1">
+				<span class={labelClass}>Name</span>
+				<input bind:value={pName} required class={inputClass} />
+			</label>
+			<label class="flex flex-col gap-1">
+				<span class={labelClass}>Category</span>
+				<input bind:value={pCategory} class={inputClass} />
+			</label>
+			<label class="flex flex-col gap-1">
+				<span class={labelClass}>Price (USD)</span>
+				<input type="number" min="0" step="0.01" bind:value={pPrice} class="{inputClass} w-32" />
+			</label>
+			<label class="flex flex-col gap-1">
+				<span class={labelClass}>SKU</span>
+				<input bind:value={pSku} placeholder="ACME-01" class={inputClass} />
+			</label>
+			<label class="flex flex-col gap-1">
+				<span class="{labelClass} flex items-center gap-2">
+					Images
+					{#if uploading}<span class="text-accent">uploading…</span>{/if}
+				</span>
+				{#if pImages.length}
+					<div class="flex flex-wrap gap-2">
+						{#each pImages as img, i (img)}
+							<div class="relative">
+								<img src={img} alt="" class="brutal-border h-12 w-12 object-cover" />
+								{#if i === 0}
+									<span class="absolute -bottom-2 left-0 brutal-border bg-bg px-1 font-mono text-[0.6rem] uppercase text-text-muted">main</span>
+								{/if}
+								<button
+									type="button"
+									onclick={() => removeProductImage(i)}
+									aria-label="Remove image"
+									class="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center brutal-border bg-bg font-mono text-metadata-sm text-text hover:text-error"
+								>
+									×
+								</button>
+							</div>
+						{/each}
+					</div>
+				{/if}
+				<input
+					type="file"
+					accept="image/png,image/jpeg,image/webp,image/avif,image/gif"
+					multiple
+					onchange={onPickProductImage}
+					disabled={uploading}
+					class="mt-1 font-mono text-metadata-sm text-text-muted file:mr-3 file:brutal-border file:bg-surface file:px-3 file:py-1 file:font-mono file:text-metadata-sm file:text-text"
+				/>
+			</label>
+			<label class="flex flex-col gap-1">
+				<span class="{labelClass} flex items-center gap-1">
+					Drop date {#if !canDrops}<Lock size={11} /> Pro{:else}(optional){/if}
+				</span>
+				<input
+					type="datetime-local"
+					bind:value={pDrop}
+					disabled={!canDrops}
+					title={canDrops ? '' : 'Timed drops are a Pro feature — upgrade above'}
+					class="{inputClass} disabled:cursor-not-allowed disabled:opacity-40"
+				/>
+			</label>
+			<button type="submit" disabled={atProductLimit} class="btn-primary disabled:cursor-not-allowed disabled:opacity-40">
+				Add product
+			</button>
+		</form>
+		{#if atProductLimit}
+			<p class="mt-3 font-mono text-metadata-sm text-text-muted">
+				You've hit the {PLANS[tier].label} plan limit of {limit} products. Upgrade to add more.
+			</p>
+		{/if}
+	</section>
+
+	<!-- Stock -->
+	<section class="mb-12">
+		<h2 class="mb-4 font-sans text-headline-md tracking-tight">Stock</h2>
+		<form onsubmit={doSetStock} class="flex flex-wrap items-end gap-3">
+			<label class="flex flex-col gap-1">
+				<span class={labelClass}>SKU</span>
+				<input bind:value={sSku} required placeholder="ACME-01" class={inputClass} />
+			</label>
+			<label class="flex flex-col gap-1">
+				<span class={labelClass}>Available</span>
+				<input type="number" min="0" bind:value={sQty} class="{inputClass} w-32" />
+			</label>
+			<button type="submit" class="btn-primary">Set stock</button>
+		</form>
+	</section>
+
+	<!-- Settings -->
+	<section class="mb-12">
+		<h2 class="mb-4 font-sans text-headline-md tracking-tight">Store settings</h2>
+		<form onsubmit={doSaveSettings} class="flex flex-col gap-8">
+			<div class="flex flex-wrap items-end gap-3">
+				<label class="flex flex-col gap-1">
+					<span class={labelClass}>Display name</span>
+					<input bind:value={setName} class={inputClass} />
+				</label>
+				<label class="flex flex-col gap-1">
+					<span class={labelClass}>Accent color</span>
+					<input type="color" bind:value={setAccent} class="brutal-border h-12 w-16 bg-surface" />
+				</label>
+				<label class="flex flex-col gap-1">
+					<span class="{labelClass} flex items-center gap-1">
+						Logo URL {#if !canLogo}<Lock size={11} /> Pro{/if}
+					</span>
+					<input
+						bind:value={setLogo}
+						disabled={!canLogo}
+						title={canLogo ? '' : 'A custom logo is a Pro feature — upgrade above'}
+						class="{inputClass} disabled:cursor-not-allowed disabled:opacity-40"
+					/>
+				</label>
+			</div>
+
+			<!-- Storefront layout: which sections appear, in what order, and their copy. The grid is fixed
+			     (always on, can be reordered); the rest are optional. Chrome and design tokens never change. -->
+			<div>
+				<div class="mb-1 flex items-baseline gap-3">
+					<h3 class="font-sans text-body-lg">Storefront layout</h3>
+					<span class="font-mono text-metadata-sm text-text-muted">drag-free reorder · toggle · edit copy</span>
+				</div>
+				<p class="mb-4 font-mono text-metadata-sm text-text-muted">
+					Arrange the blocks of your homepage. The product grid is always shown; everything else is optional.
+				</p>
+				<div class="flex flex-col gap-px brutal-border bg-border">
+					{#each setLayout as section, i (section.type)}
+						{@const meta = SECTION_META[section.type as SectionType]}
+						<div class="flex flex-col gap-3 bg-bg p-4 {section.enabled ? '' : 'opacity-60'}">
+							<div class="flex flex-wrap items-center gap-3">
+								<div class="flex flex-col">
+									<button
+										type="button"
+										onclick={() => moveSection(i, -1)}
+										disabled={i === 0}
+										aria-label="Move up"
+										class="text-text-muted hover:text-text disabled:opacity-20"
+									>
+										<ArrowUp size={14} />
+									</button>
+									<button
+										type="button"
+										onclick={() => moveSection(i, 1)}
+										disabled={i === setLayout.length - 1}
+										aria-label="Move down"
+										class="text-text-muted hover:text-text disabled:opacity-20"
+									>
+										<ArrowDown size={14} />
+									</button>
+								</div>
+								<div class="flex flex-1 flex-col">
+									<span class="font-sans text-body-md">{meta.label}</span>
+									<span class={labelClass}>{meta.hint}</span>
+								</div>
+								{#if meta.fixed}
+									<span class="font-mono text-metadata-sm uppercase tracking-[0.1em] text-text-muted">Always on</span>
+								{:else}
+									<button
+										type="button"
+										onclick={() => toggleSection(i)}
+										class="font-mono text-metadata-sm uppercase tracking-[0.1em] {section.enabled
+											? 'text-accent'
+											: 'text-text-muted hover:text-text'}"
+									>
+										{section.enabled ? '● Shown' : '○ Hidden'}
+									</button>
+								{/if}
+							</div>
+
+							{#if section.enabled && meta.fields.length}
+								<div class="flex flex-wrap gap-3 border-t border-border pt-3">
+									{#each meta.fields as field (field)}
+										<label class="flex flex-1 flex-col gap-1" style="min-width: 12rem">
+											<span class="{labelClass} flex items-center gap-2">
+												{fieldLabels[field] ?? field}
+												{#if field === 'imageUrl' && uploadingSection === i}<span class="text-accent">uploading…</span>{/if}
+											</span>
+											{#if field === 'body'}
+												<textarea
+													value={section[field] ?? ''}
+													oninput={(e) => editSection(i, field, e.currentTarget.value)}
+													rows="2"
+													class={inputClass}
+												></textarea>
+											{:else if field === 'imageUrl'}
+												<div class="flex items-center gap-3">
+													{#if section.imageUrl}
+														<img src={section.imageUrl} alt="" class="brutal-border h-10 w-10 object-cover" />
+													{/if}
+													<input
+														value={section[field] ?? ''}
+														oninput={(e) => editSection(i, field, e.currentTarget.value)}
+														placeholder="upload or paste a URL"
+														class="{inputClass} flex-1"
+													/>
+												</div>
+												<input
+													type="file"
+													accept="image/png,image/jpeg,image/webp,image/avif,image/gif"
+													onchange={(e) => onPickSectionImage(i, e)}
+													disabled={uploadingSection === i}
+													class="mt-1 font-mono text-metadata-sm text-text-muted file:mr-3 file:brutal-border file:bg-surface file:px-3 file:py-1 file:font-mono file:text-metadata-sm file:text-text"
+												/>
+											{:else}
+												<input
+													value={section[field] ?? ''}
+													oninput={(e) => editSection(i, field, e.currentTarget.value)}
+													class={inputClass}
+												/>
+											{/if}
+										</label>
+									{/each}
+								</div>
+							{/if}
+
+							{#if section.enabled && meta.item}
+								{@const im = meta.item}
+								<div class="flex flex-col gap-3 border-t border-border pt-3">
+									<span class={labelClass}>{im.label}s</span>
+									{#each section.items ?? [] as item, ii (ii)}
+										<div class="flex flex-wrap items-start gap-3 brutal-border bg-surface p-3">
+											{#if im.kind === 'image'}
+												<div class="flex items-center gap-3">
+													{#if item.imageUrl}
+														<img src={item.imageUrl} alt="" class="brutal-border h-10 w-10 object-cover" />
+													{/if}
+													<input
+														type="file"
+														accept="image/png,image/jpeg,image/webp,image/avif,image/gif"
+														onchange={(e) => onPickItemImage(i, ii, e)}
+														disabled={uploadingItem === i + ':' + ii}
+														class="font-mono text-metadata-sm text-text-muted file:mr-3 file:brutal-border file:bg-surface file:px-3 file:py-1 file:font-mono file:text-metadata-sm file:text-text"
+													/>
+												</div>
+												<input
+													value={item.imageUrl ?? ''}
+													oninput={(e) => editItem(i, ii, 'imageUrl', e.currentTarget.value)}
+													placeholder="image URL"
+													class="{inputClass} flex-1"
+													style="min-width: 10rem"
+												/>
+												<input
+													value={item.heading ?? ''}
+													oninput={(e) => editItem(i, ii, 'heading', e.currentTarget.value)}
+													placeholder="caption (optional)"
+													class="{inputClass} w-44"
+												/>
+											{:else}
+												<input
+													value={item.heading ?? ''}
+													oninput={(e) => editItem(i, ii, 'heading', e.currentTarget.value)}
+													placeholder="Question"
+													class="{inputClass} flex-1"
+													style="min-width: 10rem"
+												/>
+												<textarea
+													value={item.body ?? ''}
+													oninput={(e) => editItem(i, ii, 'body', e.currentTarget.value)}
+													placeholder="Answer"
+													rows="2"
+													class="{inputClass} flex-1"
+													style="min-width: 10rem"
+												></textarea>
+											{/if}
+											{#if uploadingItem === i + ':' + ii}
+												<span class="font-mono text-metadata-sm text-accent">uploading…</span>
+											{/if}
+											<button
+												type="button"
+												onclick={() => removeItem(i, ii)}
+												class="font-mono text-metadata-sm uppercase tracking-[0.05em] text-text-muted hover:text-error"
+											>
+												Remove
+											</button>
+										</div>
+									{/each}
+									<button type="button" onclick={() => addItem(i)} class="btn-ghost self-start">
+										+ Add {im.label.toLowerCase()}
+									</button>
+								</div>
+							{/if}
+						</div>
+					{/each}
+				</div>
+			</div>
+
+			<button type="submit" class="btn-primary self-start">Save settings</button>
+		</form>
+	</section>
+{/if}
