@@ -118,6 +118,7 @@ func (s *Service) Create(ctx context.Context, tenant string, p Product) (*Produc
 		p.Currency = "USD"
 	}
 	normalizeImages(&p)
+	normalizeVariants(&p)
 	p.CreatedAt = time.Now().UTC()
 	if err := s.repo.Upsert(ctx, p); err != nil {
 		return nil, err
@@ -151,6 +152,29 @@ func normalizeImages(p *Product) {
 	}
 }
 
+// normalizeVariants cleans the variant list on write: trims fields, drops blank-SKU rows and duplicate
+// SKUs (inventory keys on {tenantId, sku}, so a repeated SKU would make two variants fight over one stock
+// document), and falls back the label to the SKU. Same defensive write-time stance as normalizeImages and
+// the layout sanitizers — a multi-variant product (sizes/colors) can't be saved into an inconsistent state.
+func normalizeVariants(p *Product) {
+	out := make([]Variant, 0, len(p.Variants))
+	seen := map[string]bool{}
+	for _, v := range p.Variants {
+		v.SKU = strings.TrimSpace(v.SKU)
+		v.Label = strings.TrimSpace(v.Label)
+		v.Color = strings.TrimSpace(v.Color)
+		if v.SKU == "" || seen[v.SKU] {
+			continue
+		}
+		if v.Label == "" {
+			v.Label = v.SKU
+		}
+		seen[v.SKU] = true
+		out = append(out, v)
+	}
+	p.Variants = out
+}
+
 // Update replaces an existing product within a store, preserving its creation time. Invalidates cache.
 func (s *Service) Update(ctx context.Context, tenant, id string, p Product) (*Product, error) {
 	if err := gateDrop(plan.FromContext(ctx), p); err != nil {
@@ -167,6 +191,7 @@ func (s *Service) Update(ctx context.Context, tenant, id string, p Product) (*Pr
 		p.Currency = existing.Currency
 	}
 	normalizeImages(&p)
+	normalizeVariants(&p)
 	if err := s.repo.Upsert(ctx, p); err != nil {
 		return nil, err
 	}
