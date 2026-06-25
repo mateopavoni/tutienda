@@ -26,6 +26,18 @@ type Settings struct {
 	// Layout is the ordered list of storefront sections the merchant arranged. Empty = the default
 	// layout (just the product grid). The grid ("catalog") is mandatory; the rest are optional blocks.
 	Layout []Section `bson:"layout,omitempty" json:"layout,omitempty"`
+	// Pages are standalone storefront pages, each at its own route (/store/{slug}/{type}). Unlike layout
+	// sections (homepage blocks), these are full pages the merchant fills in: about/faq/contact/terms. A
+	// page with an empty body is treated as absent — it isn't routed or linked.
+	Pages []Page `bson:"pages,omitempty" json:"pages,omitempty"`
+}
+
+// Page is a standalone storefront page (about/faq/contact/terms). Type is the route segment; Title is the
+// heading (falls back to a default per type in the UI); Body is free text rendered with line breaks kept.
+type Page struct {
+	Type  string `bson:"type" json:"type"`
+	Title string `bson:"title,omitempty" json:"title,omitempty"`
+	Body  string `bson:"body,omitempty" json:"body,omitempty"`
 }
 
 // Section is one configurable block of a store's storefront. A merchant chooses which optional sections

@@ -143,6 +143,7 @@ func (s *Service) SetPlan(ctx context.Context, ownerID, storeID, tier string) (*
 // UpdateStore patches a store's settings/displayName, scoped to the owner.
 func (s *Service) UpdateStore(ctx context.Context, ownerID, storeID, displayName string, settings Settings) (*Store, error) {
 	settings.Layout = sanitizeLayout(settings.Layout)
+	settings.Pages = sanitizePages(settings.Pages)
 	return s.repo.updateSettings(ctx, storeID, ownerID, displayName, settings)
 }
 
@@ -214,6 +215,47 @@ func sanitizeItems(raw []SectionItem) []SectionItem {
 		if len(out) >= maxSectionItems {
 			break
 		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+// knownPageTypes is the closed set of standalone storefront pages. Same defensive stance as
+// knownSectionTypes: an unknown type is a typo/tampered request and gets dropped. Mirrors PAGE_TYPES in
+// web/src/lib/pages.ts.
+var knownPageTypes = map[string]bool{
+	"about":   true,
+	"faq":     true,
+	"contact": true,
+	"terms":   true,
+}
+
+// pageBodyMax caps a page body. Bigger than a section field (a terms/policy page is legitimately long)
+// but still bounded so the store document can't grow without limit. The title reuses sectionFieldMax.
+const pageBodyMax = 20000
+
+// sanitizePages normalizes the pages on write: keeps only known types, drops duplicates, trims/caps the
+// title and body, and drops any page with an empty body (an empty page is treated as absent — nothing to
+// route or link). Write-time guarantee mirroring sanitizeLayout: the stored document is always clean.
+func sanitizePages(raw []Page) []Page {
+	if len(raw) == 0 {
+		return nil
+	}
+	out := make([]Page, 0, len(raw))
+	seen := map[string]bool{}
+	for _, p := range raw {
+		if !knownPageTypes[p.Type] || seen[p.Type] {
+			continue
+		}
+		p.Title = capRunes(strings.TrimSpace(p.Title), sectionFieldMax)
+		p.Body = capRunes(strings.TrimSpace(p.Body), pageBodyMax)
+		if p.Body == "" {
+			continue
+		}
+		seen[p.Type] = true
+		out = append(out, p)
 	}
 	if len(out) == 0 {
 		return nil
