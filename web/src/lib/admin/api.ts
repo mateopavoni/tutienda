@@ -3,6 +3,7 @@
 import { env } from '$env/dynamic/public';
 import type { ApiError, Product, Stock } from '$lib/types';
 import type { Section } from '$lib/layout';
+import type { Page } from '$lib/pages';
 import { session, type ActiveStore } from './session';
 
 function base(): string {
@@ -27,7 +28,7 @@ export interface Store {
 	slug: string;
 	ownerId: string;
 	displayName: string;
-	settings: { logoUrl?: string; accentColor?: string; currency?: string; layout?: Section[] };
+	settings: { logoUrl?: string; accentColor?: string; currency?: string; layout?: Section[]; pages?: Page[] };
 	/** Membership tier (see $lib/plan). Defaults to 'free' for stores created before plans existed. */
 	plan: string;
 }

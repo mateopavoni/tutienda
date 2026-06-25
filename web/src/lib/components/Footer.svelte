@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
 	import { BRAND } from '$lib/brand';
-	let { storeName }: { storeName?: string } = $props();
+	import { pageTitle, type Page } from '$lib/pages';
+	let { storeName, slug = '', pages = [] }: { storeName?: string; slug?: string; pages?: Page[] } = $props();
 	const year = new Date().getFullYear();
 	const name = $derived(storeName ?? '');
 </script>
@@ -13,8 +14,13 @@
 				© {year} {name}
 			</p>
 		</div>
-		<!-- No dead links: just the platform attribution, which actually navigates. -->
+		<!-- Store pages (only ones with content) + the platform attribution; all of these actually navigate. -->
 		<div class="flex flex-wrap gap-8 font-mono text-metadata-sm md:col-span-6 md:justify-end">
+			{#each pages as p (p.type)}
+				<a href="/store/{slug}/{p.type}" class="text-text-muted transition-colors hover:text-accent">
+					{pageTitle(p)}
+				</a>
+			{/each}
 			<a href="/" class="text-text-muted transition-colors hover:text-accent">
 				{$t('footer.poweredBy', { brand: BRAND })}
 			</a>

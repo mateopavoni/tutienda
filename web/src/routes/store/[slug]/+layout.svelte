@@ -3,6 +3,7 @@
 	import Footer from '$lib/components/Footer.svelte';
 	import CartDrawer from '$lib/components/CartDrawer.svelte';
 	import { setBrowserSlug } from '$lib/tenant';
+	import { enabledPages } from '$lib/pages';
 
 	let { children, data } = $props();
 
@@ -36,6 +37,10 @@
 	<main class="flex-1 pt-16">
 		{@render children()}
 	</main>
-	<Footer storeName={data.store?.displayName} />
+	<Footer
+		storeName={data.store?.displayName}
+		slug={data.storeSlug}
+		pages={enabledPages(data.store?.settings?.pages)}
+	/>
 	<CartDrawer />
 </div>

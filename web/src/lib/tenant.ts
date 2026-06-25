@@ -44,5 +44,6 @@ export interface StoreInfo {
 		accentColor?: string;
 		currency?: string;
 		layout?: import('$lib/layout').Section[];
+		pages?: import('$lib/pages').Page[];
 	};
 }
