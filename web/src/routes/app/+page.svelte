@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { get } from 'svelte/store';
+	import { t } from '$lib/i18n';
 	import { session } from '$lib/admin/session';
 	import {
 		listStores,
@@ -24,6 +26,7 @@
 		type SectionType,
 		type ContentField
 	} from '$lib/layout';
+	import { PAGE_TYPES, PAGE_META, type Page, type PageType } from '$lib/pages';
 	import { ExternalLink, Lock, ArrowUp, ArrowDown } from 'lucide-svelte';
 
 	let stores = $state<Store[]>([]);
@@ -49,7 +52,9 @@
 	let pCategory = $state('apparel');
 	let pPrice = $state(0);
 	let pImages = $state<string[]>([]); // gallery for the new product; first is the primary image
-	let pSku = $state('');
+	// One or more sellable variants (size/color); each carries its own SKU and starting stock. Inventory
+	// keys on SKU, so blank/duplicate SKUs are filtered on submit (and again server-side in normalizeVariants).
+	let pVariants = $state<{ label: string; sku: string; qty: number }[]>([{ label: '', sku: '', qty: 0 }]);
 	let pDrop = $state(''); // datetime-local; empty = on sale now, a future value schedules a drop
 	let uploading = $state(false); // true while a product image is being uploaded to the object store
 
@@ -66,13 +71,27 @@
 	// Storefront layout: the normalized, full list of sections (every known block exactly once, in order).
 	// The merchant toggles, reorders and edits copy here; only enabled sections render on the storefront.
 	let setLayout = $state<Section[]>(normalizeLayout());
+	// Standalone pages, one editable row per known type (blank ones are dropped on save / server-side).
+	let setPages = $state<Record<PageType, { title: string; body: string }>>(emptyPages());
 
-	// loadStoreSettings hydrates the settings form (including layout) from a store record.
+	function emptyPages(): Record<PageType, { title: string; body: string }> {
+		return Object.fromEntries(PAGE_TYPES.map((t) => [t, { title: '', body: '' }])) as Record<
+			PageType,
+			{ title: string; body: string }
+		>;
+	}
+
+	// loadStoreSettings hydrates the settings form (including layout + pages) from a store record.
 	function loadStoreSettings(s: Store) {
 		setName = s.displayName;
 		setAccent = s.settings.accentColor ?? '#1b03ea';
 		setLogo = s.settings.logoUrl ?? '';
 		setLayout = normalizeLayout(s.settings.layout);
+		const p = emptyPages();
+		for (const pg of s.settings.pages ?? []) {
+			if (pg.type in p) p[pg.type] = { title: pg.title ?? '', body: pg.body ?? '' };
+		}
+		setPages = p;
 	}
 
 	// A section can move up/down within the list; the mandatory grid stays in the flow but can be reordered.
@@ -107,7 +126,7 @@
 		uploadingSection = i;
 		try {
 			editSection(i, 'imageUrl', await uploadImage(file));
-			ok('Image uploaded');
+			ok($t('app.toast.imageUploaded'));
 		} catch (err) {
 			fail(err);
 		} finally {
@@ -116,12 +135,12 @@
 		}
 	}
 
-	const fieldLabels: Record<ContentField, string> = {
-		heading: 'Heading',
-		body: 'Text',
-		imageUrl: 'Image URL',
-		ctaLabel: 'Button label'
-	};
+	const fieldLabels = $derived<Record<ContentField, string>>({
+		heading: $t('app.fields.heading'),
+		body: $t('app.fields.body'),
+		imageUrl: $t('app.fields.imageUrl'),
+		ctaLabel: $t('app.fields.ctaLabel')
+	});
 
 	// --- Repeatable items (gallery images / FAQ Q&A) inside an item-based section ---
 	type ItemField = 'heading' | 'body' | 'imageUrl';
@@ -153,7 +172,7 @@
 		uploadingItem = `${si}:${ii}`;
 		try {
 			editItem(si, ii, 'imageUrl', await uploadImage(file));
-			ok('Image uploaded');
+			ok($t('app.toast.imageUploaded'));
 		} catch (err) {
 			fail(err);
 		} finally {
@@ -163,7 +182,7 @@
 	}
 
 	function fail(err: unknown) {
-		error = (err as ApiError)?.error ?? 'Request failed';
+		error = (err as ApiError)?.error ?? get(t)('app.toast.requestFailed');
 		notice = '';
 	}
 	function ok(msg: string) {
@@ -215,7 +234,7 @@
 		try {
 			await setStock(sku, available);
 			stockMap = { ...stockMap, [sku]: available };
-			ok('Stock set for ' + sku);
+			ok($t('app.toast.stockSet', { sku }));
 		} catch (err) {
 			fail(err);
 		}
@@ -227,7 +246,7 @@
 			stores = [...stores, s];
 			newSlug = '';
 			newName = '';
-			ok('Store created');
+			ok($t('app.toast.storeCreated'));
 		} catch (err) {
 			fail(err);
 		}
@@ -239,7 +258,7 @@
 			active = session.activeStore();
 			loadStoreSettings(store);
 			await refreshProducts();
-			ok('Managing ' + store.displayName);
+			ok($t('app.toast.managing', { name: store.displayName }));
 		} catch (err) {
 			fail(err);
 		}
@@ -253,14 +272,24 @@
 			// The plan is signed into the store token, so re-mint it for the gateway to honor the new tier.
 			await selectStore(updated);
 			active = session.activeStore();
-			ok('Plan changed to ' + PLANS[normalizeTier(toTier)].label);
+			ok($t('app.toast.planChanged', { plan: PLANS[normalizeTier(toTier)].label }));
 		} catch (err) {
 			fail(err);
 		}
 	}
 
+	function addVariant() {
+		pVariants = [...pVariants, { label: '', sku: '', qty: 0 }];
+	}
+	function removeVariant(i: number) {
+		if (pVariants.length > 1) pVariants = pVariants.filter((_, k) => k !== i);
+	}
+
 	async function doCreateProduct(e: SubmitEvent) {
 		e.preventDefault();
+		// Keep only variants with a SKU; the server dedupes/normalizes again, but filtering here also tells us
+		// which rows carry a starting stock to seed after the product exists.
+		const rows = pVariants.filter((v) => v.sku.trim());
 		try {
 			await createProduct({
 				name: pName,
@@ -269,17 +298,21 @@
 				currency: 'USD',
 				imageUrl: pImages[0] ?? '',
 				images: pImages,
-				variants: pSku ? [{ sku: pSku, label: 'Default' }] : [],
+				variants: rows.map((v) => ({ sku: v.sku.trim(), label: v.label.trim() })),
 				// A future drop date schedules a drop (storefront countdown + server-side checkout gate).
 				dropAt: pDrop ? new Date(pDrop).toISOString() : undefined
 			});
+			// Seed starting stock per variant (inventory is a separate service keyed by SKU).
+			for (const v of rows) {
+				if (v.qty > 0) await setStock(v.sku.trim(), Math.max(0, Math.round(v.qty)));
+			}
 			pName = '';
 			pPrice = 0;
 			pImages = [];
-			pSku = '';
+			pVariants = [{ label: '', sku: '', qty: 0 }];
 			pDrop = '';
 			await refreshProducts();
-			ok('Product created');
+			ok($t('app.toast.productCreated'));
 		} catch (err) {
 			fail(err);
 		}
@@ -297,7 +330,7 @@
 			for (const file of files) {
 				pImages = [...pImages, await uploadImage(file)];
 			}
-			ok(files.length > 1 ? files.length + ' images uploaded' : 'Image uploaded');
+			ok(files.length > 1 ? $t('app.toast.imagesUploaded', { n: files.length }) : $t('app.toast.imageUploaded'));
 		} catch (err) {
 			fail(err);
 		} finally {
@@ -314,7 +347,7 @@
 		try {
 			await deleteProduct(id);
 			products = products.filter((p) => p.id !== id);
-			ok('Product deleted');
+			ok($t('app.toast.productDeleted'));
 		} catch (err) {
 			fail(err);
 		}
@@ -324,7 +357,7 @@
 		e.preventDefault();
 		try {
 			await setStock(sSku, sQty);
-			ok('Stock set for ' + sSku);
+			ok($t('app.toast.stockSet', { sku: sSku }));
 		} catch (err) {
 			fail(err);
 		}
@@ -334,15 +367,22 @@
 		e.preventDefault();
 		if (!active) return;
 		try {
+			// Only ship pages that have body content; the server drops empty ones too, this just keeps the payload tidy.
+			const pages: Page[] = PAGE_TYPES.filter((t) => setPages[t].body.trim()).map((t) => ({
+				type: t,
+				title: setPages[t].title.trim(),
+				body: setPages[t].body.trim()
+			}));
 			const updated = await updateStore(active.id, setName, {
 				accentColor: setAccent,
 				logoUrl: setLogo,
 				currency: 'USD',
-				layout: setLayout
+				layout: setLayout,
+				pages
 			});
 			stores = stores.map((s) => (s.id === updated.id ? updated : s));
 			loadStoreSettings(updated);
-			ok('Settings saved');
+			ok($t('app.toast.settingsSaved'));
 		} catch (err) {
 			fail(err);
 		}
@@ -355,7 +395,7 @@
 
 <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
 	<div class="flex items-center gap-3">
-		<h1 class="font-sans text-headline-lg tracking-tighter">Dashboard</h1>
+		<h1 class="font-sans text-headline-lg tracking-tighter">{$t('app.title')}</h1>
 		{#if activeStore}
 			<span class="brutal-border bg-accent px-2 py-1 font-mono text-metadata-sm uppercase tracking-[0.1em] text-on-accent">
 				{PLANS[tier].label}
@@ -364,7 +404,7 @@
 	</div>
 	{#if active}
 		<a href="/store/{active.slug}" target="_blank" rel="noopener" class="btn-ghost flex items-center gap-2">
-			Ver mi tienda
+			{$t('app.viewStore')}
 			<ExternalLink size={14} />
 		</a>
 	{/if}
@@ -379,7 +419,7 @@
 
 <!-- Stores -->
 <section class="mb-12">
-	<h2 class="mb-4 font-sans text-headline-md tracking-tight">Your stores</h2>
+	<h2 class="mb-4 font-sans text-headline-md tracking-tight">{$t('app.stores.title')}</h2>
 	<div class="grid gap-px brutal-border bg-border sm:grid-cols-2 lg:grid-cols-3">
 		{#each stores as store (store.id)}
 			<div class="flex flex-col gap-2 bg-bg p-4">
@@ -389,55 +429,55 @@
 					onclick={() => doSelectStore(store)}
 					class="mt-2 {active?.id === store.id ? 'btn-accent' : 'btn-ghost'}"
 				>
-					{active?.id === store.id ? 'Active' : 'Manage'}
+					{active?.id === store.id ? $t('app.stores.active') : $t('app.stores.manage')}
 				</button>
 			</div>
 		{:else}
-			<p class="bg-bg p-4 font-mono text-metadata-sm text-text-muted">No stores yet — create one below.</p>
+			<p class="bg-bg p-4 font-mono text-metadata-sm text-text-muted">{$t('app.stores.empty')}</p>
 		{/each}
 	</div>
 
 	<div class="mt-6 flex flex-wrap items-end gap-3">
 		<label class="flex flex-col gap-1">
-			<span class={labelClass}>Slug</span>
+			<span class={labelClass}>{$t('app.stores.slug')}</span>
 			<input bind:value={newSlug} placeholder="acme" class={inputClass} />
 		</label>
 		<label class="flex flex-col gap-1">
-			<span class={labelClass}>Display name</span>
+			<span class={labelClass}>{$t('app.stores.displayName')}</span>
 			<input bind:value={newName} placeholder="ACME" class={inputClass} />
 		</label>
-		<button onclick={doCreateStore} class="btn-primary">Create store</button>
+		<button onclick={doCreateStore} class="btn-primary">{$t('app.stores.create')}</button>
 	</div>
 </section>
 
 {#if active && session.storeToken()}
 	<!-- Membership -->
 	<section class="mb-12">
-		<h2 class="mb-4 font-sans text-headline-md tracking-tight">Membership</h2>
+		<h2 class="mb-4 font-sans text-headline-md tracking-tight">{$t('app.membership.title')}</h2>
 		<div class="grid gap-px brutal-border bg-border md:grid-cols-3">
-			{#each TIERS as t (t)}
-				<div class="flex flex-col gap-3 bg-bg p-4 {t === tier ? 'ring-2 ring-inset ring-accent' : ''}">
+			{#each TIERS as pt (pt)}
+				<div class="flex flex-col gap-3 bg-bg p-4 {pt === tier ? 'ring-2 ring-inset ring-accent' : ''}">
 					<div class="flex items-baseline justify-between">
-						<span class="font-sans text-body-lg">{PLANS[t].label}</span>
-						<span class="font-mono text-metadata-sm text-text-muted">{PLANS[t].price}/mo</span>
+						<span class="font-sans text-body-lg">{PLANS[pt].label}</span>
+						<span class="font-mono text-metadata-sm text-text-muted">{PLANS[pt].price}{$t('app.membership.perMonth')}</span>
 					</div>
 					<ul class="flex flex-col gap-1 font-mono text-metadata-sm text-text-muted">
-						<li>{PLANS[t].productLimit === UNLIMITED ? 'Unlimited' : PLANS[t].productLimit} products</li>
-						<li class={PLANS[t].features.includes('drops') ? 'text-text' : ''}>
-							{PLANS[t].features.includes('drops') ? '✓' : '·'} Timed drops
+						<li>{PLANS[pt].productLimit === UNLIMITED ? $t('app.membership.unlimited') : PLANS[pt].productLimit} {$t('app.membership.products')}</li>
+						<li class={PLANS[pt].features.includes('drops') ? 'text-text' : ''}>
+							{PLANS[pt].features.includes('drops') ? '✓' : '·'} {$t('app.membership.timedDrops')}
 						</li>
-						<li class={PLANS[t].features.includes('customLogo') ? 'text-text' : ''}>
-							{PLANS[t].features.includes('customLogo') ? '✓' : '·'} Custom logo
+						<li class={PLANS[pt].features.includes('customLogo') ? 'text-text' : ''}>
+							{PLANS[pt].features.includes('customLogo') ? '✓' : '·'} {$t('app.membership.customLogo')}
 						</li>
-						<li class={PLANS[t].features.includes('removeBranding') ? 'text-text' : ''}>
-							{PLANS[t].features.includes('removeBranding') ? '✓' : '·'} Remove platform mark
+						<li class={PLANS[pt].features.includes('removeBranding') ? 'text-text' : ''}>
+							{PLANS[pt].features.includes('removeBranding') ? '✓' : '·'} {$t('app.membership.removeBranding')}
 						</li>
 					</ul>
-					{#if t === tier}
-						<span class="mt-auto font-mono text-metadata-sm uppercase tracking-[0.1em] text-accent">Current plan</span>
+					{#if pt === tier}
+						<span class="mt-auto font-mono text-metadata-sm uppercase tracking-[0.1em] text-accent">{$t('app.membership.current')}</span>
 					{:else}
-						<button onclick={() => doChangePlan(t)} class="mt-auto {TIERS.indexOf(t) > TIERS.indexOf(tier) ? 'btn-accent' : 'btn-ghost'}">
-							{TIERS.indexOf(t) > TIERS.indexOf(tier) ? 'Upgrade' : 'Downgrade'}
+						<button onclick={() => doChangePlan(pt)} class="mt-auto {TIERS.indexOf(pt) > TIERS.indexOf(tier) ? 'btn-accent' : 'btn-ghost'}">
+							{TIERS.indexOf(pt) > TIERS.indexOf(tier) ? $t('app.membership.upgrade') : $t('app.membership.downgrade')}
 						</button>
 					{/if}
 				</div>
@@ -448,7 +488,7 @@
 	<!-- Products -->
 	<section class="mb-12">
 		<h2 class="mb-4 font-sans text-headline-md tracking-tight">
-			Products — {active.displayName}
+			{$t('app.products.title')} — {active.displayName}
 			<span class="ml-2 font-mono text-metadata-sm text-text-muted">
 				{products.length}{limit === UNLIMITED ? '' : '/' + limit}
 			</span>
@@ -466,7 +506,7 @@
 								<span class="font-sans text-body-md">
 									{product.name}
 									{#if product.images && product.images.length > 1}
-										<span class="ml-2 font-mono text-metadata-sm text-text-muted">{product.images.length} imgs</span>
+										<span class="ml-2 font-mono text-metadata-sm text-text-muted">{$t('app.products.imgs', { n: product.images.length })}</span>
 									{/if}
 								</span>
 								<span class={labelClass}>
@@ -478,12 +518,12 @@
 							onclick={() => doDeleteProduct(product.id)}
 							class="font-mono text-metadata-sm uppercase tracking-[0.05em] text-text-muted hover:text-error"
 						>
-							Delete
+							{$t('app.products.delete')}
 						</button>
 					</div>
 					{#if product.variants.length}
 						<div class="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-3">
-							<span class={labelClass}>Stock</span>
+							<span class={labelClass}>{$t('app.products.stock')}</span>
 							{#each product.variants as v (v.sku)}
 								<label class="flex items-center gap-2">
 									<span class="font-mono text-metadata-sm text-text-muted">{v.label || v.sku}</span>
@@ -501,31 +541,50 @@
 					{/if}
 				</div>
 			{:else}
-				<p class="bg-bg p-4 font-mono text-metadata-sm text-text-muted">No products yet.</p>
+				<p class="bg-bg p-4 font-mono text-metadata-sm text-text-muted">{$t('app.products.empty')}</p>
 			{/each}
 		</div>
 
 		<form onsubmit={doCreateProduct} class="flex flex-wrap items-end gap-3">
 			<label class="flex flex-col gap-1">
-				<span class={labelClass}>Name</span>
+				<span class={labelClass}>{$t('app.products.name')}</span>
 				<input bind:value={pName} required class={inputClass} />
 			</label>
 			<label class="flex flex-col gap-1">
-				<span class={labelClass}>Category</span>
+				<span class={labelClass}>{$t('app.products.category')}</span>
 				<input bind:value={pCategory} class={inputClass} />
 			</label>
 			<label class="flex flex-col gap-1">
-				<span class={labelClass}>Price (USD)</span>
+				<span class={labelClass}>{$t('app.products.price')}</span>
 				<input type="number" min="0" step="0.01" bind:value={pPrice} class="{inputClass} w-32" />
 			</label>
-			<label class="flex flex-col gap-1">
-				<span class={labelClass}>SKU</span>
-				<input bind:value={pSku} placeholder="ACME-01" class={inputClass} />
-			</label>
+			<div class="flex w-full flex-col gap-2">
+				<span class={labelClass}>{$t('app.products.variantsLabel')}</span>
+				{#each pVariants as v, i (i)}
+					<div class="flex flex-wrap items-end gap-2">
+						<input bind:value={v.label} placeholder={$t('app.products.variantLabelPh')} class={inputClass} />
+						<input bind:value={v.sku} placeholder={$t('app.products.variantSkuPh')} class={inputClass} />
+						<input type="number" min="0" bind:value={v.qty} placeholder={$t('app.products.variantStockPh')} class="{inputClass} w-24" />
+						{#if pVariants.length > 1}
+							<button
+								type="button"
+								onclick={() => removeVariant(i)}
+								aria-label={$t('app.products.removeVariant')}
+								class="flex h-12 w-12 items-center justify-center brutal-border bg-bg font-mono text-text hover:text-error"
+							>
+								×
+							</button>
+						{/if}
+					</div>
+				{/each}
+				<button type="button" onclick={addVariant} class="self-start font-mono text-metadata-sm text-accent hover:underline">
+					{$t('app.products.addVariant')}
+				</button>
+			</div>
 			<label class="flex flex-col gap-1">
 				<span class="{labelClass} flex items-center gap-2">
-					Images
-					{#if uploading}<span class="text-accent">uploading…</span>{/if}
+					{$t('app.products.images')}
+					{#if uploading}<span class="text-accent">{$t('app.products.uploading')}</span>{/if}
 				</span>
 				{#if pImages.length}
 					<div class="flex flex-wrap gap-2">
@@ -533,12 +592,12 @@
 							<div class="relative">
 								<img src={img} alt="" class="brutal-border h-12 w-12 object-cover" />
 								{#if i === 0}
-									<span class="absolute -bottom-2 left-0 brutal-border bg-bg px-1 font-mono text-[0.6rem] uppercase text-text-muted">main</span>
+									<span class="absolute -bottom-2 left-0 brutal-border bg-bg px-1 font-mono text-[0.6rem] uppercase text-text-muted">{$t('app.products.main')}</span>
 								{/if}
 								<button
 									type="button"
 									onclick={() => removeProductImage(i)}
-									aria-label="Remove image"
+									aria-label={$t('app.products.removeImage')}
 									class="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center brutal-border bg-bg font-mono text-metadata-sm text-text hover:text-error"
 								>
 									×
@@ -558,64 +617,64 @@
 			</label>
 			<label class="flex flex-col gap-1">
 				<span class="{labelClass} flex items-center gap-1">
-					Drop date {#if !canDrops}<Lock size={11} /> Pro{:else}(optional){/if}
+					{$t('app.products.dropDate')} {#if !canDrops}<Lock size={11} /> {$t('app.pro')}{:else}{$t('app.products.optional')}{/if}
 				</span>
 				<input
 					type="datetime-local"
 					bind:value={pDrop}
 					disabled={!canDrops}
-					title={canDrops ? '' : 'Timed drops are a Pro feature — upgrade above'}
+					title={canDrops ? '' : $t('app.products.dropLocked')}
 					class="{inputClass} disabled:cursor-not-allowed disabled:opacity-40"
 				/>
 			</label>
 			<button type="submit" disabled={atProductLimit} class="btn-primary disabled:cursor-not-allowed disabled:opacity-40">
-				Add product
+				{$t('app.products.add')}
 			</button>
 		</form>
 		{#if atProductLimit}
 			<p class="mt-3 font-mono text-metadata-sm text-text-muted">
-				You've hit the {PLANS[tier].label} plan limit of {limit} products. Upgrade to add more.
+				{$t('app.products.limitHit', { plan: PLANS[tier].label, limit })}
 			</p>
 		{/if}
 	</section>
 
 	<!-- Stock -->
 	<section class="mb-12">
-		<h2 class="mb-4 font-sans text-headline-md tracking-tight">Stock</h2>
+		<h2 class="mb-4 font-sans text-headline-md tracking-tight">{$t('app.stockSection.title')}</h2>
 		<form onsubmit={doSetStock} class="flex flex-wrap items-end gap-3">
 			<label class="flex flex-col gap-1">
-				<span class={labelClass}>SKU</span>
+				<span class={labelClass}>{$t('app.stockSection.sku')}</span>
 				<input bind:value={sSku} required placeholder="ACME-01" class={inputClass} />
 			</label>
 			<label class="flex flex-col gap-1">
-				<span class={labelClass}>Available</span>
+				<span class={labelClass}>{$t('app.stockSection.available')}</span>
 				<input type="number" min="0" bind:value={sQty} class="{inputClass} w-32" />
 			</label>
-			<button type="submit" class="btn-primary">Set stock</button>
+			<button type="submit" class="btn-primary">{$t('app.stockSection.set')}</button>
 		</form>
 	</section>
 
 	<!-- Settings -->
 	<section class="mb-12">
-		<h2 class="mb-4 font-sans text-headline-md tracking-tight">Store settings</h2>
+		<h2 class="mb-4 font-sans text-headline-md tracking-tight">{$t('app.settings.title')}</h2>
 		<form onsubmit={doSaveSettings} class="flex flex-col gap-8">
 			<div class="flex flex-wrap items-end gap-3">
 				<label class="flex flex-col gap-1">
-					<span class={labelClass}>Display name</span>
+					<span class={labelClass}>{$t('app.settings.displayName')}</span>
 					<input bind:value={setName} class={inputClass} />
 				</label>
 				<label class="flex flex-col gap-1">
-					<span class={labelClass}>Accent color</span>
+					<span class={labelClass}>{$t('app.settings.accent')}</span>
 					<input type="color" bind:value={setAccent} class="brutal-border h-12 w-16 bg-surface" />
 				</label>
 				<label class="flex flex-col gap-1">
 					<span class="{labelClass} flex items-center gap-1">
-						Logo URL {#if !canLogo}<Lock size={11} /> Pro{/if}
+						{$t('app.settings.logoUrl')} {#if !canLogo}<Lock size={11} /> {$t('app.pro')}{/if}
 					</span>
 					<input
 						bind:value={setLogo}
 						disabled={!canLogo}
-						title={canLogo ? '' : 'A custom logo is a Pro feature — upgrade above'}
+						title={canLogo ? '' : $t('app.settings.logoLocked')}
 						class="{inputClass} disabled:cursor-not-allowed disabled:opacity-40"
 					/>
 				</label>
@@ -625,11 +684,11 @@
 			     (always on, can be reordered); the rest are optional. Chrome and design tokens never change. -->
 			<div>
 				<div class="mb-1 flex items-baseline gap-3">
-					<h3 class="font-sans text-body-lg">Storefront layout</h3>
-					<span class="font-mono text-metadata-sm text-text-muted">drag-free reorder · toggle · edit copy</span>
+					<h3 class="font-sans text-body-lg">{$t('app.settings.layoutTitle')}</h3>
+					<span class="font-mono text-metadata-sm text-text-muted">{$t('app.settings.layoutHint')}</span>
 				</div>
 				<p class="mb-4 font-mono text-metadata-sm text-text-muted">
-					Arrange the blocks of your homepage. The product grid is always shown; everything else is optional.
+					{$t('app.settings.layoutDesc')}
 				</p>
 				<div class="flex flex-col gap-px brutal-border bg-border">
 					{#each setLayout as section, i (section.type)}
@@ -641,7 +700,7 @@
 										type="button"
 										onclick={() => moveSection(i, -1)}
 										disabled={i === 0}
-										aria-label="Move up"
+										aria-label={$t('app.settings.moveUp')}
 										class="text-text-muted hover:text-text disabled:opacity-20"
 									>
 										<ArrowUp size={14} />
@@ -650,7 +709,7 @@
 										type="button"
 										onclick={() => moveSection(i, 1)}
 										disabled={i === setLayout.length - 1}
-										aria-label="Move down"
+										aria-label={$t('app.settings.moveDown')}
 										class="text-text-muted hover:text-text disabled:opacity-20"
 									>
 										<ArrowDown size={14} />
@@ -661,7 +720,7 @@
 									<span class={labelClass}>{meta.hint}</span>
 								</div>
 								{#if meta.fixed}
-									<span class="font-mono text-metadata-sm uppercase tracking-[0.1em] text-text-muted">Always on</span>
+									<span class="font-mono text-metadata-sm uppercase tracking-[0.1em] text-text-muted">{$t('app.settings.alwaysOn')}</span>
 								{:else}
 									<button
 										type="button"
@@ -670,7 +729,7 @@
 											? 'text-accent'
 											: 'text-text-muted hover:text-text'}"
 									>
-										{section.enabled ? '● Shown' : '○ Hidden'}
+										{section.enabled ? $t('app.settings.shown') : $t('app.settings.hidden')}
 									</button>
 								{/if}
 							</div>
@@ -681,7 +740,7 @@
 										<label class="flex flex-1 flex-col gap-1" style="min-width: 12rem">
 											<span class="{labelClass} flex items-center gap-2">
 												{fieldLabels[field] ?? field}
-												{#if field === 'imageUrl' && uploadingSection === i}<span class="text-accent">uploading…</span>{/if}
+												{#if field === 'imageUrl' && uploadingSection === i}<span class="text-accent">{$t('app.products.uploading')}</span>{/if}
 											</span>
 											{#if field === 'body'}
 												<textarea
@@ -698,7 +757,7 @@
 													<input
 														value={section[field] ?? ''}
 														oninput={(e) => editSection(i, field, e.currentTarget.value)}
-														placeholder="upload or paste a URL"
+														placeholder={$t('app.settings.imageUrlPh')}
 														class="{inputClass} flex-1"
 													/>
 												</div>
@@ -743,42 +802,42 @@
 												<input
 													value={item.imageUrl ?? ''}
 													oninput={(e) => editItem(i, ii, 'imageUrl', e.currentTarget.value)}
-													placeholder="image URL"
+													placeholder={$t('app.items.imageUrl')}
 													class="{inputClass} flex-1"
 													style="min-width: 10rem"
 												/>
 												<input
 													value={item.heading ?? ''}
 													oninput={(e) => editItem(i, ii, 'heading', e.currentTarget.value)}
-													placeholder="caption (optional)"
+													placeholder={$t('app.items.caption')}
 													class="{inputClass} w-44"
 												/>
 											{:else}
 												<input
 													value={item.heading ?? ''}
 													oninput={(e) => editItem(i, ii, 'heading', e.currentTarget.value)}
-													placeholder="Question"
+													placeholder={$t('app.items.question')}
 													class="{inputClass} flex-1"
 													style="min-width: 10rem"
 												/>
 												<textarea
 													value={item.body ?? ''}
 													oninput={(e) => editItem(i, ii, 'body', e.currentTarget.value)}
-													placeholder="Answer"
+													placeholder={$t('app.items.answer')}
 													rows="2"
 													class="{inputClass} flex-1"
 													style="min-width: 10rem"
 												></textarea>
 											{/if}
 											{#if uploadingItem === i + ':' + ii}
-												<span class="font-mono text-metadata-sm text-accent">uploading…</span>
+												<span class="font-mono text-metadata-sm text-accent">{$t('app.products.uploading')}</span>
 											{/if}
 											<button
 												type="button"
 												onclick={() => removeItem(i, ii)}
 												class="font-mono text-metadata-sm uppercase tracking-[0.05em] text-text-muted hover:text-error"
 											>
-												Remove
+												{$t('app.items.remove')}
 											</button>
 										</div>
 									{/each}
@@ -792,7 +851,41 @@
 				</div>
 			</div>
 
-			<button type="submit" class="btn-primary self-start">Save settings</button>
+			<!-- Standalone pages (About / FAQ / Contact / Terms): each gets its own storefront route and a
+			     footer link, but only once it has content. Leave a page blank to keep it hidden. -->
+			<div>
+				<div class="mb-1 flex items-baseline gap-3">
+					<h3 class="font-sans text-body-lg">{$t('app.settings.pagesTitle')}</h3>
+					<span class="font-mono text-metadata-sm text-text-muted">{$t('app.settings.pagesHint')}</span>
+				</div>
+				<p class="mb-4 font-mono text-metadata-sm text-text-muted">
+					{$t('app.settings.pagesDesc')}
+				</p>
+				<div class="flex flex-col gap-px brutal-border bg-border">
+					{#each PAGE_TYPES as type (type)}
+						<div class="flex flex-col gap-3 bg-bg p-4">
+							<div class="flex items-baseline justify-between gap-3">
+								<span class="font-sans text-body-md">{PAGE_META[type].defaultTitle}</span>
+								<span class={labelClass}>{PAGE_META[type].hint}</span>
+							</div>
+							<label class="flex flex-col gap-1">
+								<span class={labelClass}>{$t('app.settings.pageTitleField')}</span>
+								<input
+									bind:value={setPages[type].title}
+									placeholder={PAGE_META[type].defaultTitle}
+									class={inputClass}
+								/>
+							</label>
+							<label class="flex flex-col gap-1">
+								<span class={labelClass}>{$t('app.settings.pageContentField')}</span>
+								<textarea bind:value={setPages[type].body} rows="4" class={inputClass}></textarea>
+							</label>
+						</div>
+					{/each}
+				</div>
+			</div>
+
+			<button type="submit" class="btn-primary self-start">{$t('app.settings.save')}</button>
 		</form>
 	</section>
 {/if}

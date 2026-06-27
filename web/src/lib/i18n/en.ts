@@ -110,6 +110,96 @@ export const en = {
 		plan_scale_desc: 'Multiple stores, higher rate limits and dedicated support.',
 		finalTitle: 'Your store, online in minutes.',
 		footerNote: 'Built for merchants who refuse to oversell.'
+	},
+	// Merchant dashboard (/app). Section/page block *names* still come from layout.ts / pages.ts metadata
+	// (shared with the storefront) and stay English for now; everything the dashboard itself renders is here.
+	app: {
+		title: 'Dashboard',
+		viewStore: 'View my store',
+		pro: 'Pro',
+		stores: {
+			title: 'Your stores',
+			active: 'Active',
+			manage: 'Manage',
+			empty: 'No stores yet — create one below.',
+			slug: 'Slug',
+			displayName: 'Display name',
+			create: 'Create store'
+		},
+		membership: {
+			title: 'Membership',
+			perMonth: '/mo',
+			unlimited: 'Unlimited',
+			products: 'products',
+			timedDrops: 'Timed drops',
+			customLogo: 'Custom logo',
+			removeBranding: 'Remove platform mark',
+			current: 'Current plan',
+			upgrade: 'Upgrade',
+			downgrade: 'Downgrade'
+		},
+		products: {
+			title: 'Products',
+			delete: 'Delete',
+			imgs: '{n} imgs',
+			stock: 'Stock',
+			empty: 'No products yet.',
+			name: 'Name',
+			category: 'Category',
+			price: 'Price (USD)',
+			variantsLabel: 'Variants (size / color — each its own SKU + starting stock)',
+			variantLabelPh: 'Label (e.g. M / Black)',
+			variantSkuPh: 'SKU (e.g. ACME-01-M)',
+			variantStockPh: 'Stock',
+			removeVariant: 'Remove variant',
+			addVariant: '+ Add variant',
+			images: 'Images',
+			uploading: 'uploading…',
+			main: 'main',
+			removeImage: 'Remove image',
+			dropDate: 'Drop date',
+			optional: '(optional)',
+			dropLocked: 'Timed drops are a Pro feature — upgrade above',
+			add: 'Add product',
+			limitHit: "You've hit the {plan} plan limit of {limit} products. Upgrade to add more."
+		},
+		stockSection: { title: 'Stock', sku: 'SKU', available: 'Available', set: 'Set stock' },
+		settings: {
+			title: 'Store settings',
+			displayName: 'Display name',
+			accent: 'Accent color',
+			logoUrl: 'Logo URL',
+			logoLocked: 'A custom logo is a Pro feature — upgrade above',
+			layoutTitle: 'Storefront layout',
+			layoutHint: 'drag-free reorder · toggle · edit copy',
+			moveUp: 'Move up',
+			moveDown: 'Move down',
+			layoutDesc: 'Arrange the blocks of your homepage. The product grid is always shown; everything else is optional.',
+			alwaysOn: 'Always on',
+			shown: '● Shown',
+			hidden: '○ Hidden',
+			pagesTitle: 'Pages',
+			pagesHint: 'footer links · blank = hidden',
+			pagesDesc: 'Standalone pages linked from your storefront footer. A page only appears once it has content.',
+			pageTitleField: 'Title (optional)',
+			pageContentField: 'Content',
+			imageUrlPh: 'upload or paste a URL',
+			save: 'Save settings'
+		},
+		fields: { heading: 'Heading', body: 'Text', imageUrl: 'Image URL', ctaLabel: 'Button label' },
+		items: { question: 'Question', answer: 'Answer', caption: 'caption (optional)', imageUrl: 'image URL', remove: 'Remove' },
+		toast: {
+			imageUploaded: 'Image uploaded',
+			imagesUploaded: '{n} images uploaded',
+			requestFailed: 'Request failed',
+			stockSet: 'Stock set for {sku}',
+			storeCreated: 'Store created',
+			managing: 'Managing {name}',
+			planChanged: 'Plan changed to {plan}',
+			productCreated: 'Product created',
+			productDeleted: 'Product deleted',
+			settingsSaved: 'Settings saved'
+		}
 	}
 };
 
