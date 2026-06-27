@@ -1,0 +1,34 @@
+name: deploy
+
+# Push a main en GitHub -> deploya gateway (api) + storefront (web) a Dokku.
+# OJO: los servicios de compose (mongo/redis/minio + catalog/inventory/orders/accounts)
+# se manejan a mano por SSH en ~/tutienda del VPS; esto NO los toca.
+on:
+  push:
+    branches: [main]
+
+# Un solo deploy a la vez.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Dokku necesita la historia, no un shallow clone
+
+      - name: Configurar SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DOKKU_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H 146.181.35.182 >> ~/.ssh/known_hosts
+
+      - name: Deploy API (gateway)
+        run: git push --force dokku@146.181.35.182:tutienda-api HEAD:main
+
+      - name: Deploy WEB (storefront)
+        run: git push --force dokku@146.181.35.182:tutienda-web HEAD:main
