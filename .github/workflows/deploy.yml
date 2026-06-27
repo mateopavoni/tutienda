@@ -13,7 +13,30 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Gate: si los tests rompen, no se deploya nada.
+  test:
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:7
+        ports: ["27017:27017"]
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand(\"ping\").ok'"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+          cache-dependency-path: services/go.sum
+      - name: go test -race
+        working-directory: services
+        env:
+          MONGO_URI: mongodb://localhost:27017  # prende los tests de integración de inventory
+        run: go test -race ./...
+
   deploy:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
