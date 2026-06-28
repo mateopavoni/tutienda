@@ -65,17 +65,31 @@ func (s *Service) SeedDemoIfEmpty(ctx context.Context) (bool, error) {
 		return false, err
 	}
 
-	store := &Store{
-		ID:          tenant.DemoID,
-		Slug:        tenant.DemoSlug,
-		OwnerID:     merchant.ID.Hex(),
-		DisplayName: tenant.DemoName,
-		Settings:    Settings{AccentColor: "#1b03ea", Currency: "USD"},
-		Plan:        string(plan.Scale), // the showcase runs on the top tier so every tool (drops, etc.) is live
-		CreatedAt:   time.Now().UTC(),
-	}
-	if err := s.repo.upsertStore(ctx, store); err != nil {
-		return false, err
+	// Seed every example store (see tenant.DemoStores) under the demo merchant, so one login shows the
+	// whole multi-tenant spread in /app and each rubro's storefront resolves out of the box. Each gets a
+	// hero block over the mandatory product grid so the homepage looks built, not empty.
+	now := time.Now().UTC()
+	for _, ds := range tenant.DemoStores {
+		store := &Store{
+			ID:          ds.ID,
+			Slug:        ds.Slug,
+			OwnerID:     merchant.ID.Hex(),
+			DisplayName: ds.Name,
+			Settings: Settings{
+				AccentColor: ds.Accent,
+				Currency:    "USD",
+				Theme:       normalizeTheme(ds.Theme),
+				Layout: []Section{
+					{Type: "hero", Enabled: true, Heading: ds.Name, Body: ds.Tagline},
+					{Type: "catalog", Enabled: true},
+				},
+			},
+			Plan:      string(plan.Normalize(ds.Plan)), // unknown/typo tier ⇒ free, same defensive stance as everywhere
+			CreatedAt: now,
+		}
+		if err := s.repo.upsertStore(ctx, store); err != nil {
+			return false, err
+		}
 	}
 	return true, nil
 }

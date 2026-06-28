@@ -18,6 +18,7 @@ import (
 func stripIdentityHeaders(r *http.Request) {
 	r.Header.Del(tenant.Header)
 	r.Header.Del(authx.MerchantHeader)
+	r.Header.Del(authx.CustomerHeader)
 	r.Header.Del(plan.Header)
 }
 
@@ -27,19 +28,8 @@ func resolveTenant(res *Resolver, log *slog.Logger) httpx.Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			stripIdentityHeaders(r)
-			slug := slugFromRequest(r)
-			if slug == "" {
-				httpx.Fail(w, http.StatusBadRequest, "missing store")
-				return
-			}
-			id, err := res.Resolve(r.Context(), slug)
-			if errors.Is(err, ErrStoreNotFound) {
-				httpx.Fail(w, http.StatusNotFound, "unknown store")
-				return
-			}
-			if err != nil {
-				log.Warn("tenant resolve failed", "slug", slug, "error", err)
-				httpx.Fail(w, http.StatusBadGateway, "could not resolve store")
+			id, ok := resolveSlug(w, r, res, log)
+			if !ok {
 				return
 			}
 			r.Header.Set(tenant.Header, id)
@@ -55,7 +45,7 @@ func requireStore(issuer *authx.Issuer) httpx.Middleware {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			stripIdentityHeaders(r)
 			claims, err := verifyBearer(issuer, r)
-			if err != nil {
+			if err != nil || claims.Aud == authx.AudCustomer {
 				httpx.Fail(w, http.StatusUnauthorized, "authentication required")
 				return
 			}
@@ -80,7 +70,7 @@ func requirePlatformAdmin(issuer *authx.Issuer) httpx.Middleware {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			stripIdentityHeaders(r)
 			claims, err := verifyBearer(issuer, r)
-			if err != nil {
+			if err != nil || claims.Aud == authx.AudCustomer {
 				httpx.Fail(w, http.StatusUnauthorized, "authentication required")
 				return
 			}
@@ -105,7 +95,7 @@ func accountsAuth(issuer *authx.Issuer) httpx.Middleware {
 				return
 			}
 			claims, err := verifyBearer(issuer, r)
-			if err != nil {
+			if err != nil || claims.Aud == authx.AudCustomer {
 				httpx.Fail(w, http.StatusUnauthorized, "authentication required")
 				return
 			}
@@ -113,6 +103,78 @@ func accountsAuth(issuer *authx.Issuer) httpx.Middleware {
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+// customerAuth guards the storefront customer routes (/api/customers/*). signup/login are public but
+// still need a tenant: the slug is resolved to X-Tenant-ID like the storefront. Everything else (me)
+// requires a valid buyer token whose audience is AudCustomer; the tenant then comes from the token's own
+// claim (not the slug), and the customer id is stamped as X-Customer-ID.
+func customerAuth(issuer *authx.Issuer, res *Resolver, log *slog.Logger) httpx.Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			stripIdentityHeaders(r)
+			if strings.HasSuffix(r.URL.Path, "/signup") || strings.HasSuffix(r.URL.Path, "/login") {
+				id, ok := resolveSlug(w, r, res, log)
+				if !ok {
+					return
+				}
+				r.Header.Set(tenant.Header, id)
+				next.ServeHTTP(w, r)
+				return
+			}
+			claims, err := verifyBearer(issuer, r)
+			if err != nil || claims.Aud != authx.AudCustomer || claims.TenantID == "" {
+				httpx.Fail(w, http.StatusUnauthorized, "authentication required")
+				return
+			}
+			r.Header.Set(tenant.Header, claims.TenantID)
+			r.Header.Set(authx.CustomerHeader, claims.MerchantID)
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// storefrontBuyer is the storefront tenant resolver for the orders routes, plus an *optional* buyer
+// stamp: if the caller carries a valid customer token bound to this same store, X-Customer-ID is set so
+// the order is attributed to them. No token (or one for another store) ⇒ a guest checkout, still allowed.
+func storefrontBuyer(res *Resolver, issuer *authx.Issuer, log *slog.Logger) httpx.Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			stripIdentityHeaders(r)
+			id, ok := resolveSlug(w, r, res, log)
+			if !ok {
+				return
+			}
+			r.Header.Set(tenant.Header, id)
+			// Soft attribution: only honor a customer token that is for *this* store, so a buyer of store
+			// A can never have an order in store B pinned to them.
+			if claims, err := verifyBearer(issuer, r); err == nil && claims.Aud == authx.AudCustomer && claims.TenantID == id {
+				r.Header.Set(authx.CustomerHeader, claims.MerchantID)
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// resolveSlug maps the request's store slug to a tenant id, writing the proper 4xx/5xx and returning
+// ok=false on failure. Shared by the storefront-family middlewares.
+func resolveSlug(w http.ResponseWriter, r *http.Request, res *Resolver, log *slog.Logger) (string, bool) {
+	slug := slugFromRequest(r)
+	if slug == "" {
+		httpx.Fail(w, http.StatusBadRequest, "missing store")
+		return "", false
+	}
+	id, err := res.Resolve(r.Context(), slug)
+	if errors.Is(err, ErrStoreNotFound) {
+		httpx.Fail(w, http.StatusNotFound, "unknown store")
+		return "", false
+	}
+	if err != nil {
+		log.Warn("tenant resolve failed", "slug", slug, "error", err)
+		httpx.Fail(w, http.StatusBadGateway, "could not resolve store")
+		return "", false
+	}
+	return id, true
 }
 
 // isPublicAccountsPath reports whether an accounts route needs no authentication. Paths still carry

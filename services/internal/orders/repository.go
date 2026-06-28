@@ -7,6 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // ErrOrderNotFound is returned when an order id has no match.
@@ -35,6 +36,23 @@ func (r *Repository) setStatus(ctx context.Context, id primitive.ObjectID, statu
 		bson.M{"$set": bson.M{"status": status, "failureReason": reason}},
 	)
 	return err
+}
+
+// listByCustomer returns a customer's orders within their store, newest first. Scoped by both tenant and
+// customer so one shopper can never read another's (or another store's) orders.
+func (r *Repository) listByCustomer(ctx context.Context, tenant, customerID string) ([]Order, error) {
+	cur, err := r.orders.Find(ctx,
+		bson.M{"tenantId": tenant, "customerId": customerID},
+		options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}}),
+	)
+	if err != nil {
+		return nil, err
+	}
+	var out []Order
+	if err := cur.All(ctx, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (r *Repository) get(ctx context.Context, tenant string, id primitive.ObjectID) (*Order, error) {

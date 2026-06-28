@@ -231,14 +231,19 @@ func (s *Service) SeedIfEmpty(ctx context.Context) (int, error) {
 	return s.Seed(ctx)
 }
 
-// Seed populates the demo store's catalog and clears its cache.
+// Seed populates every example store's catalog (see tenant.DemoStores) and clears each one's cache.
 func (s *Service) Seed(ctx context.Context) (int, error) {
-	for _, p := range demoProducts() {
-		p.TenantID = tenant.DemoID
-		if err := s.repo.Upsert(ctx, p); err != nil {
-			return 0, err
+	total := 0
+	for _, ds := range tenant.DemoStores {
+		products := demoCatalog(ds.Slug)
+		for _, p := range products {
+			p.TenantID = ds.ID
+			if err := s.repo.Upsert(ctx, p); err != nil {
+				return 0, err
+			}
 		}
+		cacheInvalidate(ctx, s.cache, ds.ID)
+		total += len(products)
 	}
-	cacheInvalidate(ctx, s.cache, tenant.DemoID)
-	return len(demoProducts()), nil
+	return total, nil
 }

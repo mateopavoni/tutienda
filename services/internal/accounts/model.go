@@ -23,6 +23,9 @@ type Settings struct {
 	LogoURL     string `bson:"logoUrl,omitempty" json:"logoUrl,omitempty"`
 	AccentColor string `bson:"accentColor,omitempty" json:"accentColor,omitempty"`
 	Currency    string `bson:"currency,omitempty" json:"currency,omitempty"`
+	// Theme is the storefront visual template (fonts + palette); see knownThemes and web/src/lib/theme.ts.
+	// Unknown/empty ⇒ the default "monolith", same defensive stance as an unknown plan tier falling to free.
+	Theme string `bson:"theme,omitempty" json:"theme,omitempty"`
 	// Layout is the ordered list of storefront sections the merchant arranged. Empty = the default
 	// layout (just the product grid). The grid ("catalog") is mandatory; the rest are optional blocks.
 	Layout []Section `bson:"layout,omitempty" json:"layout,omitempty"`

@@ -28,6 +28,9 @@ type Item struct {
 type Order struct {
 	ID            primitive.ObjectID `bson:"_id,omitempty" json:"id"`
 	TenantID      string             `bson:"tenantId" json:"-"`
+	// CustomerID attributes the order to a logged-in storefront customer. Empty = a guest checkout
+	// (accounts are optional). Not exposed in JSON; it's an internal ownership key for order history.
+	CustomerID    string             `bson:"customerId,omitempty" json:"-"`
 	Items         []Item             `bson:"items" json:"items"`
 	Currency      string             `bson:"currency" json:"currency"`
 	TotalCents    int64              `bson:"totalCents" json:"totalCents"`

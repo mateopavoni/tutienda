@@ -6,6 +6,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
+	"github.com/mateopavoni/archive-commerce/internal/platform/authx"
 	"github.com/mateopavoni/archive-commerce/internal/platform/httpx"
 	"github.com/mateopavoni/archive-commerce/internal/platform/tenant"
 )
@@ -21,9 +22,10 @@ func (h *Handler) Routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", h.health)
 	mux.HandleFunc("POST /orders", h.checkout)
+	mux.HandleFunc("GET /orders/mine", h.mine)
 	mux.HandleFunc("GET /orders/{id}", h.get)
-	// Lift the gateway-stamped X-Tenant-ID into the context for every handler.
-	return tenant.Middleware()(mux)
+	// Lift the gateway-stamped X-Tenant-ID and (optional) X-Customer-ID into the context for every handler.
+	return tenant.Middleware()(authx.CustomerMiddleware(mux))
 }
 
 func (h *Handler) health(w http.ResponseWriter, _ *http.Request) {
@@ -58,6 +60,26 @@ func (h *Handler) checkout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpx.JSON(w, http.StatusCreated, order)
+}
+
+// mine returns the authenticated customer's order history. Requires X-Customer-ID (the gateway stamps it
+// only for a valid buyer token of this store), so a guest gets 401.
+func (h *Handler) mine(w http.ResponseWriter, r *http.Request) {
+	tid, ok := tenant.Require(w, r)
+	if !ok {
+		return
+	}
+	cid, ok := authx.CustomerFromContext(r.Context())
+	if !ok {
+		httpx.Fail(w, http.StatusUnauthorized, "authentication required")
+		return
+	}
+	orders, err := h.svc.Mine(r.Context(), tid, cid)
+	if err != nil {
+		httpx.Fail(w, http.StatusInternalServerError, "could not list orders")
+		return
+	}
+	httpx.JSON(w, http.StatusOK, map[string]any{"items": orders})
 }
 
 func (h *Handler) get(w http.ResponseWriter, r *http.Request) {

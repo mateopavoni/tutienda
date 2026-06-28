@@ -65,17 +65,24 @@ func Router(cfg Config) (http.Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Platform admin hits the same accounts service; strip only "/api" so it sees "/platform/...".
+	// Platform admin and storefront customers both hit the accounts service; strip only "/api" so it
+	// sees "/platform/..." / "/customers/..." (its own route prefixes).
 	platform, err := newProxy(cfg.AccountsURL, "/api")
+	if err != nil {
+		return nil, err
+	}
+	customers, err := newProxy(cfg.AccountsURL, "/api")
 	if err != nil {
 		return nil, err
 	}
 
 	limit := rateLimit(cfg.Limiter, cfg.Log)
 	storefront := resolveTenant(cfg.Resolver, cfg.Log)
+	storeOrders := storefrontBuyer(cfg.Resolver, cfg.Issuer, cfg.Log)
 	admin := requireStore(cfg.Issuer)
 	identity := accountsAuth(cfg.Issuer)
 	platformAdmin := requirePlatformAdmin(cfg.Issuer)
+	buyer := customerAuth(cfg.Issuer, cfg.Resolver, cfg.Log)
 
 	mux := http.NewServeMux()
 	mount := func(prefix string, h http.Handler, mw ...httpx.Middleware) {
@@ -89,9 +96,10 @@ func Router(cfg Config) (http.Handler, error) {
 	mount("/api/admin/inventory", adminInventory, admin)
 	mount("/api/catalog", catalog, storefront)
 	mount("/api/inventory", inventory, storefront)
-	mount("/api/orders", ordersProxy, storefront)
+	mount("/api/orders", ordersProxy, storeOrders)
 	mount("/api/accounts", accounts, identity)
 	mount("/api/platform", platform, platformAdmin)
+	mount("/api/customers", customers, buyer)
 	mux.HandleFunc("GET /health", healthHandler(cfg))
 	return mux, nil
 }

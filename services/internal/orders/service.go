@@ -9,6 +9,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
+	"github.com/mateopavoni/archive-commerce/internal/platform/authx"
 	"github.com/mateopavoni/archive-commerce/internal/platform/tenant"
 )
 
@@ -54,9 +55,14 @@ func (s *Service) Checkout(ctx context.Context, items []CheckoutItem) (*Order, e
 		return nil, err // OutOfStockError or transport error bubbles up; nothing persisted yet
 	}
 
+	// Optional buyer attribution: the gateway stamps X-Customer-ID only for a logged-in customer of this
+	// store. A guest checkout leaves it empty — accounts are optional.
+	customerID, _ := authx.CustomerFromContext(ctx)
+
 	now := time.Now().UTC()
 	order := &Order{
 		TenantID:      tid,
+		CustomerID:    customerID,
 		Items:         orderItems,
 		Currency:      currency,
 		TotalCents:    total,
@@ -132,4 +138,16 @@ func (s *Service) price(ctx context.Context, items []CheckoutItem) ([]Item, []re
 // Get returns an order by id, scoped to the store.
 func (s *Service) Get(ctx context.Context, tenant string, id primitive.ObjectID) (*Order, error) {
 	return s.repo.get(ctx, tenant, id)
+}
+
+// Mine lists a customer's orders within their store, newest first (storefront order history).
+func (s *Service) Mine(ctx context.Context, tenant, customerID string) ([]Order, error) {
+	orders, err := s.repo.listByCustomer(ctx, tenant, customerID)
+	if err != nil {
+		return nil, err
+	}
+	if orders == nil {
+		orders = []Order{}
+	}
+	return orders, nil
 }

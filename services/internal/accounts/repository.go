@@ -19,20 +19,24 @@ var (
 	ErrDuplicate = errors.New("already exists")
 )
 
-// Repository persists merchants and stores.
+// Repository persists merchants, stores and storefront customers.
 type Repository struct {
 	merchants *mongo.Collection
 	stores    *mongo.Collection
+	customers *mongo.Collection
 }
 
 func NewRepository(db *mongo.Database) *Repository {
 	return &Repository{
 		merchants: db.Collection("merchants"),
 		stores:    db.Collection("stores"),
+		customers: db.Collection("customers"),
 	}
 }
 
-// EnsureIndexes enforces unique email per merchant and unique slug per store.
+// EnsureIndexes enforces unique email per merchant, unique slug per store, and a unique email *per store*
+// for customers — the same address can register independently in two different stores (a customer of
+// store A is unrelated to one of store B), so the customer uniqueness key is the {tenantId, email} pair.
 func (r *Repository) EnsureIndexes(ctx context.Context) error {
 	if _, err := r.merchants.Indexes().CreateOne(ctx, mongo.IndexModel{
 		Keys:    bson.D{{Key: "email", Value: 1}},
@@ -40,8 +44,14 @@ func (r *Repository) EnsureIndexes(ctx context.Context) error {
 	}); err != nil {
 		return err
 	}
-	_, err := r.stores.Indexes().CreateOne(ctx, mongo.IndexModel{
+	if _, err := r.stores.Indexes().CreateOne(ctx, mongo.IndexModel{
 		Keys:    bson.D{{Key: "slug", Value: 1}},
+		Options: options.Index().SetUnique(true),
+	}); err != nil {
+		return err
+	}
+	_, err := r.customers.Indexes().CreateOne(ctx, mongo.IndexModel{
+		Keys:    bson.D{{Key: "tenantId", Value: 1}, {Key: "email", Value: 1}},
 		Options: options.Index().SetUnique(true),
 	})
 	return err

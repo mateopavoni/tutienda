@@ -77,7 +77,7 @@ func (s *Service) Login(ctx context.Context, email, password string) (string, *M
 }
 
 // CreateStore registers a new tenant owned by the merchant.
-func (s *Service) CreateStore(ctx context.Context, ownerID, slug, displayName string) (*Store, error) {
+func (s *Service) CreateStore(ctx context.Context, ownerID, slug, displayName, theme, accentColor string) (*Store, error) {
 	slug = strings.TrimSpace(strings.ToLower(slug))
 	if !slugRe.MatchString(slug) {
 		return nil, fmt.Errorf("%w: slug must be 3-40 lowercase alphanumeric/hyphen chars", ErrInvalidInput)
@@ -90,9 +90,20 @@ func (s *Service) CreateStore(ctx context.Context, ownerID, slug, displayName st
 		Slug:        slug,
 		OwnerID:     ownerID,
 		DisplayName: displayName,
-		Settings:    Settings{AccentColor: "#1b03ea", Currency: "USD"},
-		Plan:        string(plan.Free), // every store starts free; upgrades flip this tier
-		CreatedAt:   time.Now().UTC(),
+		Settings: Settings{
+			// A blank accent ⇒ the storefront falls back to the chosen theme's own accent, so a new store
+			// looks like its theme out of the box instead of every store sharing one hardcoded color.
+			AccentColor: sanitizeHexAccent(accentColor),
+			Currency:    "USD",
+			Theme:       normalizeTheme(theme),
+			// Seed a hero over the mandatory grid so the homepage looks built, not an empty catalog.
+			Layout: []Section{
+				{Type: "hero", Enabled: true, Heading: displayName},
+				{Type: "catalog", Enabled: true},
+			},
+		},
+		Plan:      string(plan.Free), // every store starts free; upgrades flip this tier
+		CreatedAt: time.Now().UTC(),
 	}
 	if err := s.repo.insertStore(ctx, store); err != nil {
 		return nil, err
@@ -144,7 +155,41 @@ func (s *Service) SetPlan(ctx context.Context, ownerID, storeID, tier string) (*
 func (s *Service) UpdateStore(ctx context.Context, ownerID, storeID, displayName string, settings Settings) (*Store, error) {
 	settings.Layout = sanitizeLayout(settings.Layout)
 	settings.Pages = sanitizePages(settings.Pages)
+	settings.Theme = normalizeTheme(settings.Theme)
 	return s.repo.updateSettings(ctx, storeID, ownerID, displayName, settings)
+}
+
+// defaultTheme is the storefront template every store falls back to. knownThemes is the closed set a
+// merchant may pick (mirrors THEMES in web/src/lib/theme.ts); anything else is a typo/tampered value.
+const defaultTheme = "monolith"
+
+var knownThemes = map[string]bool{
+	"monolith": true,
+	"boutique": true,
+	"pop":      true,
+	"terminal": true,
+}
+
+// normalizeTheme keeps a known theme, else falls back to the default — the same "invalid value ⇒ safe
+// default" stance as an unknown plan tier becoming free. The storefront also defaults on render.
+func normalizeTheme(t string) string {
+	t = strings.TrimSpace(t)
+	if knownThemes[t] {
+		return t
+	}
+	return defaultTheme
+}
+
+var hexAccentRe = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
+
+// sanitizeHexAccent returns a valid #rrggbb accent (lowercased) or "" for anything else. A blank accent
+// is meaningful: the storefront then uses the chosen theme's own accent instead of a forced color.
+func sanitizeHexAccent(c string) string {
+	c = strings.TrimSpace(c)
+	if hexAccentRe.MatchString(c) {
+		return strings.ToLower(c)
+	}
+	return ""
 }
 
 // knownSectionTypes is the closed set of storefront blocks a merchant may arrange. Anything else is a
