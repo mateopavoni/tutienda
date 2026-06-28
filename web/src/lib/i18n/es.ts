@@ -1,7 +1,7 @@
 import type { Messages } from './en';
 
 export const es: Messages = {
-	nav: { shop: 'Tienda', collection: 'Colección', about: 'Nosotros', journal: 'Journal', bag: 'Bolsa', catalog: 'Catálogo' },
+	nav: { shop: 'Tienda', collection: 'Colección', about: 'Nosotros', journal: 'Journal', bag: 'Bolsa', catalog: 'Catálogo', home: 'Inicio', account: 'Mi cuenta' },
 	common: {
 		addToBag: 'Agregar a la bolsa',
 		checkout: 'Finalizar compra',
@@ -22,6 +22,8 @@ export const es: Messages = {
 		filter: 'Filtrar',
 		season: 'Temporada 04 // Lógica Industrial',
 		showing: 'Mostrando {n} artículos',
+		featured: 'Destacados',
+		viewAll: 'Ver catálogo completo',
 		all: 'Todo',
 		footwear: 'Calzado',
 		outerwear: 'Abrigos',
@@ -79,6 +81,31 @@ export const es: Messages = {
 		failed: 'Falló la autenticación'
 	},
 	settings: { title: 'Configuración', language: 'Idioma', theme: 'Apariencia' },
+	account: {
+		title: 'Mi cuenta',
+		loginTitle: 'Iniciar sesión',
+		registerTitle: 'Creá tu cuenta',
+		subtitle: 'Iniciá sesión en {store} para seguir tus pedidos',
+		registerSubtitle: 'Una cuenta para {store} — guardá tu historial de pedidos',
+		email: 'Email',
+		password: 'Contraseña',
+		name: 'Nombre',
+		nameOptional: 'Nombre (opcional)',
+		signInCta: 'Iniciar sesión',
+		registerCta: 'Crear cuenta',
+		toRegister: '¿No tenés cuenta? Creá una',
+		toLogin: '¿Ya tenés cuenta? Iniciá sesión',
+		failed: 'No pudimos iniciar tu sesión',
+		logout: 'Cerrar sesión',
+		guestNote: 'También podés comprar como invitado — la cuenta solo guarda tu historial de pedidos.',
+		greeting: 'Hola {name}',
+		ordersTitle: 'Historial de pedidos',
+		ordersEmpty: 'Todavía no tenés pedidos.',
+		ordersFailed: 'No pudimos cargar tus pedidos.',
+		orderDate: 'Fecha',
+		orderTotal: 'Total',
+		orderStatus: 'Estado'
+	},
 	landing: {
 		kicker: 'Constructor de ecommerce multi-tienda',
 		tagline: 'Lanzá tu tienda. Nunca sobrevendas.',
@@ -99,6 +126,9 @@ export const es: Messages = {
 		coreTitle: 'Cero sobreventa bajo carga concurrente',
 		coreBody:
 			'Cuando N personas compiten por las últimas K unidades, exactamente K tienen éxito y nadie sobrevende. Lo garantizamos con operaciones atómicas en MongoDB y reservas compensadas — sin locks distribuidos, scopeado por tienda para que una nunca toque a la otra.',
+		examplesKicker: 'Ejemplos en vivo',
+		examplesTitle: 'Tiendas distintas, una plataforma',
+		examplesBody: 'Cada tienda de acá corre sobre el mismo motor — son ejemplos que armamos para mostrar el rango. Entrá a cualquiera.',
 		pricingTitle: 'Precios simples',
 		plan_free_name: 'Inicial',
 		plan_free_price: 'Gratis',
@@ -167,6 +197,7 @@ export const es: Messages = {
 			title: 'Configuración de la tienda',
 			displayName: 'Nombre visible',
 			accent: 'Color de acento',
+			theme: 'Tema',
 			logoUrl: 'URL del logo',
 			logoLocked: 'El logo propio es una función Pro — mejorá arriba',
 			layoutTitle: 'Diseño del storefront',

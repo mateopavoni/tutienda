@@ -1,6 +1,7 @@
 import { env } from '$env/dynamic/public';
 import type { ApiError, Order, Stock } from '$lib/types';
 import { getBrowserSlug } from '$lib/tenant';
+import { customerToken } from '$lib/stores/customer';
 
 // Browser-side client. Mutations and live stock reads go through the public gateway, which applies
 // CORS and rate limiting. SSR reads use the server client instead (src/lib/server/api.ts). Every call
@@ -12,6 +13,10 @@ function base(): string {
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
 	const headers = new Headers(init?.headers);
 	headers.set('X-Tenant-Slug', getBrowserSlug());
+	// If a buyer is signed in to this store, attach their token so the order is attributed to them. The
+	// gateway only honors it when the token's tenant matches this store; otherwise it's a guest checkout.
+	const token = customerToken();
+	if (token) headers.set('Authorization', 'Bearer ' + token);
 	const res = await fetch(base() + path, { ...init, headers });
 	const data = (await res.json().catch(() => ({}))) as unknown;
 	if (!res.ok) {

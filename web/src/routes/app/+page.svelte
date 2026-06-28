@@ -19,6 +19,7 @@
 	} from '$lib/admin/api';
 	import type { ApiError, Product } from '$lib/types';
 	import { PLANS, TIERS, hasFeature, productLimit, normalizeTier, UNLIMITED } from '$lib/plan';
+	import { THEMES, normalizeTheme } from '$lib/theme';
 	import {
 		normalizeLayout,
 		SECTION_META,
@@ -67,6 +68,7 @@
 	// Settings form
 	let setName = $state('');
 	let setAccent = $state('#1b03ea');
+	let setTheme = $state('monolith');
 	let setLogo = $state('');
 	// Storefront layout: the normalized, full list of sections (every known block exactly once, in order).
 	// The merchant toggles, reorders and edits copy here; only enabled sections render on the storefront.
@@ -85,6 +87,7 @@
 	function loadStoreSettings(s: Store) {
 		setName = s.displayName;
 		setAccent = s.settings.accentColor ?? '#1b03ea';
+		setTheme = normalizeTheme(s.settings.theme);
 		setLogo = s.settings.logoUrl ?? '';
 		setLayout = normalizeLayout(s.settings.layout);
 		const p = emptyPages();
@@ -375,6 +378,7 @@
 			}));
 			const updated = await updateStore(active.id, setName, {
 				accentColor: setAccent,
+				theme: setTheme,
 				logoUrl: setLogo,
 				currency: 'USD',
 				layout: setLayout,
@@ -666,6 +670,14 @@
 				<label class="flex flex-col gap-1">
 					<span class={labelClass}>{$t('app.settings.accent')}</span>
 					<input type="color" bind:value={setAccent} class="brutal-border h-12 w-16 bg-surface" />
+				</label>
+				<label class="flex flex-col gap-1">
+					<span class={labelClass}>{$t('app.settings.theme')}</span>
+					<select bind:value={setTheme} class="{inputClass} h-12" title={THEMES.find((th) => th.id === setTheme)?.description}>
+						{#each THEMES as th}
+							<option value={th.id}>{th.label}</option>
+						{/each}
+					</select>
 				</label>
 				<label class="flex flex-col gap-1">
 					<span class="{labelClass} flex items-center gap-1">

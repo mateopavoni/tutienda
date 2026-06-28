@@ -28,7 +28,7 @@ export interface Store {
 	slug: string;
 	ownerId: string;
 	displayName: string;
-	settings: { logoUrl?: string; accentColor?: string; currency?: string; layout?: Section[]; pages?: Page[] };
+	settings: { logoUrl?: string; accentColor?: string; theme?: string; currency?: string; layout?: Section[]; pages?: Page[] };
 	/** Membership tier (see $lib/plan). Defaults to 'free' for stores created before plans existed. */
 	plan: string;
 }
@@ -78,10 +78,15 @@ export async function listStores(): Promise<Store[]> {
 	return data.items ?? [];
 }
 
-export async function createStore(slug: string, displayName: string): Promise<Store> {
+export async function createStore(
+	slug: string,
+	displayName: string,
+	theme?: string,
+	accentColor?: string
+): Promise<Store> {
 	return call<Store>(
 		'/api/accounts/stores',
-		{ method: 'POST', body: JSON.stringify({ slug, displayName }) },
+		{ method: 'POST', body: JSON.stringify({ slug, displayName, theme, accentColor }) },
 		session.merchantToken()
 	);
 }

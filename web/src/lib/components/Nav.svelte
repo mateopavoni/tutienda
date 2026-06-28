@@ -2,13 +2,17 @@
 	import { t } from '$lib/i18n';
 	import { cartCount } from '$lib/stores/cart';
 	import { cartOpen } from '$lib/stores/ui';
-	import { Settings } from 'lucide-svelte';
+	import { customer } from '$lib/stores/customer';
+	import { Settings, User } from 'lucide-svelte';
 	import type { StoreInfo } from '$lib/tenant';
 
 	let { store, slug }: { store?: StoreInfo | null; slug: string } = $props();
 	// Per-store wordmark; the type/scale stay fixed by the design system.
 	let wordmark = $derived((store?.displayName ?? slug).toUpperCase());
 	let home = $derived('/store/' + slug);
+	let catalog = $derived(home + '/catalogo');
+	// Account link points to the profile when signed in, otherwise to the login page.
+	let account = $derived(home + '/cuenta' + ($customer ? '' : '/login'));
 </script>
 
 <header class="fixed top-0 z-50 w-full border-b border-border bg-bg">
@@ -26,7 +30,21 @@
 				href={home}
 				class="hidden font-sans text-label-caps uppercase tracking-[0.1em] text-text-muted transition-colors hover:text-text md:inline"
 			>
+				{$t('nav.home')}
+			</a>
+			<a
+				href={catalog}
+				class="hidden font-sans text-label-caps uppercase tracking-[0.1em] text-text-muted transition-colors hover:text-text md:inline"
+			>
 				{$t('nav.catalog')}
+			</a>
+			<a
+				href={account}
+				class="p-2 transition-colors hover:text-text {$customer ? 'text-text' : 'text-text-muted'}"
+				aria-label={$t('account.title')}
+				title={$t('account.title')}
+			>
+				<User size={18} strokeWidth={1.5} />
 			</a>
 			<a
 				href="/configuracion"

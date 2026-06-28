@@ -3,18 +3,26 @@
 	import Footer from '$lib/components/Footer.svelte';
 	import CartDrawer from '$lib/components/CartDrawer.svelte';
 	import { setBrowserSlug } from '$lib/tenant';
+	import { loadCustomer } from '$lib/stores/customer';
 	import { enabledPages } from '$lib/pages';
+	import { normalizeTheme } from '$lib/theme';
 
 	let { children, data } = $props();
 
-	// Seed the browser API client with the resolved store slug; $effect keeps it in sync across navigations.
+	// Seed the browser API client with the resolved store slug and hydrate the buyer session for this
+	// store; $effect keeps both in sync across navigations (and when switching between stores).
 	$effect(() => {
 		setBrowserSlug(data.storeSlug);
+		loadCustomer(data.storeSlug);
 	});
 
 	// Per-store accent: the only chromatic token a store can override. Everything else stays fixed.
 	// We guard against a near-white accent so the white-on-accent buttons never lose their label.
 	let accentVar = $derived(safeAccent(data.store?.settings?.accentColor));
+
+	// Per-store visual theme (fonts + palette); see web/src/lib/theme.ts + app.css [data-store-theme].
+	// Defaults to monolith on any unknown/legacy value. The accent above still overrides the theme accent.
+	let storeTheme = $derived(normalizeTheme(data.store?.settings?.theme));
 
 	function safeAccent(hex: string | undefined): string | undefined {
 		if (!hex) return undefined;
@@ -32,7 +40,11 @@
 	}
 </script>
 
-<div class="flex min-h-screen flex-col" style={accentVar ? `--accent: ${accentVar}` : undefined}>
+<div
+	class="flex min-h-screen flex-col bg-bg text-text"
+	data-store-theme={storeTheme}
+	style={accentVar ? `--accent: ${accentVar}` : undefined}
+>
 	<Nav store={data.store} slug={data.storeSlug} />
 	<main class="flex-1 pt-16">
 		{@render children()}

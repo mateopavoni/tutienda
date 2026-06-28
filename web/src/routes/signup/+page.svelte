@@ -3,6 +3,7 @@
 	import { signup, createStore, selectStore } from '$lib/admin/api';
 	import { BRAND, ROOT_DOMAIN } from '$lib/brand';
 	import { t } from '$lib/i18n';
+	import { THEMES } from '$lib/theme';
 	import SiteHeader from '$lib/components/SiteHeader.svelte';
 	import type { ApiError } from '$lib/types';
 
@@ -11,6 +12,9 @@
 	let storeName = $state('');
 	let slug = $state('');
 	let slugTouched = $state(false);
+	// Default to a non-monolith theme so a store created without touching this picker still looks like its
+	// own thing, not a clone of the TuTienda landing (which is monolith). Each theme brings its own accent.
+	let theme = $state('boutique');
 	let busy = $state(false);
 	let error = $state('');
 
@@ -27,9 +31,10 @@
 		busy = true;
 		error = '';
 		try {
-			// 1) create the merchant account, 2) create their first store, 3) enter it → dashboard.
+			// 1) create the merchant account, 2) create their first store (with the chosen theme so it
+			// looks distinct from the start), 3) enter it → dashboard.
 			await signup(email, password);
-			const store = await createStore(effectiveSlug, storeName);
+			const store = await createStore(effectiveSlug, storeName, theme);
 			await selectStore(store);
 			await goto('/app');
 		} catch (err) {
@@ -77,6 +82,24 @@
 					{effectiveSlug || 'tu-tienda'}.{ROOT_DOMAIN}
 				</span>
 			</label>
+
+			<fieldset class="flex flex-col gap-2">
+				<legend class="mb-1 {labelClass}">{$t('app.settings.theme')}</legend>
+				<div class="grid grid-cols-2 gap-2">
+					{#each THEMES as th (th.id)}
+						<button
+							type="button"
+							onclick={() => (theme = th.id)}
+							aria-pressed={theme === th.id}
+							class="brutal-border flex flex-col gap-1 p-3 text-left transition-colors focus-ring
+								{theme === th.id ? 'border-accent bg-surface' : 'bg-surface/40 hover:bg-surface'}"
+						>
+							<span class="font-sans text-body-md text-text">{th.label}</span>
+							<span class="font-mono text-metadata-sm leading-snug text-text-muted">{th.description}</span>
+						</button>
+					{/each}
+				</div>
+			</fieldset>
 
 			{#if error}<p class="font-mono text-metadata-sm text-error">{error}</p>{/if}
 

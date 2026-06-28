@@ -1,7 +1,7 @@
 import type { Messages } from './en';
 
 export const ptBR: Messages = {
-	nav: { shop: 'Loja', collection: 'Coleção', about: 'Sobre', journal: 'Journal', bag: 'Sacola', catalog: 'Catálogo' },
+	nav: { shop: 'Loja', collection: 'Coleção', about: 'Sobre', journal: 'Journal', bag: 'Sacola', catalog: 'Catálogo', home: 'Início', account: 'Minha conta' },
 	common: {
 		addToBag: 'Adicionar à sacola',
 		checkout: 'Finalizar compra',
@@ -22,6 +22,8 @@ export const ptBR: Messages = {
 		filter: 'Filtrar',
 		season: 'Temporada 04 // Lógica Industrial',
 		showing: 'Exibindo {n} itens',
+		featured: 'Destaques',
+		viewAll: 'Ver catálogo completo',
 		all: 'Tudo',
 		footwear: 'Calçados',
 		outerwear: 'Casacos',
@@ -79,6 +81,31 @@ export const ptBR: Messages = {
 		failed: 'Falha na autenticação'
 	},
 	settings: { title: 'Configurações', language: 'Idioma', theme: 'Aparência' },
+	account: {
+		title: 'Minha conta',
+		loginTitle: 'Entrar',
+		registerTitle: 'Crie sua conta',
+		subtitle: 'Entre em {store} para acompanhar seus pedidos',
+		registerSubtitle: 'Uma conta para {store} — guarde seu histórico de pedidos',
+		email: 'Email',
+		password: 'Senha',
+		name: 'Nome',
+		nameOptional: 'Nome (opcional)',
+		signInCta: 'Entrar',
+		registerCta: 'Criar conta',
+		toRegister: 'Ainda não tem conta? Crie uma',
+		toLogin: 'Já tem conta? Entre',
+		failed: 'Não foi possível entrar',
+		logout: 'Sair',
+		guestNote: 'Você também pode finalizar como convidado — a conta apenas guarda seu histórico de pedidos.',
+		greeting: 'Olá {name}',
+		ordersTitle: 'Histórico de pedidos',
+		ordersEmpty: 'Nenhum pedido ainda.',
+		ordersFailed: 'Não foi possível carregar seus pedidos.',
+		orderDate: 'Data',
+		orderTotal: 'Total',
+		orderStatus: 'Status'
+	},
 	landing: {
 		kicker: 'Construtor de ecommerce multiloja',
 		tagline: 'Lance sua loja. Nunca venda além do estoque.',
@@ -99,6 +126,9 @@ export const ptBR: Messages = {
 		coreTitle: 'Zero venda em excesso sob carga concorrente',
 		coreBody:
 			'Quando N compradores disputam as últimas K unidades, exatamente K têm sucesso e ninguém vende além do estoque. Garantimos isso com operações atômicas no MongoDB e reservas compensadas — sem locks distribuídos, isolado por loja para que uma nunca toque a outra.',
+		examplesKicker: 'Exemplos ao vivo',
+		examplesTitle: 'Lojas diferentes, uma plataforma',
+		examplesBody: 'Cada loja abaixo roda no mesmo motor — exemplos que montamos para mostrar a variedade. Abra qualquer uma.',
 		pricingTitle: 'Preços simples',
 		plan_free_name: 'Inicial',
 		plan_free_price: 'Grátis',
@@ -167,6 +197,7 @@ export const ptBR: Messages = {
 			title: 'Configurações da loja',
 			displayName: 'Nome de exibição',
 			accent: 'Cor de destaque',
+			theme: 'Tema',
 			logoUrl: 'URL do logo',
 			logoLocked: 'Logo próprio é um recurso Pro — faça upgrade acima',
 			layoutTitle: 'Layout da loja',

@@ -5,16 +5,22 @@
 	import { t } from '$lib/i18n';
 	import SiteHeader from '$lib/components/SiteHeader.svelte';
 	import SiteFooter from '$lib/components/SiteFooter.svelte';
-	import { ArrowRight, ShieldCheck, Zap, Palette, Store } from 'lucide-svelte';
+	import { ArrowRight } from 'lucide-svelte';
 
-	const features = [
-		{ icon: Store, key: 'feat1' },
-		{ icon: Palette, key: 'feat2' },
-		{ icon: ShieldCheck, key: 'feat3' },
-		{ icon: Zap, key: 'feat4' }
-	];
+	// Editorial wayfinding: features are numbered, not iconed — numerals read more like a magazine index
+	// than the product-y lucide glyphs, which fits the Monolith Editorial system.
+	const features = ['feat1', 'feat2', 'feat3', 'feat4'];
 
 	const plans = ['free', 'pro', 'scale'] as const;
+
+	// Sample stores seeded by the backend (tenant.DemoStores) — surfaced here so prospective merchants
+	// see the range of looks one platform produces. Names/taglines are store content, not UI copy.
+	const examples = [
+		{ slug: 'system-archive', name: 'SYSTEM ARCHIVE', theme: 'Monolith', blurb: 'Engineered garments, brutalist editorial.' },
+		{ slug: 'casa-bruta', name: 'CASA BRUTA', theme: 'Boutique', blurb: 'Objects for the brutalist home.' },
+		{ slug: 'papel-y-tinta', name: 'PAPEL & TINTA', theme: 'Terminal', blurb: 'An editorial bookshop on paper.' },
+		{ slug: 'cafe-noventa', name: 'CAFÉ NOVENTA', theme: 'Pop', blurb: 'Single-origin coffee, severe standard.' }
+	];
 </script>
 
 <svelte:head>
@@ -26,40 +32,43 @@
 	<SiteHeader />
 
 	<main class="flex-1">
-		<!-- Hero -->
-		<section class="mx-auto w-full max-w-container px-4 pb-20 pt-16 md:px-12 md:pb-28 md:pt-24">
-			<p class="mb-6 font-mono text-metadata-sm uppercase tracking-[0.2em] text-text-muted">
+		<!-- Hero — editorial masthead: accent tick, mono kicker, oversized display type, generous space. -->
+		<section class="mx-auto w-full max-w-container px-4 pb-24 pt-20 md:px-12 md:pb-36 md:pt-32">
+			<p class="mb-8 flex items-center gap-3 font-mono text-metadata-sm uppercase tracking-[0.2em] text-text-muted">
+				<span class="inline-block h-3 w-1.5 bg-accent"></span>
 				{$t('landing.kicker')}
 			</p>
-			<h1 class="max-w-5xl font-sans uppercase leading-none tracking-tighter text-display-xl">
+			<h1 class="max-w-5xl font-sans uppercase leading-[0.95] tracking-tighter text-display-xl">
 				{$t('landing.tagline')}
 			</h1>
-			<p class="mt-8 max-w-2xl font-sans text-body-lg text-text-muted">
+			<p class="mt-10 max-w-2xl font-sans text-body-lg leading-relaxed text-text-muted">
 				{$t('landing.subtitle')}
 			</p>
-			<div class="mt-10 flex flex-wrap items-center gap-4">
+			<div class="mt-12 flex flex-wrap items-center gap-4">
 				<a href="/signup" class="flex items-center gap-3 btn-accent">
 					{$t('landing.cta')}
 					<ArrowRight size={16} />
 				</a>
 				<a href="/store/system-archive" class="btn-ghost">{$t('landing.seeDemo')}</a>
 			</div>
-			<p class="mt-6 font-mono text-metadata-sm uppercase tracking-[0.1em] text-text-muted">
+			<p class="mt-8 font-mono text-metadata-sm uppercase tracking-[0.1em] text-text-muted">
 				{$t('landing.subdomainNote', { domain: ROOT_DOMAIN })}
 			</p>
 		</section>
 
-		<!-- Features -->
+		<!-- Features — numbered editorial grid -->
 		<section class="border-t border-border">
 			<div class="mx-auto grid max-w-container grid-cols-1 gap-px bg-border md:grid-cols-2 lg:grid-cols-4">
-				{#each features as feature (feature.key)}
+				{#each features as key, i (key)}
 					<div class="flex flex-col gap-4 bg-bg p-8 md:p-10">
-						<feature.icon size={24} strokeWidth={1.5} class="text-accent" />
+						<span class="font-mono text-metadata-sm tracking-[0.1em] text-accent">
+							{String(i + 1).padStart(2, '0')}
+						</span>
 						<h3 class="font-sans text-headline-md tracking-tight text-text">
-							{$t('landing.' + feature.key + 'Title')}
+							{$t('landing.' + key + 'Title')}
 						</h3>
 						<p class="font-sans text-body-md text-text-muted">
-							{$t('landing.' + feature.key + 'Body')}
+							{$t('landing.' + key + 'Body')}
 						</p>
 					</div>
 				{/each}
@@ -71,7 +80,7 @@
 			<div class="mx-auto grid max-w-container grid-cols-1 gap-10 px-4 py-20 md:grid-cols-12 md:px-12">
 				<div class="md:col-span-5">
 					<p class="font-mono text-metadata-sm uppercase tracking-[0.2em] text-accent">
-						{$t('landing.coreKicker')}
+						<span class="text-text-muted">01 — </span>{$t('landing.coreKicker')}
 					</p>
 					<h2 class="mt-4 font-sans uppercase leading-none tracking-tighter text-headline-lg text-text">
 						{$t('landing.coreTitle')}
@@ -85,9 +94,39 @@
 			</div>
 		</section>
 
+		<!-- Live examples: the seeded demo stores, each its own theme -->
+		<section class="border-t border-border">
+			<div class="mx-auto max-w-container px-4 py-20 md:px-12">
+				<p class="font-mono text-metadata-sm uppercase tracking-[0.2em] text-accent">
+					<span class="text-text-muted">02 — </span>{$t('landing.examplesKicker')}
+				</p>
+				<h2 class="mt-4 max-w-3xl font-sans uppercase leading-none tracking-tighter text-headline-lg text-text">
+					{$t('landing.examplesTitle')}
+				</h2>
+				<p class="mt-6 max-w-2xl font-sans text-body-lg text-text-muted">{$t('landing.examplesBody')}</p>
+				<div class="mt-12 grid grid-cols-1 gap-px bg-border md:grid-cols-2 lg:grid-cols-4">
+					{#each examples as ex (ex.slug)}
+						<a
+							href="/store/{ex.slug}"
+							class="group flex flex-col gap-3 bg-bg p-8 transition-colors hover:bg-surface-variant"
+						>
+							<span class="font-mono text-metadata-sm uppercase tracking-[0.1em] text-text-muted">{ex.theme}</span>
+							<h3 class="font-sans text-headline-md tracking-tight text-text">{ex.name}</h3>
+							<p class="font-sans text-body-md text-text-muted">{ex.blurb}</p>
+							<span class="mt-auto flex items-center gap-2 pt-4 font-mono text-metadata-sm uppercase tracking-[0.1em] text-accent">
+								{$t('landing.seeDemo')}
+								<ArrowRight size={14} class="transition-transform group-hover:translate-x-1" />
+							</span>
+						</a>
+					{/each}
+				</div>
+			</div>
+		</section>
+
 		<!-- Pricing -->
 		<section class="border-t border-border">
 			<div class="mx-auto max-w-container px-4 py-20 md:px-12">
+				<p class="mb-4 font-mono text-metadata-sm uppercase tracking-[0.2em] text-text-muted">03</p>
 				<h2 class="mb-12 font-sans uppercase tracking-tighter text-headline-lg text-text">
 					{$t('landing.pricingTitle')}
 				</h2>

@@ -1,6 +1,6 @@
 // English is the source of truth; other locales mirror this shape (enforced by `Messages = typeof en`).
 export const en = {
-	nav: { shop: 'Shop', collection: 'Collection', about: 'About', journal: 'Journal', bag: 'Bag', catalog: 'Catalog' },
+	nav: { shop: 'Shop', collection: 'Collection', about: 'About', journal: 'Journal', bag: 'Bag', catalog: 'Catalog', home: 'Home', account: 'Account' },
 	common: {
 		addToBag: 'Add to bag',
 		checkout: 'Checkout',
@@ -21,6 +21,8 @@ export const en = {
 		filter: 'Filter',
 		season: 'Season 04 // Industrial Logic',
 		showing: 'Showing {n} items',
+		featured: 'Featured',
+		viewAll: 'View full catalog',
 		all: 'All',
 		footwear: 'Footwear',
 		outerwear: 'Outerwear',
@@ -78,6 +80,34 @@ export const en = {
 		failed: 'Authentication failed'
 	},
 	settings: { title: 'Settings', language: 'Language', theme: 'Appearance' },
+	// Storefront customer accounts (/store/[slug]/cuenta). A shopper's own account, separate from the
+	// merchant console — they sign in to a single store and see their order history. Checkout stays
+	// available to guests; an account just keeps the history.
+	account: {
+		title: 'My account',
+		loginTitle: 'Sign in',
+		registerTitle: 'Create your account',
+		subtitle: 'Sign in to {store} to track your orders',
+		registerSubtitle: 'One account for {store} — keep your order history',
+		email: 'Email',
+		password: 'Password',
+		name: 'Name',
+		nameOptional: 'Name (optional)',
+		signInCta: 'Sign in',
+		registerCta: 'Create account',
+		toRegister: "No account yet? Create one",
+		toLogin: 'Already have an account? Sign in',
+		failed: 'Could not sign you in',
+		logout: 'Sign out',
+		guestNote: 'You can also check out as a guest — an account just saves your order history.',
+		greeting: 'Hi {name}',
+		ordersTitle: 'Order history',
+		ordersEmpty: 'No orders yet.',
+		ordersFailed: 'Could not load your orders.',
+		orderDate: 'Date',
+		orderTotal: 'Total',
+		orderStatus: 'Status'
+	},
 	landing: {
 		kicker: 'Multi-store ecommerce builder',
 		tagline: 'Launch your store. Never oversell.',
@@ -98,6 +128,9 @@ export const en = {
 		coreTitle: 'Zero oversell under concurrent load',
 		coreBody:
 			'When N buyers race for the last K units, exactly K succeed and nobody is oversold. We enforce it with atomic MongoDB operations and compensated reservations — no distributed locks, scoped per store so one shop never touches another.',
+		examplesKicker: 'Live examples',
+		examplesTitle: 'Different stores, one platform',
+		examplesBody: 'Every store below runs on the same engine — sample shops we built to show the range. Open any one.',
 		pricingTitle: 'Simple pricing',
 		plan_free_name: 'Starter',
 		plan_free_price: 'Free',
@@ -168,6 +201,7 @@ export const en = {
 			title: 'Store settings',
 			displayName: 'Display name',
 			accent: 'Accent color',
+			theme: 'Theme',
 			logoUrl: 'Logo URL',
 			logoLocked: 'A custom logo is a Pro feature — upgrade above',
 			layoutTitle: 'Storefront layout',
