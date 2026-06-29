@@ -5,6 +5,9 @@
 /* Semantic tokens as RGB triplets. Light is the Stitch "Alabaster/Onyx" base; dark is the derived
    high-contrast counterpart. Components only ever reference semantic names, never raw hex. */
 :root {
+	/* Default storefront/site font. Per-store themes override this on the storefront wrapper
+	   (see [data-store-theme] blocks below); the marketing site keeps Inter. */
+	--font-sans: 'Inter', system-ui, sans-serif;
 	--bg: 250 249 249;
 	--surface: 255 255 255;
 	--surface-variant: 227 226 226;
@@ -14,8 +17,14 @@
 	--outline: 116 120 120;
 	--primary: 0 0 0;
 	--on-primary: 255 255 255;
-	--accent: 27 3 234;
+	/* Platform accent: black primary + the "Shop" rationed violet (#5433eb). Each store overrides
+	   --accent with its own brand color, so this only colors the marketing site + theme-less stores. */
+	--accent: 84 51 235;
 	--on-accent: 255 255 255;
+	/* Corner radii as tokens so each store theme can set its own character (default = the soft "Shop"
+	   look: 8px surfaces, 28px pill controls). terminal goes sharp to stay technical. */
+	--radius-surface: 8px;
+	--radius-control: 28px;
 	--error: 186 26 26;
 	/* The cart drawer is a constant high-contrast onyx surface in both themes (per the design). */
 	--inverse: 0 0 0;
@@ -32,21 +41,117 @@
 	--outline: 95 94 94;
 	--primary: 255 255 255;
 	--on-primary: 17 17 17;
-	--accent: 112 115 255;
+	--accent: 124 96 245;
 	--on-accent: 255 255 255;
 	--error: 255 180 171;
 	--inverse: 0 0 0;
 	--on-inverse: 242 240 240;
 }
 
+/* Per-store storefront themes. The storefront wrapper sets data-store-theme; each theme overrides the
+   font + palette tokens, scoped so the marketing site and dark-mode base stay intact. "monolith" is the
+   default (the :root values) and needs no block. Mirrors the id list in web/src/lib/theme.ts. */
+[data-store-theme] {
+	font-family: var(--font-sans);
+}
+
+/* boutique — warm editorial serif (home/deco, fashion). */
+[data-store-theme='boutique'] {
+	--font-sans: 'Fraunces', Georgia, serif;
+	--bg: 247 243 237;
+	--surface: 255 252 248;
+	--surface-variant: 235 228 219;
+	--border: 43 34 28;
+	--text: 43 34 28;
+	--text-muted: 96 84 74;
+	--outline: 150 135 120;
+	--primary: 43 34 28;
+	--on-primary: 255 252 248;
+	--accent: 181 101 59;
+	--on-accent: 255 255 255;
+}
+.dark [data-store-theme='boutique'] {
+	--bg: 28 24 21;
+	--surface: 38 33 29;
+	--surface-variant: 48 42 37;
+	--border: 222 210 198;
+	--text: 240 232 223;
+	--text-muted: 180 168 156;
+	--outline: 110 98 88;
+	--primary: 240 232 223;
+	--on-primary: 28 24 21;
+	--accent: 214 140 96;
+	--on-accent: 28 24 21;
+}
+
+/* pop — bright rounded sans (café, lifestyle). */
+[data-store-theme='pop'] {
+	--font-sans: 'Poppins', system-ui, sans-serif;
+	/* Playful, rounder than default: softer surfaces + full-pill controls. */
+	--radius-surface: 12px;
+	--radius-control: 9999px;
+	--bg: 255 255 255;
+	--surface: 255 255 255;
+	--surface-variant: 244 242 255;
+	--border: 17 17 23;
+	--text: 26 24 38;
+	--text-muted: 90 86 110;
+	--outline: 150 146 175;
+	--primary: 91 60 245;
+	--on-primary: 255 255 255;
+	--accent: 255 61 129;
+	--on-accent: 255 255 255;
+}
+.dark [data-store-theme='pop'] {
+	--bg: 21 18 30;
+	--surface: 31 27 44;
+	--surface-variant: 41 36 58;
+	--border: 220 216 235;
+	--text: 240 238 248;
+	--text-muted: 176 172 196;
+	--outline: 110 104 130;
+	--primary: 150 130 255;
+	--on-primary: 21 18 30;
+	--accent: 255 110 160;
+	--on-accent: 21 18 30;
+}
+
+/* terminal — full monospace, green-on-paper (typographic, technical). */
+[data-store-theme='terminal'] {
+	--font-sans: 'JetBrains Mono', ui-monospace, monospace;
+	/* Sharp edges keep the technical/monospace character — the one theme that stays hard-edge. */
+	--radius-surface: 0px;
+	--radius-control: 0px;
+	--bg: 244 244 240;
+	--surface: 255 255 255;
+	--surface-variant: 226 226 220;
+	--border: 20 24 20;
+	--text: 20 24 20;
+	--text-muted: 78 86 78;
+	--outline: 120 128 120;
+	--primary: 20 24 20;
+	--on-primary: 244 244 240;
+	--accent: 30 130 76;
+	--on-accent: 255 255 255;
+}
+.dark [data-store-theme='terminal'] {
+	--bg: 12 16 12;
+	--surface: 18 24 18;
+	--surface-variant: 26 34 26;
+	--border: 180 200 180;
+	--text: 210 230 210;
+	--text-muted: 150 170 150;
+	--outline: 90 110 90;
+	--primary: 210 230 210;
+	--on-primary: 12 16 12;
+	--accent: 64 220 130;
+	--on-accent: 12 16 12;
+}
+
 @layer base {
 	body {
-		font-family: 'Inter', system-ui, sans-serif;
+		font-family: var(--font-sans);
 		-webkit-font-smoothing: antialiased;
-	}
-	/* Hard-edge rule: no rounded corners anywhere in the system. */
-	* {
-		border-radius: 0;
 	}
 	/* Minimal, monochrome scrollbar in keeping with the flat language. */
 	::-webkit-scrollbar {
@@ -65,23 +170,29 @@
 }
 
 @layer components {
-	/* The 1px onyx separator that defines the grid. */
+	/* The 1px hairline that defines a card/surface — now softly rounded per the "Shop" reference. */
 	.brutal-border {
 		border: 1px solid rgb(var(--border));
+		border-radius: var(--radius-surface);
 	}
-	/* Primary action: solid block, caps label, colour inversion on hover. */
+	/* Primary action: solid block, caps label, colour inversion on hover. Pill corners (28px).
+	   The explicit radius after @apply wins over brutal-border's 8px (Tailwind @apply ignores
+	   the written order for conflicting props, so we set it here, not via rounded-2xl). */
 	.btn-primary {
 		@apply bg-primary text-on-primary font-sans uppercase tracking-[0.1em] text-label-caps
 			px-6 py-4 transition-colors brutal-border hover:bg-bg hover:text-text;
+		border-radius: var(--radius-control);
 	}
-	/* Conversion action: the single chromatic disruption, reserved for checkout. */
+	/* Conversion action: the single chromatic disruption + the system's only elevation (violet glow). */
 	.btn-accent {
 		@apply bg-accent text-on-accent font-sans uppercase tracking-[0.1em] text-label-caps
-			px-6 py-4 transition-opacity hover:opacity-90;
+			px-6 py-4 shadow-accent transition-opacity hover:opacity-90;
+		border-radius: var(--radius-control);
 	}
 	.btn-ghost {
 		@apply bg-bg text-text font-sans uppercase tracking-[0.1em] text-label-caps
 			px-6 py-4 transition-colors brutal-border hover:bg-primary hover:text-on-primary;
+		border-radius: var(--radius-control);
 	}
 	/* Inputs opt into this instead of a bare `focus:outline-none`: focus stays visible via the ring above. */
 	.focus-ring {

@@ -1,8 +1,9 @@
 import type { Config } from 'tailwindcss';
 
-// Tokens come from the Stitch "Refined Brutalism" design system (docs/design/design-tokens.md).
+// Tokens come from the "Shop" design reference (tutienda-cambios/DESIGN.md): hairline-bordered
+// surfaces on a white canvas, one rationed violet, soft corners instead of hard edges.
 // Semantic colours are CSS custom properties (RGB triplets) so light/dark swap by toggling .dark,
-// with no component hardcoding a colour. Zero radius everywhere enforces the hard-edge language.
+// with no component hardcoding a colour. Radii: cards 8px, images ~11px, buttons/search 28px, tags pill.
 export default {
 	darkMode: 'class',
 	content: ['./src/**/*.{html,js,svelte,ts}'],
@@ -25,7 +26,9 @@ export default {
 				'on-inverse': 'rgb(var(--on-inverse) / <alpha-value>)'
 			},
 			fontFamily: {
-				sans: ['Inter', 'system-ui', 'sans-serif'],
+				// font-sans resolves a CSS var so per-store themes can swap the whole storefront typeface
+				// (see app.css [data-store-theme] + web/src/lib/theme.ts). Default var value is Inter.
+				sans: ['var(--font-sans)', 'Inter', 'system-ui', 'sans-serif'],
 				mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace']
 			},
 			fontSize: {
@@ -39,12 +42,17 @@ export default {
 			},
 			borderRadius: {
 				none: '0',
-				DEFAULT: '0',
-				sm: '0',
-				md: '0',
-				lg: '0',
-				xl: '0',
-				full: '0'
+				sm: '4px',
+				DEFAULT: '8px',
+				md: '8px',
+				lg: '11.4px',
+				xl: '17px',
+				'2xl': '28px',
+				full: '9999px'
+			},
+			boxShadow: {
+				// The system's single elevation: the violet glow under the one conversion CTA.
+				accent: 'rgba(69, 36, 219, 0.34) 0px 4px 24px 0px'
 			},
 			maxWidth: {
 				container: '1440px'
