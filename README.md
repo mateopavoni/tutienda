@@ -148,20 +148,34 @@ in one step**:
 The public site is served by the Dokku apps; they reach the backend by Docker DNS (`accounts:8084`, …)
 because the Dokku containers share the compose network (`archive-commerce_default`).
 
-One-time VPS + GitHub setup (so the backend step works):
+One-time VPS + GitHub setup (so the backend step works). **Order matters**: the deploy key must be on
+GitHub *before* the first SSH fetch, or it fails with `Permission denied (publickey)`.
 
 ```bash
-# On the VPS, make ~/tutienda a git checkout that can pull passwordless via a read-only deploy key:
+# 1. On the VPS, generate one keypair (used both ways: Actions→VPS and VPS→GitHub):
 cd ~/tutienda
-ssh-keygen -t ed25519 -f ~/.ssh/gha -N "" -C "github-actions"   # one keypair, used both ways
+ssh-keygen -t ed25519 -f ~/.ssh/gha -N "" -C "github-actions"
 cat ~/.ssh/gha.pub >> ~/.ssh/authorized_keys                    # lets GitHub Actions SSH in as ubuntu
+chmod 600 ~/.ssh/authorized_keys
 printf 'Host github.com\n  IdentityFile ~/.ssh/gha\n  IdentitiesOnly yes\n' >> ~/.ssh/config
 git remote set-url origin git@github.com:mateopavoni/tutienda.git
+cat ~/.ssh/gha.pub                                              # copy this PUBLIC key
+```
+
+```text
+# 2. In GitHub (browser), BEFORE the next step:
+#    repo → Settings → Deploy keys → Add deploy key → paste ~/.ssh/gha.pub, leave write access OFF (read-only)
+#    repo → Settings → Secrets → Actions → New secret VPS_SSH_PRIVATE_KEY = contents of ~/.ssh/gha
+#    (copy the private key straight from the terminal into the secret field — never paste it elsewhere)
+```
+
+```bash
+# 3. Back on the VPS, now that the deploy key is registered:
 git fetch origin && git checkout -B main origin/main            # track origin/main for --ff-only pulls
 ```
 
-Then in GitHub: add `~/.ssh/gha.pub` as a **Deploy key** (read-only) on the repo, and add the **private**
-key `~/.ssh/gha` as the Actions secret **`VPS_SSH_PRIVATE_KEY`**. (`DOKKU_SSH_PRIVATE_KEY` stays as-is.)
+`DOKKU_SSH_PRIVATE_KEY` stays as-is. If the private key ever leaks, regenerate the pair, replace the
+`authorized_keys` line and the deploy key, and rotate the secret.
 
 > ⚠️ **Seeds and data.** The seed (demo + example stores) only runs on an **empty** database — it is a
 > no-op once any merchant exists. The CI deploy never wipes data, so re-seeding requires clearing the
