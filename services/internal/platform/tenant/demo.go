@@ -28,7 +28,7 @@ type DemoStore struct {
 // is the original SYSTEM ARCHIVE showcase (kept verbatim, scale tier, the loadtest target). All four
 // are owned by the same demo merchant so a single login shows every store in /app.
 var DemoStores = []DemoStore{
-	{DemoID, DemoSlug, DemoName, "#1b03ea", "scale", "monolith", "Engineered garments. Manufactured without excess."},
+	{DemoID, DemoSlug, DemoName, "#5433eb", "scale", "monolith", "Engineered garments. Manufactured without excess."},
 	{"000000000000000000000002", "casa-bruta", "CASA BRUTA", "#b5651d", "pro", "boutique", "Objects for the brutalist home — concrete, steel, linen."},
 	{"000000000000000000000003", "papel-y-tinta", "PAPEL & TINTA", "#1f6f4a", "free", "terminal", "An editorial bookshop. Form, type, and ideas on paper."},
 	{"000000000000000000000004", "cafe-noventa", "CAFÉ NOVENTA", "#6f4e37", "pro", "pop", "Single-origin coffee, roasted to a severe standard."},
