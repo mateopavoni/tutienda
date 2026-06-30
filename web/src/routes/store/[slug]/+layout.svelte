@@ -54,5 +54,5 @@
 		slug={data.storeSlug}
 		pages={enabledPages(data.store?.settings?.pages)}
 	/>
-	<CartDrawer />
+	<CartDrawer slug={data.storeSlug} />
 </div>

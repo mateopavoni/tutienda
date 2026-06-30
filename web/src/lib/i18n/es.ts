@@ -49,6 +49,8 @@ export const es: Messages = {
 		subtitle: 'Tu selección',
 		empty: 'El carrito está vacío',
 		checkoutNow: 'Finalizar compra',
+		signInToBuy: 'Iniciá sesión para comprar',
+		signInNote: 'Necesitás una cuenta para hacer un pedido.',
 		processing: 'Procesando',
 		confirmedTitle: 'Orden confirmada',
 		failedTitle: 'La compra falló',

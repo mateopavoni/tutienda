@@ -49,6 +49,8 @@ export const ptBR: Messages = {
 		subtitle: 'Sua seleção',
 		empty: 'O carrinho está vazio',
 		checkoutNow: 'Finalizar compra',
+		signInToBuy: 'Entre para comprar',
+		signInNote: 'É necessário ter uma conta para fazer um pedido.',
 		processing: 'Processando',
 		confirmedTitle: 'Pedido confirmado',
 		failedTitle: 'A compra falhou',

@@ -6,7 +6,11 @@
 	import { checkout } from '$lib/api/client';
 	import type { ApiError, Order, ShippingAddress } from '$lib/types';
 	import { FULFILLMENT_STAGES, fulfillmentIndex } from '$lib/order';
-	import { X, ShoppingBag, Minus, Plus, ArrowRight, ArrowLeft, Check, TriangleAlert, CreditCard } from 'lucide-svelte';
+	import { customer } from '$lib/stores/customer';
+	import { X, ShoppingBag, Minus, Plus, ArrowRight, ArrowLeft, Check, TriangleAlert, CreditCard, Lock } from 'lucide-svelte';
+
+	// The storefront passes its slug so we can gate checkout behind a customer account and link to sign-in.
+	let { slug = '' }: { slug?: string } = $props();
 
 	// ponytail: mirror of orders.flatShippingCents (Go is source of truth; the server total is authoritative).
 	const SHIPPING_FLAT_CENTS = 1500;
@@ -278,8 +282,8 @@
 							<h3 class="font-mono text-metadata-sm uppercase tracking-widest">{line.name}</h3>
 							<p class="font-mono text-metadata-sm opacity-60">{line.label}</p>
 						</div>
-						<div class="flex items-end justify-between">
-							<div class="flex items-center overflow-hidden rounded-[var(--radius-control)] border border-on-inverse/30">
+						<div class="flex flex-wrap items-end justify-between gap-x-3 gap-y-2">
+							<div class="flex shrink-0 items-center overflow-hidden rounded-[var(--radius-control)] border border-on-inverse/30">
 								<button
 									onclick={() => cart.setQty(line.sku, line.qty - 1)}
 									class="flex h-8 w-8 items-center justify-center transition-colors hover:bg-on-inverse hover:text-inverse"
@@ -296,7 +300,7 @@
 									<Plus size={14} />
 								</button>
 							</div>
-							<span class="font-sans text-headline-md tracking-tighter">
+							<span class="ml-auto whitespace-nowrap font-sans text-headline-md tabular-nums tracking-tighter">
 								{money(line.priceCents * line.qty, line.currency, $locale)}
 							</span>
 						</div>
@@ -314,13 +318,25 @@
 					{money($cartTotal, $cartCurrency, $locale)}
 				</span>
 			</div>
-			<button
-				onclick={() => (phase = 'shipping')}
-				class="flex w-full items-center justify-center gap-2 btn-accent"
-			>
-				{$t('cart.checkoutNow')}
-				<ArrowRight size={16} />
-			</button>
+			{#if $customer}
+				<button
+					onclick={() => (phase = 'shipping')}
+					class="flex w-full items-center justify-center gap-2 btn-accent"
+				>
+					{$t('cart.checkoutNow')}
+					<ArrowRight size={16} />
+				</button>
+			{:else}
+				<a
+					href={'/store/' + slug + '/cuenta/login'}
+					onclick={() => cartOpen.set(false)}
+					class="flex w-full items-center justify-center gap-2 btn-accent"
+				>
+					<Lock size={15} />
+					{$t('cart.signInToBuy')}
+				</a>
+				<p class="mt-3 text-center font-mono text-metadata-sm opacity-60">{$t('cart.signInNote')}</p>
+			{/if}
 		</div>
 	{/if}
 </div>

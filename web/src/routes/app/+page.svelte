@@ -71,7 +71,7 @@
 
 	// Settings form
 	let setName = $state('');
-	let setAccent = $state('#1b03ea');
+	let setAccent = $state('#5433eb');
 	let setTheme = $state('monolith');
 	let setLogo = $state('');
 	// Storefront layout: the normalized, full list of sections (every known block exactly once, in order).
@@ -90,7 +90,7 @@
 	// loadStoreSettings hydrates the settings form (including layout + pages) from a store record.
 	function loadStoreSettings(s: Store) {
 		setName = s.displayName;
-		setAccent = s.settings.accentColor ?? '#1b03ea';
+		setAccent = s.settings.accentColor ?? '#5433eb';
 		setTheme = normalizeTheme(s.settings.theme);
 		setLogo = s.settings.logoUrl ?? '';
 		setLayout = normalizeLayout(s.settings.layout);

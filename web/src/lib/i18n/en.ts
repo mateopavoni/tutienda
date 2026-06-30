@@ -48,6 +48,8 @@ export const en = {
 		subtitle: 'Your selection',
 		empty: 'Cart is empty',
 		checkoutNow: 'Checkout now',
+		signInToBuy: 'Sign in to buy',
+		signInNote: 'An account is required to place an order.',
 		processing: 'Processing',
 		confirmedTitle: 'Order confirmed',
 		failedTitle: 'Checkout failed',
