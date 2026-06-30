@@ -5,6 +5,7 @@
 	import { money } from '$lib/format';
 	import { myOrders } from '$lib/api/customer';
 	import { customer, customerToken, loadCustomer, clearCustomer } from '$lib/stores/customer';
+	import { FULFILLMENT_STAGES, fulfillmentIndex } from '$lib/order';
 	import type { Order } from '$lib/types';
 
 	let { data } = $props();
@@ -36,6 +37,19 @@
 	function signOut() {
 		clearCustomer(slug);
 		goto('/store/' + slug);
+	}
+
+	// Tick so the simulated fulfillment stage of recent orders advances on screen.
+	let now = $state(Date.now());
+	$effect(() => {
+		const id = setInterval(() => (now = Date.now()), 2000);
+		return () => clearInterval(id);
+	});
+
+	// A confirmed order shows its live simulated stage; otherwise the raw status (e.g. FAILED).
+	function statusLabel(order: Order): string {
+		const i = fulfillmentIndex(order, now);
+		return i >= 0 ? $t('cart.stage_' + FULFILLMENT_STAGES[i]) : order.status;
 	}
 
 	const fmtDate = (iso: string) => new Date(iso).toLocaleDateString($locale);
@@ -79,7 +93,13 @@
 						</span>
 					</div>
 					<div class="flex items-center gap-6">
-						<span class="font-mono text-metadata-sm uppercase tracking-[0.05em] text-text-muted">{order.status}</span>
+						<span
+							class="font-mono text-metadata-sm uppercase tracking-[0.05em] {order.status === 'CONFIRMED'
+								? 'text-accent'
+								: 'text-text-muted'}"
+						>
+							{statusLabel(order)}
+						</span>
 						<span class="font-sans text-body-md text-text">{money(order.totalCents, order.currency, $locale)}</span>
 					</div>
 				</li>

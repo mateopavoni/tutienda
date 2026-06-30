@@ -14,7 +14,8 @@ export const es: Messages = {
 		subtotal: 'Subtotal',
 		quantity: 'Cantidad',
 		close: 'Cerrar',
-		remove: 'Quitar'
+		remove: 'Quitar',
+		back: 'Volver'
 	},
 	catalog: {
 		title: 'Catálogo Dinámico',
@@ -53,7 +54,29 @@ export const es: Messages = {
 		failedTitle: 'La compra falló',
 		soldOut: 'Algunos artículos se agotaron antes de completar la compra.',
 		orderId: 'Orden',
-		continue: 'Seguir comprando'
+		continue: 'Seguir comprando',
+		declined: 'El pago fue rechazado. No se hizo ningún cargo.',
+		shippingTitle: 'Dirección de envío',
+		fieldName: 'Nombre completo',
+		fieldAddress: 'Dirección',
+		fieldCity: 'Ciudad',
+		fieldPostal: 'CP',
+		fieldCountry: 'País',
+		continueToPayment: 'Continuar al pago',
+		paymentTitle: 'Pago',
+		demoNote: 'Checkout de demo — no se cobra ninguna tarjeta real.',
+		cardNumber: 'Número de tarjeta',
+		cardExpiry: 'Vencimiento',
+		cardCvc: 'CVC',
+		approve: 'Aprobar',
+		decline: 'Rechazar',
+		shippingLine: 'Envío',
+		payNow: 'Pagar',
+		trackingTitle: 'Estado del pedido',
+		stage_paid: 'Pago confirmado',
+		stage_preparing: 'Preparando tu pedido',
+		stage_shipped: 'Enviado',
+		stage_delivered: 'Entregado'
 	},
 	theme: { label: 'Tema', system: 'Sistema', light: 'Claro', dark: 'Oscuro' },
 	drop: {
@@ -153,7 +176,8 @@ export const es: Messages = {
 			empty: 'Todavía no hay tiendas — creá una abajo.',
 			slug: 'Slug',
 			displayName: 'Nombre visible',
-			create: 'Crear tienda'
+			create: 'Crear tienda',
+			limitReached: 'Llegaste al límite de la demo: {max} tiendas por cuenta.'
 		},
 		membership: {
 			title: 'Membresía',

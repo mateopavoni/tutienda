@@ -1,5 +1,5 @@
 import { env } from '$env/dynamic/public';
-import type { ApiError, Order, Stock } from '$lib/types';
+import type { ApiError, Order, ShippingAddress, Stock } from '$lib/types';
 import { getBrowserSlug } from '$lib/tenant';
 import { customerToken } from '$lib/stores/customer';
 
@@ -25,11 +25,16 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 	return data as T;
 }
 
-export async function checkout(items: { sku: string; qty: number }[]): Promise<Order> {
+// approve simulates the payment gateway's decision — there's no real gateway (portfolio project).
+export async function checkout(
+	items: { sku: string; qty: number }[],
+	shipping: ShippingAddress,
+	approve: boolean
+): Promise<Order> {
 	return request<Order>('/api/orders', {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ items })
+		body: JSON.stringify({ items, shipping, approve })
 	});
 }
 

@@ -13,7 +13,8 @@ export const en = {
 		subtotal: 'Subtotal',
 		quantity: 'Quantity',
 		close: 'Close',
-		remove: 'Remove'
+		remove: 'Remove',
+		back: 'Back'
 	},
 	catalog: {
 		title: 'Dynamic Catalog',
@@ -52,7 +53,29 @@ export const en = {
 		failedTitle: 'Checkout failed',
 		soldOut: 'Some items sold out before checkout completed.',
 		orderId: 'Order',
-		continue: 'Continue shopping'
+		continue: 'Continue shopping',
+		declined: 'Payment was declined. No charge was made.',
+		shippingTitle: 'Shipping address',
+		fieldName: 'Full name',
+		fieldAddress: 'Address',
+		fieldCity: 'City',
+		fieldPostal: 'ZIP',
+		fieldCountry: 'Country',
+		continueToPayment: 'Continue to payment',
+		paymentTitle: 'Payment',
+		demoNote: 'Demo checkout — no real card is charged.',
+		cardNumber: 'Card number',
+		cardExpiry: 'Expiry',
+		cardCvc: 'CVC',
+		approve: 'Approve',
+		decline: 'Decline',
+		shippingLine: 'Shipping',
+		payNow: 'Pay now',
+		trackingTitle: 'Order status',
+		stage_paid: 'Payment confirmed',
+		stage_preparing: 'Preparing your order',
+		stage_shipped: 'Shipped',
+		stage_delivered: 'Delivered'
 	},
 	theme: { label: 'Theme', system: 'System', light: 'Light', dark: 'Dark' },
 	drop: {
@@ -157,7 +180,8 @@ export const en = {
 			empty: 'No stores yet — create one below.',
 			slug: 'Slug',
 			displayName: 'Display name',
-			create: 'Create store'
+			create: 'Create store',
+			limitReached: 'You\'ve reached the demo limit of {max} stores per account.'
 		},
 		membership: {
 			title: 'Membership',

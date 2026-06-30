@@ -30,6 +30,10 @@
 	import { PAGE_TYPES, PAGE_META, type Page, type PageType } from '$lib/pages';
 	import { ExternalLink, Lock, ArrowUp, ArrowDown } from 'lucide-svelte';
 
+	// Mirrors the server's MAX_STORES_PER_MERCHANT default (anti-abuse cap). The server is authoritative
+	// (409 on create); this only gates the UI so the button disables before the round-trip.
+	const MAX_STORES = 2;
+
 	let stores = $state<Store[]>([]);
 	let active = $state(session.activeStore());
 	let products = $state<Product[]>([]);
@@ -441,17 +445,23 @@
 		{/each}
 	</div>
 
-	<div class="mt-6 flex flex-wrap items-end gap-3">
-		<label class="flex flex-col gap-1">
-			<span class={labelClass}>{$t('app.stores.slug')}</span>
-			<input bind:value={newSlug} placeholder="acme" class={inputClass} />
-		</label>
-		<label class="flex flex-col gap-1">
-			<span class={labelClass}>{$t('app.stores.displayName')}</span>
-			<input bind:value={newName} placeholder="ACME" class={inputClass} />
-		</label>
-		<button onclick={doCreateStore} class="btn-primary">{$t('app.stores.create')}</button>
-	</div>
+	{#if stores.length >= MAX_STORES}
+		<p class="mt-6 brutal-border px-4 py-3 font-mono text-metadata-sm text-text-muted">
+			{$t('app.stores.limitReached', { max: String(MAX_STORES) })}
+		</p>
+	{:else}
+		<div class="mt-6 flex flex-wrap items-end gap-3">
+			<label class="flex flex-col gap-1">
+				<span class={labelClass}>{$t('app.stores.slug')}</span>
+				<input bind:value={newSlug} placeholder="acme" class={inputClass} />
+			</label>
+			<label class="flex flex-col gap-1">
+				<span class={labelClass}>{$t('app.stores.displayName')}</span>
+				<input bind:value={newName} placeholder="ACME" class={inputClass} />
+			</label>
+			<button onclick={doCreateStore} class="btn-primary">{$t('app.stores.create')}</button>
+		</div>
+	{/if}
 </section>
 
 {#if active && session.storeToken()}

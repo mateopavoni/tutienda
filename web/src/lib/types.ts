@@ -36,12 +36,23 @@ export interface OrderItem {
 	priceCents: number;
 }
 
+export interface ShippingAddress {
+	name: string;
+	line1: string;
+	city: string;
+	postalCode: string;
+	country: string;
+}
+
 export interface Order {
 	id: string;
 	items: OrderItem[];
+	shipping?: ShippingAddress;
 	currency: string;
+	shippingCents?: number;
 	totalCents: number;
 	status: 'PENDING' | 'CONFIRMED' | 'FAILED';
+	paymentStatus?: 'paid' | 'failed';
 	reservationId: string;
 	failureReason?: string;
 	createdAt: string;

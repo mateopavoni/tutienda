@@ -194,6 +194,13 @@
 			px-6 py-4 transition-colors brutal-border hover:bg-primary hover:text-on-primary;
 		border-radius: var(--radius-control);
 	}
+	/* Checkout fields inside the onyx cart drawer (on-inverse text over the dark surface). */
+	.checkout-input {
+		@apply w-full border border-on-inverse/30 bg-white/5 px-3 py-2 font-mono text-metadata-sm
+			text-on-inverse focus:outline-none focus-visible:outline focus-visible:outline-2
+			focus-visible:outline-offset-2 focus-visible:outline-accent;
+		border-radius: var(--radius-control);
+	}
 	/* Inputs opt into this instead of a bare `focus:outline-none`: focus stays visible via the ring above. */
 	.focus-ring {
 		@apply focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;

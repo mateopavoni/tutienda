@@ -14,7 +14,8 @@ export const ptBR: Messages = {
 		subtotal: 'Subtotal',
 		quantity: 'Quantidade',
 		close: 'Fechar',
-		remove: 'Remover'
+		remove: 'Remover',
+		back: 'Voltar'
 	},
 	catalog: {
 		title: 'Catálogo Dinâmico',
@@ -53,7 +54,29 @@ export const ptBR: Messages = {
 		failedTitle: 'A compra falhou',
 		soldOut: 'Alguns itens esgotaram antes de concluir a compra.',
 		orderId: 'Pedido',
-		continue: 'Continuar comprando'
+		continue: 'Continuar comprando',
+		declined: 'O pagamento foi recusado. Nenhuma cobrança foi feita.',
+		shippingTitle: 'Endereço de entrega',
+		fieldName: 'Nome completo',
+		fieldAddress: 'Endereço',
+		fieldCity: 'Cidade',
+		fieldPostal: 'CEP',
+		fieldCountry: 'País',
+		continueToPayment: 'Continuar para o pagamento',
+		paymentTitle: 'Pagamento',
+		demoNote: 'Checkout de demonstração — nenhum cartão real é cobrado.',
+		cardNumber: 'Número do cartão',
+		cardExpiry: 'Validade',
+		cardCvc: 'CVC',
+		approve: 'Aprovar',
+		decline: 'Recusar',
+		shippingLine: 'Frete',
+		payNow: 'Pagar',
+		trackingTitle: 'Status do pedido',
+		stage_paid: 'Pagamento confirmado',
+		stage_preparing: 'Preparando seu pedido',
+		stage_shipped: 'Enviado',
+		stage_delivered: 'Entregue'
 	},
 	theme: { label: 'Tema', system: 'Sistema', light: 'Claro', dark: 'Escuro' },
 	drop: {
@@ -153,7 +176,8 @@ export const ptBR: Messages = {
 			empty: 'Ainda não há lojas — crie uma abaixo.',
 			slug: 'Slug',
 			displayName: 'Nome de exibição',
-			create: 'Criar loja'
+			create: 'Criar loja',
+			limitReached: 'Você atingiu o limite da demo: {max} lojas por conta.'
 		},
 		membership: {
 			title: 'Assinatura',
