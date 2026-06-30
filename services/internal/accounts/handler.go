@@ -135,6 +135,9 @@ func (h *Handler) createStore(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, ErrDuplicate):
 		httpx.Fail(w, http.StatusConflict, "slug already taken")
 		return
+	case errors.Is(err, ErrStoreLimit):
+		httpx.FailDetail(w, http.StatusConflict, "store limit reached", err.Error())
+		return
 	case err != nil:
 		httpx.Fail(w, http.StatusInternalServerError, "could not create store")
 		return

@@ -22,17 +22,22 @@ var ErrInvalidCredentials = errors.New("invalid credentials")
 // ErrInvalidInput is returned for malformed signup/store payloads.
 var ErrInvalidInput = errors.New("invalid input")
 
+// ErrStoreLimit is returned when a merchant already owns the maximum number of stores. It caps demo
+// abuse (anyone can sign up and spin up stores); the seed bypasses it (inserts directly).
+var ErrStoreLimit = errors.New("store limit reached")
+
 var slugRe = regexp.MustCompile(`^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])$`)
 
 // Service holds the merchant/store business logic and signs session tokens.
 type Service struct {
-	repo   *Repository
-	issuer *authx.Issuer
-	log    *slog.Logger
+	repo      *Repository
+	issuer    *authx.Issuer
+	log       *slog.Logger
+	maxStores int // per-merchant cap on store creation (anti-abuse); <=0 means unlimited.
 }
 
-func NewService(repo *Repository, issuer *authx.Issuer, log *slog.Logger) *Service {
-	return &Service{repo: repo, issuer: issuer, log: log}
+func NewService(repo *Repository, issuer *authx.Issuer, log *slog.Logger, maxStores int) *Service {
+	return &Service{repo: repo, issuer: issuer, log: log, maxStores: maxStores}
 }
 
 // Signup creates a merchant and returns a merchant-scoped session token.
@@ -84,6 +89,15 @@ func (s *Service) CreateStore(ctx context.Context, ownerID, slug, displayName, t
 	}
 	if displayName == "" {
 		displayName = slug
+	}
+	if s.maxStores > 0 {
+		owned, err := s.repo.storesByOwner(ctx, ownerID)
+		if err != nil {
+			return nil, err
+		}
+		if len(owned) >= s.maxStores {
+			return nil, fmt.Errorf("%w: max %d stores per merchant", ErrStoreLimit, s.maxStores)
+		}
 	}
 	store := &Store{
 		ID:          primitive.NewObjectID().Hex(),
