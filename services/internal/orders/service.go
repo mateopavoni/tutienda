@@ -19,6 +19,13 @@ type CheckoutItem struct {
 	Qty int    `json:"qty"`
 }
 
+// flatShippingCents is a single simulated flat shipping rate, in the store's currency. ponytail: flat
+// rate; swap for per-store/zone rates if shipping ever becomes a real feature.
+const flatShippingCents int64 = 1500
+
+// ErrInvalidShipping is returned when a required shipping field is missing.
+var ErrInvalidShipping = errors.New("invalid shipping address")
+
 // Service runs the checkout saga across inventory and catalog.
 type Service struct {
 	repo    *Repository
@@ -36,19 +43,27 @@ func NewService(repo *Repository, inv *InventoryClient, catalog *CatalogClient, 
 //  2. reserve stock — fail fast with OutOfStockError if any line is short.
 //  3. persist a PENDING order holding the reservation id.
 //  4. confirm the reservation (simulated payment); on failure, release it (compensation) and mark FAILED.
-func (s *Service) Checkout(ctx context.Context, items []CheckoutItem) (*Order, error) {
+//
+// approve simulates the payment gateway's decision (this is a portfolio project — no real gateway). When
+// false, the saga still runs reserve→persist but then releases the hold and records a FAILED/failed order,
+// reusing the same compensation path as a real confirm error.
+func (s *Service) Checkout(ctx context.Context, items []CheckoutItem, shipping ShippingAddress, approve bool) (*Order, error) {
 	if len(items) == 0 {
 		return nil, errors.New("cart is empty")
+	}
+	if !validShipping(shipping) {
+		return nil, ErrInvalidShipping
 	}
 	tid, ok := tenant.FromContext(ctx)
 	if !ok {
 		return nil, errors.New("missing tenant")
 	}
 
-	orderItems, lines, total, currency, err := s.price(ctx, items)
+	orderItems, lines, subtotal, currency, err := s.price(ctx, items)
 	if err != nil {
 		return nil, err
 	}
+	total := subtotal + flatShippingCents
 
 	reservationID, err := s.inv.Reserve(ctx, lines)
 	if err != nil {
@@ -64,7 +79,9 @@ func (s *Service) Checkout(ctx context.Context, items []CheckoutItem) (*Order, e
 		TenantID:      tid,
 		CustomerID:    customerID,
 		Items:         orderItems,
+		Shipping:      shipping,
 		Currency:      currency,
+		ShippingCents: flatShippingCents,
 		TotalCents:    total,
 		Status:        StatusPending,
 		ReservationID: reservationID,
@@ -80,21 +97,41 @@ func (s *Service) Checkout(ctx context.Context, items []CheckoutItem) (*Order, e
 	}
 	order.ID = id
 
+	// Simulated payment declined: release the hold and record the failed order. Same compensation as below.
+	if !approve {
+		if relErr := s.inv.Release(ctx, reservationID); relErr != nil {
+			s.log.Error("release after declined payment failed", "order", id.Hex(), "error", relErr)
+		}
+		const reason = "payment declined"
+		_ = s.repo.setStatus(ctx, id, StatusFailed, PaymentFailed, reason)
+		order.Status = StatusFailed
+		order.PaymentStatus = PaymentFailed
+		order.FailureReason = reason
+		return order, nil
+	}
+
 	if err := s.inv.Confirm(ctx, reservationID); err != nil {
 		// Compensating action: give the stock back and record the failure.
 		s.log.Error("payment confirm failed, compensating", "order", id.Hex(), "error", err)
 		if relErr := s.inv.Release(ctx, reservationID); relErr != nil {
 			s.log.Error("compensation release failed", "order", id.Hex(), "error", relErr)
 		}
-		_ = s.repo.setStatus(ctx, id, StatusFailed, err.Error())
+		_ = s.repo.setStatus(ctx, id, StatusFailed, PaymentFailed, err.Error())
 		order.Status = StatusFailed
+		order.PaymentStatus = PaymentFailed
 		order.FailureReason = err.Error()
 		return order, nil
 	}
 
-	_ = s.repo.setStatus(ctx, id, StatusConfirmed, "")
+	_ = s.repo.setStatus(ctx, id, StatusConfirmed, PaymentPaid, "")
 	order.Status = StatusConfirmed
+	order.PaymentStatus = PaymentPaid
 	return order, nil
+}
+
+// validShipping requires the fields the merchant needs to actually ship the order.
+func validShipping(s ShippingAddress) bool {
+	return s.Name != "" && s.Line1 != "" && s.City != "" && s.Country != ""
 }
 
 // price resolves each item's name and price from the catalog and computes the total server-side.

@@ -30,10 +30,10 @@ func (r *Repository) insert(ctx context.Context, o *Order) (primitive.ObjectID, 
 	return out.InsertedID.(primitive.ObjectID), nil
 }
 
-func (r *Repository) setStatus(ctx context.Context, id primitive.ObjectID, status OrderStatus, reason string) error {
+func (r *Repository) setStatus(ctx context.Context, id primitive.ObjectID, status OrderStatus, payment PaymentStatus, reason string) error {
 	_, err := r.orders.UpdateOne(ctx,
 		bson.M{"_id": id},
-		bson.M{"$set": bson.M{"status": status, "failureReason": reason}},
+		bson.M{"$set": bson.M{"status": status, "paymentStatus": payment, "failureReason": reason}},
 	)
 	return err
 }

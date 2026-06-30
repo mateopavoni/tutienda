@@ -33,7 +33,10 @@ func (h *Handler) health(w http.ResponseWriter, _ *http.Request) {
 }
 
 type checkoutRequest struct {
-	Items []CheckoutItem `json:"items"`
+	Items    []CheckoutItem  `json:"items"`
+	Shipping ShippingAddress `json:"shipping"`
+	// Approve simulates the payment gateway's decision (portfolio project, no real gateway).
+	Approve bool `json:"approve"`
 }
 
 func (h *Handler) checkout(w http.ResponseWriter, r *http.Request) {
@@ -43,7 +46,7 @@ func (h *Handler) checkout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	order, err := h.svc.Checkout(r.Context(), req.Items)
+	order, err := h.svc.Checkout(r.Context(), req.Items, req.Shipping, req.Approve)
 	if err != nil {
 		var oos *OutOfStockError
 		var drop *DropNotReleasedError
@@ -52,6 +55,8 @@ func (h *Handler) checkout(w http.ResponseWriter, r *http.Request) {
 			httpx.JSON(w, http.StatusConflict, httpx.Error{Message: "out of stock", SKU: oos.SKU})
 		case errors.As(err, &drop):
 			httpx.JSON(w, http.StatusConflict, httpx.Error{Message: "drop not released", SKU: drop.SKU})
+		case errors.Is(err, ErrInvalidShipping):
+			httpx.Fail(w, http.StatusBadRequest, "invalid shipping address")
 		case errors.Is(err, ErrVariantNotFound):
 			httpx.FailDetail(w, http.StatusBadRequest, "unknown item", err.Error())
 		default:
