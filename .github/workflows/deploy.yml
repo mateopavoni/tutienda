@@ -1,8 +1,12 @@
 name: deploy
 
-# Push a main en GitHub -> deploya gateway (api) + storefront (web) a Dokku.
-# OJO: los servicios de compose (mongo/redis/minio + catalog/inventory/orders/accounts)
-# se manejan a mano por SSH en ~/tutienda del VPS; esto NO los toca.
+# Push a main en GitHub -> deploy completo en un solo paso:
+#   1. backend del compose (mongo/redis/minio quedan; rebuild de accounts/catalog/inventory/orders
+#      + gateway/web del compose) por SSH como ubuntu@VPS: git pull + docker compose up -d --build.
+#   2. gateway (api) + storefront (web) a Dokku (lo público con SSL).
+# Requiere en el VPS: ~/tutienda como checkout git con remote SSH (deploy key) y branch main trackeando
+# origin/main; y el secret VPS_SSH_PRIVATE_KEY (clave de ubuntu@VPS). Ver README § Deployment.
+# OJO: NO corre seeds ni toca volúmenes. Mongo/Redis/MinIO persisten entre deploys (no se pierde data).
 on:
   push:
     branches: [main]
@@ -46,12 +50,25 @@ jobs:
       - name: Configurar SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.DOKKU_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
+          echo "${{ secrets.DOKKU_SSH_PRIVATE_KEY }}" > ~/.ssh/dokku
+          echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/vps
+          chmod 600 ~/.ssh/dokku ~/.ssh/vps
           ssh-keyscan -H 146.181.35.182 >> ~/.ssh/known_hosts
 
+      # 1) Público (Dokku, con SSL): gateway + storefront. Es el camino ya probado, va primero.
       - name: Deploy API (gateway)
+        env:
+          GIT_SSH_COMMAND: ssh -i ~/.ssh/dokku -o IdentitiesOnly=yes
         run: git push --force dokku@146.181.35.182:tutienda-api HEAD:main
 
       - name: Deploy WEB (storefront)
+        env:
+          GIT_SSH_COMMAND: ssh -i ~/.ssh/dokku -o IdentitiesOnly=yes
         run: git push --force dokku@146.181.35.182:tutienda-web HEAD:main
+
+      # 2) Backend: el VPS hace pull del código nuevo y rebuildea los servicios del compose.
+      #    NO usa -v (no borra volúmenes) y NO corre seeds: la data persiste.
+      - name: Deploy backend (compose en el VPS)
+        run: |
+          ssh -i ~/.ssh/vps -o IdentitiesOnly=yes ubuntu@146.181.35.182 \
+            'cd ~/tutienda && git pull --ff-only && docker compose up -d --build'

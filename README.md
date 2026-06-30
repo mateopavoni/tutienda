@@ -135,6 +135,39 @@ The stack runs anywhere Docker does. For a VPS, put Nginx in front of the gatewa
 storefront (`:3000`) with Let's Encrypt for TLS; keep MongoDB and Redis on the internal Docker
 network, not exposed to the public.
 
+### CI/CD (one push, full deploy)
+
+A push to `main` runs `.github/workflows/deploy.yml`, which after `go test -race` deploys **everything
+in one step**:
+
+1. **Backend** — over SSH the VPS runs `git pull --ff-only && docker compose up -d --build`, rebuilding
+   the compose services (`accounts`, `catalog`, `inventory`, `orders` + the compose `gateway`/`web`).
+   Mongo/Redis/MinIO volumes are **not** touched, so data persists and **no seed runs**.
+2. **Public** — `gateway` (`tutienda-api`) and `storefront` (`tutienda-web`) ship to Dokku (TLS).
+
+The public site is served by the Dokku apps; they reach the backend by Docker DNS (`accounts:8084`, …)
+because the Dokku containers share the compose network (`archive-commerce_default`).
+
+One-time VPS + GitHub setup (so the backend step works):
+
+```bash
+# On the VPS, make ~/tutienda a git checkout that can pull passwordless via a read-only deploy key:
+cd ~/tutienda
+ssh-keygen -t ed25519 -f ~/.ssh/gha -N "" -C "github-actions"   # one keypair, used both ways
+cat ~/.ssh/gha.pub >> ~/.ssh/authorized_keys                    # lets GitHub Actions SSH in as ubuntu
+printf 'Host github.com\n  IdentityFile ~/.ssh/gha\n  IdentitiesOnly yes\n' >> ~/.ssh/config
+git remote set-url origin git@github.com:mateopavoni/tutienda.git
+git fetch origin && git checkout -B main origin/main            # track origin/main for --ff-only pulls
+```
+
+Then in GitHub: add `~/.ssh/gha.pub` as a **Deploy key** (read-only) on the repo, and add the **private**
+key `~/.ssh/gha` as the Actions secret **`VPS_SSH_PRIVATE_KEY`**. (`DOKKU_SSH_PRIVATE_KEY` stays as-is.)
+
+> ⚠️ **Seeds and data.** The seed (demo + example stores) only runs on an **empty** database — it is a
+> no-op once any merchant exists. The CI deploy never wipes data, so re-seeding requires clearing the
+> Mongo volume by hand. Never run `docker compose down -v` once real customer/store data exists: `-v`
+> deletes the Mongo/Redis/MinIO volumes. To re-seed selectively, drop only the seed documents.
+
 ## Known limitations
 
 - Payment is simulated; the saga's confirm step succeeds unless the upstream call fails.
