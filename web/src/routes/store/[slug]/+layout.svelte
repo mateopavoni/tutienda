@@ -6,6 +6,8 @@
 	import { loadCustomer } from '$lib/stores/customer';
 	import { enabledPages } from '$lib/pages';
 	import { normalizeTheme } from '$lib/theme';
+	import { theme } from '$lib/stores/theme';
+	import { browser } from '$app/environment';
 
 	let { children, data } = $props();
 
@@ -16,26 +18,48 @@
 		loadCustomer(data.storeSlug);
 	});
 
+	// Resolved light/dark scheme (mirrors the logic in $lib/stores/theme's applyTheme) so the accent can
+	// be adjusted for the mode actually on screen, not just the light-mode case.
+	let prefersDark = $state(false);
+	$effect(() => {
+		if (!browser) return;
+		const mq = window.matchMedia('(prefers-color-scheme: dark)');
+		const update = () => (prefersDark = mq.matches);
+		update();
+		mq.addEventListener('change', update);
+		return () => mq.removeEventListener('change', update);
+	});
+	let isDark = $derived($theme === 'dark' || ($theme === 'system' && prefersDark));
+
 	// Per-store accent: the only chromatic token a store can override. Everything else stays fixed.
-	// We guard against a near-white accent so the white-on-accent buttons never lose their label.
-	let accentVar = $derived(safeAccent(data.store?.settings?.accentColor));
+	let accentVar = $derived(safeAccent(data.store?.settings?.accentColor, isDark));
 
 	// Per-store visual theme (fonts + palette); see web/src/lib/theme.ts + app.css [data-store-theme].
 	// Defaults to monolith on any unknown/legacy value. The accent above still overrides the theme accent.
 	let storeTheme = $derived(normalizeTheme(data.store?.settings?.theme));
 
-	function safeAccent(hex: string | undefined): string | undefined {
+	function safeAccent(hex: string | undefined, dark: boolean): string | undefined {
 		if (!hex) return undefined;
 		const m = /^#?([0-9a-fA-F]{6})$/.exec(hex.trim());
 		if (!m) return undefined;
 		const n = parseInt(m[1], 16);
-		const r = (n >> 16) & 255;
-		const g = (n >> 8) & 255;
-		const b = n & 255;
+		let r = (n >> 16) & 255;
+		let g = (n >> 8) & 255;
+		let b = n & 255;
 		// Relative luminance: if the accent is too light, white text on it would vanish — fall back to the
 		// design-system accent rather than render an unreadable button (a real multi-tenant contrast bug).
 		const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
 		if (lum > 0.7) return undefined;
+		// Mirror problem in dark mode: the same accent is also used as plain foreground text (nav links,
+		// tags, prices) over the app's naturally dark surfaces. A merchant's dark brand color (e.g. a
+		// chocolate brown or forest green) reads fine as dark-on-light but nearly disappears as
+		// dark-on-dark. Lighten it towards white until it clears a legible-on-dark threshold.
+		if (dark && lum < 0.4) {
+			const mix = (c: number) => Math.round(c + (255 - c) * 0.5);
+			r = mix(r);
+			g = mix(g);
+			b = mix(b);
+		}
 		return `${r} ${g} ${b}`;
 	}
 </script>
