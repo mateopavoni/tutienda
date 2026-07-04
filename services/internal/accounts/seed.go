@@ -67,7 +67,8 @@ func (s *Service) SeedDemoIfEmpty(ctx context.Context) (bool, error) {
 
 	// Seed every example store (see tenant.DemoStores) under the demo merchant, so one login shows the
 	// whole multi-tenant spread in /app and each rubro's storefront resolves out of the box. Each gets a
-	// hero block over the mandatory product grid so the homepage looks built, not empty.
+	// full-bleed hero (with a rubro-appropriate photo) + an about block over the mandatory product grid
+	// so the homepage looks built, not empty.
 	now := time.Now().UTC()
 	for _, ds := range tenant.DemoStores {
 		store := &Store{
@@ -80,8 +81,9 @@ func (s *Service) SeedDemoIfEmpty(ctx context.Context) (bool, error) {
 				Currency:    "USD",
 				Theme:       normalizeTheme(ds.Theme),
 				Layout: []Section{
-					{Type: "hero", Enabled: true, Heading: ds.Name, Body: ds.Tagline},
+					{Type: "hero", Enabled: true, Heading: ds.Name, Body: ds.Tagline, ImageURL: ds.HeroImage, CTALabel: "Shop now", Overlay: 55, OverlayColor: "black"},
 					{Type: "catalog", Enabled: true},
+					{Type: "about", Enabled: true, Heading: "About", Body: ds.About},
 				},
 			},
 			Plan:      string(plan.Normalize(ds.Plan)), // unknown/typo tier ⇒ free, same defensive stance as everywhere

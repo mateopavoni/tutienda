@@ -79,6 +79,37 @@ func TestSanitizeItems(t *testing.T) {
 	}
 }
 
+// TestSanitizeLayoutHeroOverlay pins the hero overlay invariants: an unset/out-of-range strength clamps
+// into [heroOverlayMin, heroOverlayMax] (missing defaults to heroOverlayDefault), and an unknown/tampered
+// color falls back to "black" — same defensive stance as an unknown plan tier or section type.
+func TestSanitizeLayoutHeroOverlay(t *testing.T) {
+	cases := []struct {
+		name     string
+		in       Section
+		wantPct  int
+		wantColo string
+	}{
+		{"unset defaults", Section{Type: "hero"}, heroOverlayDefault, "black"},
+		{"below min clamps up", Section{Type: "hero", Overlay: 1}, heroOverlayMin, "black"},
+		{"above max clamps down", Section{Type: "hero", Overlay: 999}, heroOverlayMax, "black"},
+		{"in range kept", Section{Type: "hero", Overlay: 55, OverlayColor: "white"}, 55, "white"},
+		{"bogus color falls back", Section{Type: "hero", OverlayColor: "chartreuse"}, heroOverlayDefault, "black"},
+		{"black kept", Section{Type: "hero", Overlay: 60, OverlayColor: "black"}, 60, "black"},
+	}
+	for _, c := range cases {
+		out := sanitizeLayout([]Section{c.in})
+		if len(out) != 1 {
+			t.Fatalf("%s: want 1 section, got %+v", c.name, out)
+		}
+		if out[0].Overlay != c.wantPct {
+			t.Errorf("%s: overlay = %d, want %d", c.name, out[0].Overlay, c.wantPct)
+		}
+		if out[0].OverlayColor != c.wantColo {
+			t.Errorf("%s: overlayColor = %q, want %q", c.name, out[0].OverlayColor, c.wantColo)
+		}
+	}
+}
+
 // TestSanitizeLayoutEmpty keeps an empty/absent layout as nil so the storefront falls back to its default
 // (just the grid) instead of persisting an empty array.
 func TestSanitizeLayoutEmpty(t *testing.T) {

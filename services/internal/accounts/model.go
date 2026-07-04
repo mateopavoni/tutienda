@@ -60,6 +60,14 @@ type Section struct {
 	ImageURL string        `bson:"imageUrl,omitempty" json:"imageUrl,omitempty"`
 	CTALabel string        `bson:"ctaLabel,omitempty" json:"ctaLabel,omitempty"`
 	Items    []SectionItem `bson:"items,omitempty" json:"items,omitempty"`
+	// Overlay is the peak tint strength (0-100) of a gradient laid over a hero's background image, at the
+	// edge nearest the text (the storefront's copy is left-aligned, so the gradient starts strong on the
+	// left and fades to transparent towards the right — the photo stays visible, only the text's corner
+	// is protected). OverlayColor picks the tint: "black" (default, white text) or "white" (dark text, for
+	// a merchant who wants an airy/bright hero). Both merchant-adjustable; see sanitizeLayout for the
+	// clamped range/closed set.
+	Overlay      int    `bson:"overlay,omitempty" json:"overlay,omitempty"`
+	OverlayColor string `bson:"overlayColor,omitempty" json:"overlayColor,omitempty"`
 }
 
 // SectionItem is one repeated entry inside an item-based section (a gallery image or an FAQ Q&A). The

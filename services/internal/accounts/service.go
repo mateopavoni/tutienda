@@ -226,7 +226,22 @@ var knownSectionTypes = map[string]bool{
 const (
 	sectionFieldMax = 2000
 	maxSectionItems = 24
+
+	// heroOverlayDefault/Min/Max bound the hero's overlay peak strength (a percentage, at the edge nearest
+	// the text — see the gradient rendering in the storefront). Min/max keep the photo always at least
+	// partly visible and the text always at least partly protected.
+	heroOverlayDefault = 55
+	heroOverlayMin     = 15
+	heroOverlayMax     = 90
 )
+
+// knownOverlayColors is the closed set for a hero's overlay tint: "black" (default, white text — the
+// classic photo-hero look) or "white" (dark text, for a merchant who wants an airy/bright hero). Anything
+// else is a typo and falls back to "black" — same defensive stance as an unknown section/theme/plan.
+var knownOverlayColors = map[string]bool{
+	"black": true,
+	"white": true,
+}
 
 // sanitizeLayout normalizes a layout on write: it keeps only known section types, drops duplicates,
 // trims/caps the copy, and forces the mandatory product grid ("catalog") to stay enabled. The storefront
@@ -250,6 +265,19 @@ func sanitizeLayout(raw []Section) []Section {
 		sec.Items = sanitizeItems(sec.Items)
 		if sec.Type == "catalog" {
 			sec.Enabled = true // the grid is mandatory; it can be reordered but never disabled.
+		}
+		if sec.Type == "hero" {
+			switch {
+			case sec.Overlay <= 0:
+				sec.Overlay = heroOverlayDefault
+			case sec.Overlay < heroOverlayMin:
+				sec.Overlay = heroOverlayMin
+			case sec.Overlay > heroOverlayMax:
+				sec.Overlay = heroOverlayMax
+			}
+			if !knownOverlayColors[sec.OverlayColor] {
+				sec.OverlayColor = "black"
+			}
 		}
 		out = append(out, sec)
 	}
