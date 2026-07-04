@@ -3,7 +3,7 @@
 	import ProductCard from '$lib/components/ProductCard.svelte';
 	import { t } from '$lib/i18n';
 	import { ArrowRight } from 'lucide-svelte';
-	import { enabledSections } from '$lib/layout';
+	import { enabledSections, HERO_OVERLAY_DEFAULT } from '$lib/layout';
 
 	let { data }: { data: PageData } = $props();
 
@@ -37,7 +37,7 @@
 		     photo-hero effect. overlayColor picks black (default, white text) or white (dark text). -->
 		{@const overlayColor = section.overlayColor ?? 'black'}
 		{@const overlayRGB = overlayColor === 'white' ? '255,255,255' : '0,0,0'}
-		{@const overlayAlpha = (section.overlay ?? 55) / 100}
+		{@const overlayAlpha = (section.overlay ?? HERO_OVERLAY_DEFAULT) / 100}
 		{@const overlayText = overlayColor === 'white' ? '' : 'text-on-inverse'}
 		<section class="relative flex min-h-screen w-full items-center border-b border-border">
 			{#if section.imageUrl}

@@ -25,6 +25,7 @@
 		SECTION_META,
 		HERO_OVERLAY_MIN,
 		HERO_OVERLAY_MAX,
+		HERO_OVERLAY_DEFAULT,
 		type Section,
 		type SectionType,
 		type ContentField,
@@ -820,12 +821,12 @@
 							{#if section.enabled && meta.overlay && section.imageUrl}
 								<div class="flex flex-wrap items-center gap-4 border-t border-border pt-3">
 									<label class="flex flex-1 flex-col gap-1" style="min-width: 12rem">
-										<span class={labelClass}>{$t('app.fields.overlay')} ({section.overlay ?? 55}%)</span>
+										<span class={labelClass}>{$t('app.fields.overlay')} ({section.overlay ?? HERO_OVERLAY_DEFAULT}%)</span>
 										<input
 											type="range"
 											min={HERO_OVERLAY_MIN}
 											max={HERO_OVERLAY_MAX}
-											value={section.overlay ?? 55}
+											value={section.overlay ?? HERO_OVERLAY_DEFAULT}
 											oninput={(e) => editSectionOverlay(i, Number(e.currentTarget.value))}
 										/>
 									</label>

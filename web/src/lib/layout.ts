@@ -43,7 +43,7 @@ export interface Section {
 	overlayColor?: OverlayColor; // hero only
 }
 
-export const HERO_OVERLAY_DEFAULT = 55;
+export const HERO_OVERLAY_DEFAULT = 70;
 export const HERO_OVERLAY_MIN = 15;
 export const HERO_OVERLAY_MAX = 90;
 

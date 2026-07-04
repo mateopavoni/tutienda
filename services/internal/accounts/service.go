@@ -230,7 +230,7 @@ const (
 	// heroOverlayDefault/Min/Max bound the hero's overlay peak strength (a percentage, at the edge nearest
 	// the text — see the gradient rendering in the storefront). Min/max keep the photo always at least
 	// partly visible and the text always at least partly protected.
-	heroOverlayDefault = 55
+	heroOverlayDefault = 70
 	heroOverlayMin     = 15
 	heroOverlayMax     = 90
 )

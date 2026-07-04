@@ -81,7 +81,7 @@ func (s *Service) SeedDemoIfEmpty(ctx context.Context) (bool, error) {
 				Currency:    "USD",
 				Theme:       normalizeTheme(ds.Theme),
 				Layout: []Section{
-					{Type: "hero", Enabled: true, Heading: ds.Name, Body: ds.Tagline, ImageURL: ds.HeroImage, CTALabel: "Shop now", Overlay: 55, OverlayColor: "black"},
+					{Type: "hero", Enabled: true, Heading: ds.Name, Body: ds.Tagline, ImageURL: ds.HeroImage, CTALabel: "Shop now", Overlay: heroOverlayDefault, OverlayColor: "black"},
 					{Type: "catalog", Enabled: true},
 					{Type: "about", Enabled: true, Heading: "About", Body: ds.About},
 				},
