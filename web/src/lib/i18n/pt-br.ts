@@ -242,7 +242,16 @@ export const ptBR: Messages = {
 			imageUrlPh: 'envie ou cole uma URL',
 			save: 'Salvar configurações'
 		},
-		fields: { heading: 'Título', body: 'Texto', imageUrl: 'URL da imagem', ctaLabel: 'Texto do botão' },
+		fields: {
+			heading: 'Título',
+			body: 'Texto',
+			imageUrl: 'URL da imagem',
+			ctaLabel: 'Texto do botão',
+			overlay: 'Contraste da imagem',
+			overlayColor: 'Cor do véu',
+			overlayWhite: 'Claro (texto escuro)',
+			overlayBlack: 'Escuro (texto branco)'
+		},
 		items: { question: 'Pergunta', answer: 'Resposta', caption: 'legenda (opcional)', imageUrl: 'URL da imagem', remove: 'Remover' },
 		toast: {
 			imageUploaded: 'Imagem enviada',

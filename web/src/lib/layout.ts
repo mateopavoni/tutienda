@@ -25,6 +25,10 @@ export interface SectionItem {
 	imageUrl?: string;
 }
 
+// OverlayColor is the hero's image tint: 'black' (default, white text — the classic photo-hero look) or
+// 'white' (dark text, for a merchant who wants an airy/bright hero). Mirrors Go's knownOverlayColors.
+export type OverlayColor = 'black' | 'white';
+
 export interface Section {
 	type: SectionType;
 	enabled: boolean;
@@ -33,7 +37,15 @@ export interface Section {
 	imageUrl?: string;
 	ctaLabel?: string;
 	items?: SectionItem[];
+	// hero only: peak tint strength (0-100) of the gradient nearest the text, see HERO_OVERLAY_* and
+	// the storefront rendering (store/[slug]/+page.svelte) for the left-to-right fade.
+	overlay?: number;
+	overlayColor?: OverlayColor; // hero only
 }
+
+export const HERO_OVERLAY_DEFAULT = 55;
+export const HERO_OVERLAY_MIN = 15;
+export const HERO_OVERLAY_MAX = 90;
 
 // ItemKind tells the editor/storefront how to treat a section's repeatable items: 'image' = a gallery
 // image (imageUrl + optional caption), 'qa' = an FAQ entry (heading question + body answer).
@@ -44,13 +56,21 @@ export type ItemKind = 'image' | 'qa';
 // are appended in.
 export const SECTION_META: Record<
 	SectionType,
-	{ label: string; fields: ContentField[]; fixed?: boolean; hint: string; item?: { kind: ItemKind; label: string } }
+	{
+		label: string;
+		fields: ContentField[];
+		fixed?: boolean;
+		hint: string;
+		item?: { kind: ItemKind; label: string };
+		overlay?: boolean; // hero only: show the image tint strength/color controls
+	}
 > = {
 	announcement: { label: 'Announcement bar', fields: ['body'], hint: 'A thin banner across the very top.' },
 	hero: {
 		label: 'Hero',
 		fields: ['heading', 'body', 'imageUrl', 'ctaLabel'],
-		hint: 'A large banner with a headline, image and a button to your catalog.'
+		hint: 'A large banner with a headline, image and a button to your catalog.',
+		overlay: true
 	},
 	feature: {
 		label: 'Feature band',
@@ -96,7 +116,9 @@ export function defaultSection(type: SectionType): Section {
 				heading: 'New season',
 				body: 'The latest drop, now live.',
 				imageUrl: '',
-				ctaLabel: 'Shop now'
+				ctaLabel: 'Shop now',
+				overlay: HERO_OVERLAY_DEFAULT,
+				overlayColor: 'black'
 			};
 		case 'feature':
 			return {

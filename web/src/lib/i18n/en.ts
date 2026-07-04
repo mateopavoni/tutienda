@@ -246,7 +246,16 @@ export const en = {
 			imageUrlPh: 'upload or paste a URL',
 			save: 'Save settings'
 		},
-		fields: { heading: 'Heading', body: 'Text', imageUrl: 'Image URL', ctaLabel: 'Button label' },
+		fields: {
+			heading: 'Heading',
+			body: 'Text',
+			imageUrl: 'Image URL',
+			ctaLabel: 'Button label',
+			overlay: 'Image contrast',
+			overlayColor: 'Overlay color',
+			overlayWhite: 'Light (dark text)',
+			overlayBlack: 'Dark (white text)'
+		},
 		items: { question: 'Question', answer: 'Answer', caption: 'caption (optional)', imageUrl: 'image URL', remove: 'Remove' },
 		toast: {
 			imageUploaded: 'Image uploaded',

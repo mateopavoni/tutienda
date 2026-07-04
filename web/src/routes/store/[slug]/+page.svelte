@@ -32,14 +32,24 @@
 			{section.body}
 		</div>
 	{:else if section.type === 'hero'}
-		<section class="relative border-b border-border">
+		<!-- Overlay is a left-to-right gradient, not a flat tint: strongest where the (left-aligned) text
+		     sits, fading to transparent so the rest of the photo shows through untouched — the standard
+		     photo-hero effect. overlayColor picks black (default, white text) or white (dark text). -->
+		{@const overlayColor = section.overlayColor ?? 'black'}
+		{@const overlayRGB = overlayColor === 'white' ? '255,255,255' : '0,0,0'}
+		{@const overlayAlpha = (section.overlay ?? 55) / 100}
+		{@const overlayText = overlayColor === 'white' ? '' : 'text-on-inverse'}
+		<section class="relative flex min-h-screen w-full items-center border-b border-border">
 			{#if section.imageUrl}
-				<img src={section.imageUrl} alt={section.heading ?? storeName} class="h-[55vh] w-full object-cover" />
-				<div class="absolute inset-0 bg-black/30"></div>
+				<img src={section.imageUrl} alt={section.heading ?? storeName} class="absolute inset-0 h-full w-full object-cover" />
+				<div
+					class="absolute inset-0"
+					style="background: linear-gradient(to right, rgba({overlayRGB},{overlayAlpha}) 0%, rgba({overlayRGB},0) 65%)"
+				></div>
 			{/if}
 			<div
-				class="mx-auto flex w-full max-w-container flex-col items-start gap-6 px-4 py-20 md:px-12 md:py-28
-					{section.imageUrl ? 'absolute inset-0 justify-center text-on-inverse' : ''}"
+				class="relative mx-auto flex w-full max-w-container flex-col items-start gap-6 px-4 py-20 md:px-12 md:py-28
+					{section.imageUrl ? overlayText : ''}"
 			>
 				{#if section.heading}
 					<h2 class="max-w-3xl font-sans uppercase leading-none tracking-tighter text-display-xl">

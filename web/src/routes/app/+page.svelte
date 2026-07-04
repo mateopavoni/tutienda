@@ -23,9 +23,12 @@
 	import {
 		normalizeLayout,
 		SECTION_META,
+		HERO_OVERLAY_MIN,
+		HERO_OVERLAY_MAX,
 		type Section,
 		type SectionType,
-		type ContentField
+		type ContentField,
+		type OverlayColor
 	} from '$lib/layout';
 	import { PAGE_TYPES, PAGE_META, type Page, type PageType } from '$lib/pages';
 	import { ExternalLink, Lock, ArrowUp, ArrowDown } from 'lucide-svelte';
@@ -119,6 +122,18 @@
 	function editSection(i: number, field: ContentField, value: string) {
 		const next = [...setLayout];
 		next[i] = { ...next[i], [field]: value };
+		setLayout = next;
+	}
+
+	// Hero-only: gradient peak strength (0-100) and tint color (black/white).
+	function editSectionOverlay(i: number, overlay: number) {
+		const next = [...setLayout];
+		next[i] = { ...next[i], overlay };
+		setLayout = next;
+	}
+	function editSectionOverlayColor(i: number, overlayColor: OverlayColor) {
+		const next = [...setLayout];
+		next[i] = { ...next[i], overlayColor };
 		setLayout = next;
 	}
 
@@ -799,6 +814,32 @@
 											{/if}
 										</label>
 									{/each}
+								</div>
+							{/if}
+
+							{#if section.enabled && meta.overlay && section.imageUrl}
+								<div class="flex flex-wrap items-center gap-4 border-t border-border pt-3">
+									<label class="flex flex-1 flex-col gap-1" style="min-width: 12rem">
+										<span class={labelClass}>{$t('app.fields.overlay')} ({section.overlay ?? 55}%)</span>
+										<input
+											type="range"
+											min={HERO_OVERLAY_MIN}
+											max={HERO_OVERLAY_MAX}
+											value={section.overlay ?? 55}
+											oninput={(e) => editSectionOverlay(i, Number(e.currentTarget.value))}
+										/>
+									</label>
+									<label class="flex flex-col gap-1">
+										<span class={labelClass}>{$t('app.fields.overlayColor')}</span>
+										<select
+											value={section.overlayColor ?? 'black'}
+											onchange={(e) => editSectionOverlayColor(i, e.currentTarget.value as OverlayColor)}
+											class={inputClass}
+										>
+											<option value="black">{$t('app.fields.overlayBlack')}</option>
+											<option value="white">{$t('app.fields.overlayWhite')}</option>
+										</select>
+									</label>
 								</div>
 							{/if}
 

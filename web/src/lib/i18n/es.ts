@@ -242,7 +242,16 @@ export const es: Messages = {
 			imageUrlPh: 'subí o pegá una URL',
 			save: 'Guardar configuración'
 		},
-		fields: { heading: 'Título', body: 'Texto', imageUrl: 'URL de imagen', ctaLabel: 'Texto del botón' },
+		fields: {
+			heading: 'Título',
+			body: 'Texto',
+			imageUrl: 'URL de imagen',
+			ctaLabel: 'Texto del botón',
+			overlay: 'Contraste de la imagen',
+			overlayColor: 'Color del velo',
+			overlayWhite: 'Claro (texto oscuro)',
+			overlayBlack: 'Oscuro (texto blanco)'
+		},
 		items: { question: 'Pregunta', answer: 'Respuesta', caption: 'epígrafe (opcional)', imageUrl: 'URL de imagen', remove: 'Quitar' },
 		toast: {
 			imageUploaded: 'Imagen subida',
