@@ -1,9 +1,9 @@
 import type { Config } from 'tailwindcss';
 
-// Tokens come from the "Shop" design reference (tutienda-cambios/DESIGN.md): hairline-bordered
-// surfaces on a white canvas, one rationed violet, soft corners instead of hard edges.
-// Semantic colours are CSS custom properties (RGB triplets) so light/dark swap by toggling .dark,
-// with no component hardcoding a colour. Radii: cards 8px, images ~11px, buttons/search 28px, tags pill.
+// Monolith Editorial: hairline-bordered surfaces on a white canvas, one rationed violet, hard edges
+// (0px radius) by default — per-theme overrides in app.css opt individual store themes into rounder
+// corners. Semantic colours are CSS custom properties (RGB triplets) so light/dark swap by toggling
+// .dark, with no component hardcoding a colour.
 export default {
 	darkMode: 'class',
 	content: ['./src/**/*.{html,js,svelte,ts}'],
@@ -49,10 +49,6 @@ export default {
 				xl: '17px',
 				'2xl': '28px',
 				full: '9999px'
-			},
-			boxShadow: {
-				// The system's single elevation: the violet glow under the one conversion CTA.
-				accent: 'rgba(69, 36, 219, 0.34) 0px 4px 24px 0px'
 			},
 			maxWidth: {
 				container: '1440px'

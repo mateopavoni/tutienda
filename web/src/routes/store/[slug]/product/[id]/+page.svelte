@@ -194,8 +194,8 @@
 							<button
 								onclick={() => (selectedSku = variant.sku)}
 								disabled={available <= 0}
-								class="relative bg-surface py-3 font-mono text-metadata-sm transition-colors
-									{selectedSku === variant.sku ? 'bg-primary text-on-primary' : 'text-text hover:bg-surface-variant'}
+								class="relative py-3 font-mono text-metadata-sm transition-colors
+									{selectedSku === variant.sku ? 'bg-primary text-on-primary' : 'bg-surface text-text hover:bg-surface-variant'}
 									{available <= 0 ? 'cursor-not-allowed opacity-40' : ''}"
 								aria-pressed={selectedSku === variant.sku}
 							>

@@ -4,7 +4,12 @@
 	import { t, locale, locales, type Locale } from '$lib/i18n';
 	import { theme, type Theme } from '$lib/stores/theme';
 	import SiteHeader from '$lib/components/SiteHeader.svelte';
-	import { Sun, Moon, Monitor } from 'lucide-svelte';
+	import { Sun, Moon, Monitor, ArrowLeft } from 'lucide-svelte';
+
+	// Settings has no fixed parent route (reached from any page's navbar), so browser history is "back".
+	function goBack() {
+		history.length > 1 ? history.back() : (location.href = '/');
+	}
 
 	const themes: { value: Theme; icon: typeof Sun }[] = [
 		{ value: 'system', icon: Monitor },
@@ -20,6 +25,15 @@
 <div class="flex min-h-screen flex-col bg-bg text-text">
 	<SiteHeader variant="minimal" />
 	<main class="mx-auto w-full max-w-container flex-1 px-4 py-16 md:px-12">
+		<button
+			type="button"
+			onclick={goBack}
+			class="mb-8 flex items-center gap-2 font-mono text-metadata-sm uppercase tracking-[0.1em] text-text-muted transition-colors hover:text-text"
+		>
+			<ArrowLeft size={14} />
+			{$t('common.back')}
+		</button>
+
 		<h1 class="mb-12 font-sans text-headline-lg tracking-tighter">{$t('settings.title')}</h1>
 
 		<div class="grid grid-cols-1 gap-12 md:max-w-2xl">

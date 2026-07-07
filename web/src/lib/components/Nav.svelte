@@ -17,9 +17,9 @@
 
 <header class="fixed top-0 z-50 w-full border-b border-border bg-bg">
 	<div class="mx-auto flex h-16 max-w-container items-center justify-between px-4 md:px-12">
-		<a href={home} class="flex items-center gap-2 font-sans text-headline-md tracking-tighter text-text">
+		<a href={home} class="flex items-center gap-2 truncate font-sans text-body-lg tracking-tighter text-text md:text-headline-md">
 			{#if store?.settings?.logoUrl}
-				<img src={store.settings.logoUrl} alt={wordmark} class="h-7 w-auto" />
+				<img src={store.settings.logoUrl} alt={wordmark} class="h-6 w-auto md:h-7" />
 			{:else}
 				{wordmark}
 			{/if}

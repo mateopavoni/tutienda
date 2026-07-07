@@ -21,10 +21,10 @@
 	   --accent with its own brand color, so this only colors the marketing site + theme-less stores. */
 	--accent: 84 51 235;
 	--on-accent: 255 255 255;
-	/* Corner radii as tokens so each store theme can set its own character (default = the soft "Shop"
-	   look: 8px surfaces, 28px pill controls). terminal goes sharp to stay technical. */
-	--radius-surface: 8px;
-	--radius-control: 28px;
+	/* Corner radii as tokens so each store theme can set its own character. Default = "Monolith
+	   Editorial" hard edges (0px); themes like pop opt into rounder corners instead. */
+	--radius-surface: 0px;
+	--radius-control: 0px;
 	--error: 186 26 26;
 	/* The cart drawer is a constant high-contrast onyx surface in both themes (per the design). */
 	--inverse: 0 0 0;
@@ -119,9 +119,6 @@
 /* terminal — full monospace, green-on-paper (typographic, technical). */
 [data-store-theme='terminal'] {
 	--font-sans: 'JetBrains Mono', ui-monospace, monospace;
-	/* Sharp edges keep the technical/monospace character — the one theme that stays hard-edge. */
-	--radius-surface: 0px;
-	--radius-control: 0px;
 	--bg: 244 244 240;
 	--surface: 255 255 255;
 	--surface-variant: 226 226 220;
@@ -183,10 +180,11 @@
 			px-6 py-4 transition-colors brutal-border hover:bg-bg hover:text-text;
 		border-radius: var(--radius-control);
 	}
-	/* Conversion action: the single chromatic disruption + the system's only elevation (violet glow). */
+	/* Conversion action: the single chromatic disruption. Flat hairline like every other surface — no
+	   elevation tricks, per Monolith Editorial. */
 	.btn-accent {
 		@apply bg-accent text-on-accent font-sans uppercase tracking-[0.1em] text-label-caps
-			px-6 py-4 shadow-accent transition-opacity hover:opacity-90;
+			px-6 py-4 brutal-border transition-opacity hover:opacity-90;
 		border-radius: var(--radius-control);
 	}
 	.btn-ghost {
