@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /app
+Disallow: /configuracion
+Disallow: /login
+Disallow: /signup
+Disallow: /store/*/cuenta
+
+Sitemap: https://tienda.mateopavoni.com.ar/sitemap.xml
