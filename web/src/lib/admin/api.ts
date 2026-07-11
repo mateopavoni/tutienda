@@ -1,6 +1,8 @@
 // Browser API client for the merchant admin panel. Talks to the public gateway: accounts endpoints use
 // the merchant token, admin catalog/inventory endpoints use the store-scoped token.
 import { env } from '$env/dynamic/public';
+import { browser } from '$app/environment';
+import { goto } from '$app/navigation';
 import type { ApiError, Product, Stock } from '$lib/types';
 import type { Section } from '$lib/layout';
 import type { Page } from '$lib/pages';
@@ -31,6 +33,8 @@ export interface Store {
 	settings: { logoUrl?: string; accentColor?: string; theme?: string; currency?: string; layout?: Section[]; pages?: Page[] };
 	/** Membership tier (see $lib/plan). Defaults to 'free' for stores created before plans existed. */
 	plan: string;
+	/** When true, the storefront is switched off (404s at the gateway) without deleting the store. */
+	disabled: boolean;
 }
 interface Session {
 	token: string;
@@ -43,6 +47,14 @@ async function call<T>(path: string, init: RequestInit, token?: string): Promise
 	headers.set('Content-Type', 'application/json');
 	if (token) headers.set('Authorization', 'Bearer ' + token);
 	const res = await fetch(base() + path, { ...init, headers });
+	// A 401 on a call that carried a token means the session died server-side (expiry, not a bad
+	// login attempt — those never pass a token). Bounce to /login instead of letting it surface as a
+	// generic "request failed" toast the user has no way to act on.
+	if (res.status === 401 && token) {
+		session.clearAll();
+		if (browser) goto('/login?expired=1');
+		throw { error: 'session expired' } as ApiError;
+	}
 	if (res.status === 204) return undefined as T;
 	const data = (await res.json().catch(() => ({}))) as unknown;
 	if (!res.ok) throw data as ApiError;
@@ -105,6 +117,15 @@ export async function changePlan(id: string, plan: string): Promise<Store> {
 	return call<Store>(
 		'/api/accounts/stores/' + encodeURIComponent(id) + '/plan',
 		{ method: 'PATCH', body: JSON.stringify({ plan }) },
+		session.merchantToken()
+	);
+}
+
+// setStoreDisabled toggles a store's storefront on/off.
+export async function setStoreDisabled(id: string, disabled: boolean): Promise<Store> {
+	return call<Store>(
+		'/api/accounts/stores/' + encodeURIComponent(id) + '/status',
+		{ method: 'PATCH', body: JSON.stringify({ disabled }) },
 		session.merchantToken()
 	);
 }

@@ -103,7 +103,9 @@ export const es: Messages = {
 		storeSlug: 'Subdominio',
 		toSignup: '¿No tenés cuenta? Creá tu tienda',
 		toLogin: '¿Ya tenés cuenta? Ingresá',
-		failed: 'Falló la autenticación'
+		failed: 'Falló la autenticación',
+		sessionExpired: 'Tu sesión expiró — iniciá sesión de nuevo',
+		slugTaken: 'Ese subdominio ya está en uso — probá con otro'
 	},
 	settings: { title: 'Configuración', language: 'Idioma', theme: 'Apariencia' },
 	account: {
@@ -179,7 +181,10 @@ export const es: Messages = {
 			slug: 'Slug',
 			displayName: 'Nombre visible',
 			create: 'Crear tienda',
-			limitReached: 'Llegaste al límite de la demo: {max} tiendas por cuenta.'
+			limitReached: 'Llegaste al límite de la demo: {max} tiendas por cuenta.',
+			disabled: 'Desactivada',
+			enable: 'Activar tienda',
+			disable: 'Desactivar tienda'
 		},
 		membership: {
 			title: 'Membresía',
@@ -218,7 +223,6 @@ export const es: Messages = {
 			add: 'Agregar producto',
 			limitHit: 'Llegaste al límite de {limit} productos del plan {plan}. Mejorá para agregar más.'
 		},
-		stockSection: { title: 'Stock', sku: 'SKU', available: 'Disponible', set: 'Fijar stock' },
 		settings: {
 			title: 'Configuración de la tienda',
 			displayName: 'Nombre visible',
@@ -259,6 +263,8 @@ export const es: Messages = {
 			requestFailed: 'Falló la solicitud',
 			stockSet: 'Stock fijado para {sku}',
 			storeCreated: 'Tienda creada',
+			storeDisabled: 'Tienda desactivada',
+			storeEnabled: 'Tienda activada',
 			managing: 'Gestionando {name}',
 			planChanged: 'Plan cambiado a {plan}',
 			productCreated: 'Producto creado',

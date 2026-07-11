@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { signup, createStore, selectStore } from '$lib/admin/api';
+	import { signup, createStore, selectStore, listStores } from '$lib/admin/api';
 	import { BRAND, ROOT_DOMAIN } from '$lib/brand';
 	import { t } from '$lib/i18n';
 	import { THEMES } from '$lib/theme';
@@ -17,6 +17,7 @@
 	let theme = $state('boutique');
 	let busy = $state(false);
 	let error = $state('');
+	let slugError = $state('');
 
 	// Onboarding doubles as store creation: a slug is derived from the store name until the user edits it.
 	const slugify = (s: string) =>
@@ -30,15 +31,37 @@
 		e.preventDefault();
 		busy = true;
 		error = '';
+		slugError = '';
 		try {
-			// 1) create the merchant account, 2) create their first store (with the chosen theme so it
-			// looks distinct from the start), 3) enter it → dashboard.
 			await signup(email, password);
+		} catch (err) {
+			error = (err as ApiError)?.error ?? $t('auth.failed');
+			busy = false;
+			return;
+		}
+		try {
+			// Merchant account exists at this point. Create their first store (with the chosen theme so it
+			// looks distinct from the start), then enter it → dashboard.
 			const store = await createStore(effectiveSlug, storeName, theme);
 			await selectStore(store);
 			await goto('/app');
 		} catch (err) {
-			error = (err as ApiError)?.error ?? $t('auth.failed');
+			const apiErr = err as ApiError;
+			if (apiErr?.error === 'slug already taken') {
+				// The signup call right above just succeeded, so this merchant is real. If a store with
+				// this exact slug already belongs to them — e.g. a prior submit's response got lost but the
+				// store was actually created — pick it up instead of showing a confusing duplicate error.
+				const mine = await listStores().catch(() => []);
+				const existing = mine.find((s) => s.slug === effectiveSlug);
+				if (existing) {
+					await selectStore(existing);
+					await goto('/app');
+					return;
+				}
+				slugError = $t('auth.slugTaken');
+			} else {
+				error = apiErr?.error ?? $t('auth.failed');
+			}
 		} finally {
 			busy = false;
 		}
@@ -81,6 +104,7 @@
 				<span class="font-mono text-metadata-sm text-text-muted">
 					{effectiveSlug || 'tu-tienda'}.{ROOT_DOMAIN}
 				</span>
+				{#if slugError}<span class="font-mono text-metadata-sm text-error">{slugError}</span>{/if}
 			</label>
 
 			<fieldset class="flex flex-col gap-2">

@@ -102,7 +102,9 @@ export const en = {
 		storeSlug: 'Subdomain',
 		toSignup: "Need an account? Create your store",
 		toLogin: 'Have an account? Sign in',
-		failed: 'Authentication failed'
+		failed: 'Authentication failed',
+		sessionExpired: 'Your session expired — sign in again',
+		slugTaken: 'That subdomain is already taken — try another one'
 	},
 	settings: { title: 'Settings', language: 'Language', theme: 'Appearance' },
 	// Storefront customer accounts (/store/[slug]/cuenta). A shopper's own account, separate from the
@@ -183,7 +185,10 @@ export const en = {
 			slug: 'Slug',
 			displayName: 'Display name',
 			create: 'Create store',
-			limitReached: 'You\'ve reached the demo limit of {max} stores per account.'
+			limitReached: 'You\'ve reached the demo limit of {max} stores per account.',
+			disabled: 'Disabled',
+			enable: 'Enable store',
+			disable: 'Disable store'
 		},
 		membership: {
 			title: 'Membership',
@@ -222,7 +227,6 @@ export const en = {
 			add: 'Add product',
 			limitHit: "You've hit the {plan} plan limit of {limit} products. Upgrade to add more."
 		},
-		stockSection: { title: 'Stock', sku: 'SKU', available: 'Available', set: 'Set stock' },
 		settings: {
 			title: 'Store settings',
 			displayName: 'Display name',
@@ -263,6 +267,8 @@ export const en = {
 			requestFailed: 'Request failed',
 			stockSet: 'Stock set for {sku}',
 			storeCreated: 'Store created',
+			storeDisabled: 'Store disabled',
+			storeEnabled: 'Store enabled',
 			managing: 'Managing {name}',
 			planChanged: 'Plan changed to {plan}',
 			productCreated: 'Product created',

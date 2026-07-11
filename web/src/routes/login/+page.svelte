@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
+	import { get } from 'svelte/store';
 	import { login } from '$lib/admin/api';
 	import { BRAND } from '$lib/brand';
 	import { t } from '$lib/i18n';
@@ -9,7 +11,7 @@
 	let email = $state('');
 	let password = $state('');
 	let busy = $state(false);
-	let error = $state('');
+	let error = $state($page.url.searchParams.get('expired') ? get(t)('auth.sessionExpired') : '');
 
 	const inputClass = 'brutal-border bg-surface px-4 py-3 font-sans text-body-md text-text focus-ring';
 	const labelClass = 'font-mono text-metadata-sm uppercase tracking-[0.05em] text-text-muted';

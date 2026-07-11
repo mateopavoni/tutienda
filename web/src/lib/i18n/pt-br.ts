@@ -103,7 +103,9 @@ export const ptBR: Messages = {
 		storeSlug: 'Subdomínio',
 		toSignup: 'Não tem conta? Crie sua loja',
 		toLogin: 'Já tem conta? Entrar',
-		failed: 'Falha na autenticação'
+		failed: 'Falha na autenticação',
+		sessionExpired: 'Sua sessão expirou — entre novamente',
+		slugTaken: 'Esse subdomínio já está em uso — tente outro'
 	},
 	settings: { title: 'Configurações', language: 'Idioma', theme: 'Aparência' },
 	account: {
@@ -179,7 +181,10 @@ export const ptBR: Messages = {
 			slug: 'Slug',
 			displayName: 'Nome de exibição',
 			create: 'Criar loja',
-			limitReached: 'Você atingiu o limite da demo: {max} lojas por conta.'
+			limitReached: 'Você atingiu o limite da demo: {max} lojas por conta.',
+			disabled: 'Desativada',
+			enable: 'Ativar loja',
+			disable: 'Desativar loja'
 		},
 		membership: {
 			title: 'Assinatura',
@@ -218,7 +223,6 @@ export const ptBR: Messages = {
 			add: 'Adicionar produto',
 			limitHit: 'Você atingiu o limite de {limit} produtos do plano {plan}. Faça upgrade para adicionar mais.'
 		},
-		stockSection: { title: 'Estoque', sku: 'SKU', available: 'Disponível', set: 'Definir estoque' },
 		settings: {
 			title: 'Configurações da loja',
 			displayName: 'Nome de exibição',
@@ -259,6 +263,8 @@ export const ptBR: Messages = {
 			requestFailed: 'A solicitação falhou',
 			stockSet: 'Estoque definido para {sku}',
 			storeCreated: 'Loja criada',
+			storeDisabled: 'Loja desativada',
+			storeEnabled: 'Loja ativada',
 			managing: 'Gerenciando {name}',
 			planChanged: 'Plano alterado para {plan}',
 			productCreated: 'Produto criado',
