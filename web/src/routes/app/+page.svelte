@@ -1,12 +1,14 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
+	import { browser } from '$app/environment';
 	import { t } from '$lib/i18n';
 	import { session } from '$lib/admin/session';
 	import {
 		listStores,
 		createStore,
 		selectStore,
+		setStoreDisabled,
 		updateStore,
 		changePlan,
 		listProducts,
@@ -70,9 +72,6 @@
 	let pDrop = $state(''); // datetime-local; empty = on sale now, a future value schedules a drop
 	let uploading = $state(false); // true while a product image is being uploaded to the object store
 
-	// Stock form
-	let sSku = $state('');
-	let sQty = $state(0);
 	// Current on-hand per SKU across the active store's products, for the inline per-variant stock editor.
 	let stockMap = $state<Record<string, number>>({});
 
@@ -207,13 +206,21 @@
 		}
 	}
 
+	// notice/error render in one banner at the top of the page; on a long form (settings/layout editor)
+	// the user is scrolled well past it and never sees the confirmation. Auto-dismiss both so a stale
+	// message doesn't linger past its relevance.
+	let noticeTimer: ReturnType<typeof setTimeout> | undefined;
 	function fail(err: unknown) {
+		clearTimeout(noticeTimer);
 		error = (err as ApiError)?.error ?? get(t)('app.toast.requestFailed');
 		notice = '';
+		noticeTimer = setTimeout(() => (error = ''), 5000);
 	}
 	function ok(msg: string) {
+		clearTimeout(noticeTimer);
 		notice = msg;
 		error = '';
+		noticeTimer = setTimeout(() => (notice = ''), 4000);
 	}
 
 	onMount(async () => {
@@ -289,6 +296,16 @@
 			loadStoreSettings(store);
 			await refreshProducts();
 			ok($t('app.toast.managing', { name: store.displayName }));
+		} catch (err) {
+			fail(err);
+		}
+	}
+
+	async function doToggleStoreStatus(store: Store) {
+		try {
+			const updated = await setStoreDisabled(store.id, !store.disabled);
+			stores = stores.map((s) => (s.id === updated.id ? updated : s));
+			ok(updated.disabled ? $t('app.toast.storeDisabled') : $t('app.toast.storeEnabled'));
 		} catch (err) {
 			fail(err);
 		}
@@ -383,16 +400,6 @@
 		}
 	}
 
-	async function doSetStock(e: SubmitEvent) {
-		e.preventDefault();
-		try {
-			await setStock(sSku, sQty);
-			ok($t('app.toast.stockSet', { sku: sSku }));
-		} catch (err) {
-			fail(err);
-		}
-	}
-
 	async function doSaveSettings(e: SubmitEvent) {
 		e.preventDefault();
 		if (!active) return;
@@ -414,6 +421,7 @@
 			stores = stores.map((s) => (s.id === updated.id ? updated : s));
 			loadStoreSettings(updated);
 			ok($t('app.toast.settingsSaved'));
+			if (browser) window.scrollTo({ top: 0, behavior: 'smooth' });
 		} catch (err) {
 			fail(err);
 		}
@@ -463,13 +471,23 @@
 		{:else}
 			{#each stores as store (store.id)}
 				<div class="flex flex-col gap-2 bg-bg p-4">
-					<span class="font-sans text-body-lg">{store.displayName}</span>
+					<span class="flex items-center gap-2 font-sans text-body-lg">
+						{store.displayName}
+						{#if store.disabled}
+							<span class="brutal-border px-2 py-0.5 font-mono text-metadata-sm uppercase text-error">
+								{$t('app.stores.disabled')}
+							</span>
+						{/if}
+					</span>
 					<span class={labelClass}>{store.slug}</span>
 					<button
 						onclick={() => doSelectStore(store)}
 						class="mt-2 {active?.id === store.id ? 'btn-accent' : 'btn-ghost'}"
 					>
 						{active?.id === store.id ? $t('app.stores.active') : $t('app.stores.manage')}
+					</button>
+					<button onclick={() => doToggleStoreStatus(store)} class="btn-ghost">
+						{store.disabled ? $t('app.stores.enable') : $t('app.stores.disable')}
 					</button>
 				</div>
 			{:else}
@@ -683,22 +701,6 @@
 				{$t('app.products.limitHit', { plan: PLANS[tier].label, limit })}
 			</p>
 		{/if}
-	</section>
-
-	<!-- Stock -->
-	<section class="mb-12">
-		<h2 class="mb-4 font-sans text-headline-md tracking-tight">{$t('app.stockSection.title')}</h2>
-		<form onsubmit={doSetStock} class="flex flex-wrap items-end gap-3">
-			<label class="flex flex-col gap-1">
-				<span class={labelClass}>{$t('app.stockSection.sku')}</span>
-				<input bind:value={sSku} required placeholder="ACME-01" class={inputClass} />
-			</label>
-			<label class="flex flex-col gap-1">
-				<span class={labelClass}>{$t('app.stockSection.available')}</span>
-				<input type="number" min="0" bind:value={sQty} class="{inputClass} w-32" />
-			</label>
-			<button type="submit" class="btn-primary">{$t('app.stockSection.set')}</button>
-		</form>
 	</section>
 
 	<!-- Settings -->
