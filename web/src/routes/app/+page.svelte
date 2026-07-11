@@ -43,6 +43,9 @@
 	let products = $state<Product[]>([]);
 	let error = $state('');
 	let notice = $state('');
+	// True until the initial onMount fetch settles — the dashboard is pure client-side (ssr disabled),
+	// so without this the store grid renders empty for a beat instead of showing it's loading.
+	let loading = $state(true);
 
 	// The active store's full record (with its plan) lives in `stores`; `active` only holds id/slug/name.
 	const activeStore = $derived(stores.find((s) => s.id === active?.id));
@@ -219,10 +222,14 @@
 		} catch (err) {
 			fail(err);
 		}
-		if (active && session.storeToken()) {
-			await refreshProducts();
-			const s = stores.find((x) => x.id === active?.id);
-			if (s) loadStoreSettings(s);
+		try {
+			if (active && session.storeToken()) {
+				await refreshProducts();
+				const s = stores.find((x) => x.id === active?.id);
+				if (s) loadStoreSettings(s);
+			}
+		} finally {
+			loading = false;
 		}
 	});
 
@@ -445,20 +452,30 @@
 <section class="mb-12">
 	<h2 class="mb-4 font-sans text-headline-md tracking-tight">{$t('app.stores.title')}</h2>
 	<div class="grid gap-px brutal-border bg-border sm:grid-cols-2 lg:grid-cols-3">
-		{#each stores as store (store.id)}
-			<div class="flex flex-col gap-2 bg-bg p-4">
-				<span class="font-sans text-body-lg">{store.displayName}</span>
-				<span class={labelClass}>{store.slug}</span>
-				<button
-					onclick={() => doSelectStore(store)}
-					class="mt-2 {active?.id === store.id ? 'btn-accent' : 'btn-ghost'}"
-				>
-					{active?.id === store.id ? $t('app.stores.active') : $t('app.stores.manage')}
-				</button>
-			</div>
+		{#if loading}
+			{#each { length: 3 } as _}
+				<div class="flex flex-col gap-3 bg-bg p-4">
+					<div class="skeleton-block h-5 w-2/3"></div>
+					<div class="skeleton-block h-3 w-1/3"></div>
+					<div class="skeleton-block mt-2 h-10 w-full"></div>
+				</div>
+			{/each}
 		{:else}
-			<p class="bg-bg p-4 font-mono text-metadata-sm text-text-muted">{$t('app.stores.empty')}</p>
-		{/each}
+			{#each stores as store (store.id)}
+				<div class="flex flex-col gap-2 bg-bg p-4">
+					<span class="font-sans text-body-lg">{store.displayName}</span>
+					<span class={labelClass}>{store.slug}</span>
+					<button
+						onclick={() => doSelectStore(store)}
+						class="mt-2 {active?.id === store.id ? 'btn-accent' : 'btn-ghost'}"
+					>
+						{active?.id === store.id ? $t('app.stores.active') : $t('app.stores.manage')}
+					</button>
+				</div>
+			{:else}
+				<p class="bg-bg p-4 font-mono text-metadata-sm text-text-muted">{$t('app.stores.empty')}</p>
+			{/each}
+		{/if}
 	</div>
 
 	{#if stores.length >= MAX_STORES}

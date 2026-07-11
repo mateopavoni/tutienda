@@ -203,4 +203,30 @@
 	.focus-ring {
 		@apply focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
 	}
+	/* Thin top bar shown while SvelteKit is navigating between routes (SSR pages take a beat on a slow
+	   connection) — the cross-cutting equivalent of a Next.js route loading.tsx. */
+	.nav-progress-bar {
+		@apply pointer-events-none fixed inset-x-0 top-0 z-50 h-[3px] overflow-hidden bg-transparent;
+	}
+	.nav-progress-bar > span {
+		@apply block h-full w-1/3 bg-accent;
+		animation: nav-progress 1s ease-in-out infinite;
+	}
+	/* Skeleton placeholder for content still loading client-side (the /app and /admin dashboards fetch
+	   after mount, so this covers the gap instead of a blank/empty flash). */
+	.skeleton-block {
+		@apply animate-pulse brutal-border bg-surface-variant;
+	}
+}
+
+@keyframes nav-progress {
+	0% {
+		transform: translateX(-100%);
+	}
+	50% {
+		transform: translateX(100%);
+	}
+	100% {
+		transform: translateX(300%);
+	}
 }

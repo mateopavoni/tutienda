@@ -22,6 +22,9 @@
 	let authed = $state(false);
 	let error = $state('');
 	let notice = $state('');
+	// True until the onMount session check settles. Without this an already-logged-in admin sees the
+	// login form flash before the stored token is verified and the console data arrives.
+	let checkingSession = $state(true);
 
 	// Login form
 	let email = $state('');
@@ -39,8 +42,12 @@
 	}
 
 	onMount(async () => {
-		if (session.merchantToken() && session.isAdmin()) {
-			await load();
+		try {
+			if (session.merchantToken() && session.isAdmin()) {
+				await load();
+			}
+		} finally {
+			checkingSession = false;
 		}
 	});
 
@@ -128,7 +135,14 @@
 			<p class="mb-6 brutal-border px-4 py-3 font-mono text-metadata-sm text-text-muted">{notice}</p>
 		{/if}
 
-		{#if !authed}
+		{#if checkingSession}
+			<!-- Verifying a stored session before deciding between the login form and the console, so a
+			     returning admin doesn't see the login form flash first. -->
+			<div class="flex flex-col gap-4">
+				<div class="skeleton-block h-24 w-full"></div>
+				<div class="skeleton-block h-48 w-full"></div>
+			</div>
+		{:else if !authed}
 			<!-- Admin login -->
 			<form onsubmit={doLogin} class="flex max-w-sm flex-col gap-4">
 				<p class="font-sans text-body-md text-text-muted">Sign in with a platform admin account.</p>
