@@ -12,25 +12,40 @@ export interface CartLine {
 	qty: number;
 }
 
-const STORAGE_KEY = 'cart';
+// Each store gets its own cart: localStorage is per-origin, not per-path, so without a per-slug key
+// every /store/[slug] would share one cart (a real cross-tenant bug — a buyer would see another
+// merchant's demo items in their bag).
+function storageKey(slug: string): string {
+	return `cart:${slug}`;
+}
 
-function initial(): CartLine[] {
-	if (!browser) return [];
+function readLines(slug: string): CartLine[] {
+	if (!browser || !slug) return [];
 	try {
-		return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]') as CartLine[];
+		return JSON.parse(localStorage.getItem(storageKey(slug)) ?? '[]') as CartLine[];
 	} catch {
 		return [];
 	}
 }
 
 function createCart() {
-	const { subscribe, update, set } = writable<CartLine[]>(initial());
+	let currentSlug = '';
+	const { subscribe, update, set } = writable<CartLine[]>([]);
 	if (browser) {
-		subscribe((lines) => localStorage.setItem(STORAGE_KEY, JSON.stringify(lines)));
+		subscribe((lines) => {
+			if (currentSlug) localStorage.setItem(storageKey(currentSlug), JSON.stringify(lines));
+		});
 	}
 
 	return {
 		subscribe,
+		// Called once the storefront layout resolves the slug (and again if it changes, e.g. navigating
+		// between two stores in the same tab): swaps in that store's own cart from localStorage.
+		hydrate(slug: string) {
+			if (!slug || slug === currentSlug) return;
+			currentSlug = slug;
+			set(readLines(slug));
+		},
 		add(line: Omit<CartLine, 'qty'>, qty = 1) {
 			update((lines) => {
 				const existing = lines.find((l) => l.sku === line.sku);

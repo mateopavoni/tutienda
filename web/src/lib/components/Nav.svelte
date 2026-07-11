@@ -5,8 +5,9 @@
 	import { customer } from '$lib/stores/customer';
 	import { Settings, User } from 'lucide-svelte';
 	import type { StoreInfo } from '$lib/tenant';
+	import { pageTitle, type Page } from '$lib/pages';
 
-	let { store, slug }: { store?: StoreInfo | null; slug: string } = $props();
+	let { store, slug, pages = [] }: { store?: StoreInfo | null; slug: string; pages?: Page[] } = $props();
 	// Per-store wordmark; the type/scale stay fixed by the design system.
 	let wordmark = $derived((store?.displayName ?? slug).toUpperCase());
 	let home = $derived('/store/' + slug);
@@ -38,6 +39,14 @@
 			>
 				{$t('nav.catalog')}
 			</a>
+			{#each pages as p (p.type)}
+				<a
+					href="{home}/{p.type}"
+					class="hidden font-sans text-label-caps uppercase tracking-[0.1em] text-text-muted transition-colors hover:text-text md:inline"
+				>
+					{pageTitle(p)}
+				</a>
+			{/each}
 			<a
 				href={account}
 				class="p-2 transition-colors hover:text-text {$customer ? 'text-text' : 'text-text-muted'}"

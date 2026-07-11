@@ -4,6 +4,7 @@
 	import CartDrawer from '$lib/components/CartDrawer.svelte';
 	import { setBrowserSlug } from '$lib/tenant';
 	import { loadCustomer } from '$lib/stores/customer';
+	import { cart } from '$lib/stores/cart';
 	import { enabledPages } from '$lib/pages';
 	import { normalizeTheme } from '$lib/theme';
 	import { theme } from '$lib/stores/theme';
@@ -16,6 +17,7 @@
 	$effect(() => {
 		setBrowserSlug(data.storeSlug);
 		loadCustomer(data.storeSlug);
+		cart.hydrate(data.storeSlug);
 	});
 
 	// Resolved light/dark scheme (mirrors the logic in $lib/stores/theme's applyTheme) so the accent can
@@ -69,7 +71,7 @@
 	data-store-theme={storeTheme}
 	style={accentVar ? `--accent: ${accentVar}` : undefined}
 >
-	<Nav store={data.store} slug={data.storeSlug} />
+	<Nav store={data.store} slug={data.storeSlug} pages={enabledPages(data.store?.settings?.pages)} />
 	<main class="flex-1 pt-16">
 		{@render children()}
 	</main>
