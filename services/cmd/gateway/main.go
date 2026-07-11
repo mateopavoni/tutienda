@@ -50,6 +50,7 @@ func main() {
 	handler := httpx.Chain(router,
 		httpx.Recover(log),
 		httpx.Logger(log),
+		httpx.SecurityHeaders(),
 		httpx.CORS(webOrigin),
 	)
 

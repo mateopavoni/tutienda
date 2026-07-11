@@ -60,6 +60,31 @@ func Recover(log *slog.Logger) Middleware {
 	}
 }
 
+// SecurityHeaders sets the baseline response headers OWASP recommends for an API that is reachable
+// directly from a browser (storefront fetch, admin dashboard). The gateway is the single public entry
+// point, so this is the one place these need to be set for every downstream service's response.
+//   - X-Content-Type-Options: stops the browser from MIME-sniffing a JSON error body into something
+//     executable.
+//   - X-Frame-Options / frame-ancestors: the API serves no HTML, but a same-origin-policy-confused
+//     browser plugin or a misconfigured proxy embedding it in a frame is cheap to close off anyway.
+//   - Referrer-Policy: never leak the full request URL (which can carry a slug/id) to a third party.
+//   - Permissions-Policy: the API needs none of these browser features; deny them explicitly.
+//   - Strict-Transport-Security: only meaningful once the deploy terminates TLS (Nginx/Dokku in front),
+//     so it is a no-op over plain HTTP in local dev but correct in production.
+func SecurityHeaders() Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			h := w.Header()
+			h.Set("X-Content-Type-Options", "nosniff")
+			h.Set("X-Frame-Options", "DENY")
+			h.Set("Referrer-Policy", "strict-origin-when-cross-origin")
+			h.Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+			h.Set("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 // CORS allows the storefront origin and the methods/headers the API uses. The admin panel adds write
 // verbs (PUT/PATCH/DELETE), a Bearer Authorization header and the X-Tenant-Slug store selector.
 func CORS(origin string) Middleware {
