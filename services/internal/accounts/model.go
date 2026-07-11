@@ -89,6 +89,10 @@ type Store struct {
 	Settings    Settings  `bson:"settings" json:"settings"`
 	// Plan is the store's membership tier (see platform/plan). It rides into the store-scoped JWT so the
 	// gateway/services can gate paid features, and is exposed to the dashboard so it can dim locked tools.
-	Plan      string    `bson:"plan" json:"plan"`
+	Plan string `bson:"plan" json:"plan"`
+	// Disabled turns the storefront off without deleting anything (gateway returns 404 for its slug).
+	// Named as the negative so the Go/Mongo zero value for every store created before this field existed
+	// is "not disabled" — i.e. still active — with no migration needed.
+	Disabled  bool      `bson:"disabled,omitempty" json:"disabled"`
 	CreatedAt time.Time `bson:"createdAt" json:"createdAt"`
 }

@@ -197,6 +197,23 @@ func (r *Repository) updatePlan(ctx context.Context, id, ownerID, tier string) (
 	return &s, nil
 }
 
+// updateDisabled flips a store's on/off switch, guarded by ownership.
+func (r *Repository) updateDisabled(ctx context.Context, id, ownerID string, disabled bool) (*Store, error) {
+	var s Store
+	err := r.stores.FindOneAndUpdate(ctx,
+		bson.M{"_id": id, "ownerId": ownerID},
+		bson.M{"$set": bson.M{"disabled": disabled}},
+		options.FindOneAndUpdate().SetReturnDocument(options.After),
+	).Decode(&s)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, ErrStoreNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &s, nil
+}
+
 func (r *Repository) storeBySlug(ctx context.Context, slug string) (*Store, error) {
 	var s Store
 	err := r.stores.FindOne(ctx, bson.M{"slug": slug}).Decode(&s)

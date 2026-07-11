@@ -165,6 +165,11 @@ func (s *Service) SetPlan(ctx context.Context, ownerID, storeID, tier string) (*
 	return s.repo.updatePlan(ctx, storeID, ownerID, tier)
 }
 
+// SetDisabled turns a store's storefront on/off, scoped to its owner.
+func (s *Service) SetDisabled(ctx context.Context, ownerID, storeID string, disabled bool) (*Store, error) {
+	return s.repo.updateDisabled(ctx, storeID, ownerID, disabled)
+}
+
 // UpdateStore patches a store's settings/displayName, scoped to the owner.
 func (s *Service) UpdateStore(ctx context.Context, ownerID, storeID, displayName string, settings Settings) (*Store, error) {
 	settings.Layout = sanitizeLayout(settings.Layout)

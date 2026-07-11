@@ -15,6 +15,9 @@ import (
 // ErrStoreNotFound means no store matches the requested slug.
 var ErrStoreNotFound = errors.New("store not found")
 
+// ErrStoreDisabled means the store exists but its merchant switched it off.
+var ErrStoreDisabled = errors.New("store disabled")
+
 // Resolver turns a public store slug into its tenant id by asking the accounts service, with a short
 // Redis cache so the storefront's hot path doesn't hit accounts on every request.
 type Resolver struct {
@@ -39,7 +42,8 @@ func (r *Resolver) Resolve(ctx context.Context, slug string) (string, error) {
 		}
 	}
 	var store struct {
-		ID string `json:"id"`
+		ID       string `json:"id"`
+		Disabled bool   `json:"disabled"`
 	}
 	status, err := r.accounts.Do(ctx, http.MethodGet, "/stores/by-slug/"+slug, nil, &store)
 	if err != nil {
@@ -47,6 +51,11 @@ func (r *Resolver) Resolve(ctx context.Context, slug string) (string, error) {
 			return "", ErrStoreNotFound
 		}
 		return "", err
+	}
+	if store.Disabled {
+		// Never cache a disabled store under its id: a re-enable must resolve again immediately rather
+		// than wait out a stale positive cache entry (a stale *negative* result self-heals after ttl).
+		return "", ErrStoreDisabled
 	}
 	if r.cache != nil {
 		_ = r.cache.Set(ctx, key, store.ID, r.ttl).Err()

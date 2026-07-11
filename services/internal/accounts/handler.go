@@ -26,6 +26,7 @@ func (h *Handler) Routes() http.Handler {
 	mux.HandleFunc("POST /stores", h.createStore)
 	mux.HandleFunc("POST /stores/{id}/token", h.storeToken)
 	mux.HandleFunc("PATCH /stores/{id}/plan", h.changePlan)
+	mux.HandleFunc("PATCH /stores/{id}/status", h.changeStatus)
 	mux.HandleFunc("PATCH /stores/{id}", h.updateStore)
 	mux.HandleFunc("GET /stores/by-slug/{slug}", h.storeBySlug)
 	// Storefront customers (buyers). Tenant comes from the gateway-resolved slug (signup/login) or the
@@ -209,6 +210,30 @@ func (h *Handler) changePlan(w http.ResponseWriter, r *http.Request) {
 		return
 	case err != nil:
 		httpx.Fail(w, http.StatusInternalServerError, "could not change plan")
+		return
+	}
+	httpx.JSON(w, http.StatusOK, store)
+}
+
+func (h *Handler) changeStatus(w http.ResponseWriter, r *http.Request) {
+	ownerID, ok := h.merchant(w, r)
+	if !ok {
+		return
+	}
+	var body struct {
+		Disabled bool `json:"disabled"`
+	}
+	if err := httpx.Decode(r, &body); err != nil {
+		httpx.Fail(w, http.StatusBadRequest, "invalid body")
+		return
+	}
+	store, err := h.svc.SetDisabled(r.Context(), ownerID, r.PathValue("id"), body.Disabled)
+	if errors.Is(err, ErrStoreNotFound) {
+		httpx.Fail(w, http.StatusNotFound, "store not found")
+		return
+	}
+	if err != nil {
+		httpx.Fail(w, http.StatusInternalServerError, "could not change store status")
 		return
 	}
 	httpx.JSON(w, http.StatusOK, store)

@@ -169,6 +169,10 @@ func resolveSlug(w http.ResponseWriter, r *http.Request, res *Resolver, log *slo
 		httpx.Fail(w, http.StatusNotFound, "unknown store")
 		return "", false
 	}
+	if errors.Is(err, ErrStoreDisabled) {
+		httpx.Fail(w, http.StatusNotFound, "store unavailable")
+		return "", false
+	}
 	if err != nil {
 		log.Warn("tenant resolve failed", "slug", slug, "error", err)
 		httpx.Fail(w, http.StatusBadGateway, "could not resolve store")
