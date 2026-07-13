@@ -1,6 +1,6 @@
 <script lang="ts">
 	// Marketing landing for the SaaS. This is NOT a storefront — it sells the platform. The actual stores
-	// live under /store/[slug] (subdomains in production). Brand name comes from $lib/brand.
+	// live under /store/[slug]. Brand name comes from $lib/brand.
 	import { BRAND, ROOT_DOMAIN } from '$lib/brand';
 	import { t } from '$lib/i18n';
 	import SiteHeader from '$lib/components/SiteHeader.svelte';

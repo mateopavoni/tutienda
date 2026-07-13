@@ -102,7 +102,7 @@
 					class={inputClass}
 				/>
 				<span class="font-mono text-metadata-sm text-text-muted">
-					{effectiveSlug || 'tu-tienda'}.{ROOT_DOMAIN}
+					{ROOT_DOMAIN}/store/{effectiveSlug || 'tu-tienda'}
 				</span>
 				{#if slugError}<span class="font-mono text-metadata-sm text-error">{slugError}</span>{/if}
 			</label>

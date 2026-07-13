@@ -1,7 +1,7 @@
 import type { Messages } from './en';
 
 export const ptBR: Messages = {
-	nav: { shop: 'Loja', collection: 'Coleção', about: 'Sobre', journal: 'Journal', bag: 'Sacola', catalog: 'Catálogo', home: 'Início', account: 'Minha conta' },
+	nav: { shop: 'Loja', collection: 'Coleção', about: 'Sobre', journal: 'Journal', bag: 'Sacola', catalog: 'Catálogo', home: 'Início', account: 'Minha conta', menu: 'Menu' },
 	common: {
 		addToBag: 'Adicionar à sacola',
 		checkout: 'Finalizar compra',
@@ -100,12 +100,12 @@ export const ptBR: Messages = {
 		email: 'Email',
 		password: 'Senha',
 		storeName: 'Nome da loja',
-		storeSlug: 'Subdomínio',
+		storeSlug: 'URL da loja',
 		toSignup: 'Não tem conta? Crie sua loja',
 		toLogin: 'Já tem conta? Entrar',
 		failed: 'Falha na autenticação',
 		sessionExpired: 'Sua sessão expirou — entre novamente',
-		slugTaken: 'Esse subdomínio já está em uso — tente outro'
+		slugTaken: 'Essa URL de loja já está em uso — tente outra'
 	},
 	settings: { title: 'Configurações', language: 'Idioma', theme: 'Aparência' },
 	account: {
@@ -140,7 +140,7 @@ export const ptBR: Messages = {
 			'Crie uma vitrine editorial em minutos, cadastre seus produtos e venda com um estoque que permanece honesto sob qualquer carga. Multiloja desde o primeiro dia.',
 		cta: 'Crie sua loja',
 		seeDemo: 'Ver uma loja ao vivo',
-		subdomainNote: 'Cada loja ganha seu próprio subdomínio em {domain}.',
+		subdomainNote: 'Cada loja ganha sua própria página em {domain}/store/seu-nome.',
 		feat1Title: 'Sua própria vitrine',
 		feat1Body: 'Uma vitrine editorial caprichada por loja. Defina nome, logo e cor — do resto cuidamos nós.',
 		feat2Title: 'Deixe com a sua cara',
@@ -162,7 +162,7 @@ export const ptBR: Messages = {
 		plan_free_desc: 'Uma loja, vitrine completa, com o motor anti-excesso incluído.',
 		plan_pro_name: 'Pro',
 		plan_pro_price: 'R$29/mês',
-		plan_pro_desc: 'Subdomínio próprio, cache prioritário e métricas para uma loja em crescimento.',
+		plan_pro_desc: 'Logo próprio, cache prioritário e métricas para uma loja em crescimento.',
 		plan_scale_name: 'Scale',
 		plan_scale_price: 'Fale conosco',
 		plan_scale_desc: 'Várias lojas, limites mais altos e suporte dedicado.',
@@ -225,11 +225,14 @@ export const ptBR: Messages = {
 		},
 		settings: {
 			title: 'Configurações da loja',
+			contentHint: 'Tudo que você digitar abaixo aparece exatamente como escrito — o idioma da loja só traduz os rótulos fixos da vitrine, não o seu próprio conteúdo.',
 			displayName: 'Nome de exibição',
 			accent: 'Cor de destaque',
 			theme: 'Tema',
 			logoUrl: 'URL do logo',
 			logoLocked: 'Logo próprio é um recurso Pro — faça upgrade acima',
+			sectionsLocked: 'Galeria, FAQ, feature e contato são recurso Pro — faça upgrade acima',
+			pagesLocked: 'Páginas independentes são recurso Pro — faça upgrade acima',
 			layoutTitle: 'Layout da loja',
 			layoutHint: 'reordenar sem arrastar · mostrar/ocultar · editar texto',
 			moveUp: 'Subir',

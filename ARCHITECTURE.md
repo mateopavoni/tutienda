@@ -6,9 +6,9 @@ storefront under an isolated `tenantId`. Everything else (accounts, catalog, ord
 make that guarantee usable end to end across many stores.
 
 The SvelteKit front is a real SaaS, not a single storefront: `/` is the marketing landing, `/signup`
-onboards a merchant (account + first store), each store's storefront lives at `/store/[slug]` (a
-subdomain in production), the merchant dashboard is `/app`, and `/admin` is reserved for the platform
-super-admin. Preferences (language/theme) live in `/configuracion`.
+onboards a merchant (account + first store), each store's storefront lives at `/store/[slug]`, the
+merchant dashboard is `/app`, and `/admin` is reserved for the platform super-admin. Preferences
+(language/theme) live in `/configuracion`.
 
 ## Components
 
