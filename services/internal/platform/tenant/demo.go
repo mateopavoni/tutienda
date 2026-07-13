@@ -33,7 +33,7 @@ var DemoStores = []DemoStore{
 	{
 		DemoID, DemoSlug, DemoName, "#5433eb", "scale", "monolith",
 		"Engineered garments. Manufactured without excess.",
-		"https://images.unsplash.com/photo-1634573826817-27d9e8da08df?w=1920&h=1080&fit=crop&q=80",
+		"/demo/system-archive/hero.jpg",
 		"SYSTEM ARCHIVE designs for the long run: technical fabrics, minimal patterning, no seasonal noise. Every piece is built to outlast the trend it launched in.",
 	},
 	{
