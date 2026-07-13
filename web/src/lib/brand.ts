@@ -5,6 +5,6 @@ import { env } from '$env/dynamic/public';
 
 export const BRAND = env.PUBLIC_BRAND_NAME || 'TuTienda';
 
-// Public root domain stores live under as subdomains in production (slug.tutienda.com.ar). Used for
-// copy on the landing/onboarding; the actual slug→tenant resolution happens in the gateway.
+// Public root domain, used only for copy on the landing/onboarding (each store's real URL is
+// {ROOT_DOMAIN}/store/{slug} — see web/src/routes/store/[slug]).
 export const ROOT_DOMAIN = env.PUBLIC_ROOT_DOMAIN || 'tutienda.com.ar';

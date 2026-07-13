@@ -2,9 +2,9 @@ import type { LayoutServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { getStore } from '$lib/server/api';
 
-// The storefront is scoped by the [slug] route param (in production a subdomain rewrites to this path).
-// We resolve the store once per navigation and hand it to every child page via parent(); the slug also
-// seeds the browser API client so client-side calls (cart/checkout/live stock) stay scoped to this store.
+// The storefront is scoped by the [slug] route param. We resolve the store once per navigation and hand
+// it to every child page via parent(); the slug also seeds the browser API client so client-side calls
+// (cart/checkout/live stock) stay scoped to this store.
 export const load: LayoutServerLoad = async ({ fetch, params }) => {
 	const storeSlug = params.slug;
 	try {

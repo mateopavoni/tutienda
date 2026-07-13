@@ -4,7 +4,7 @@
 
 export type Tier = 'free' | 'pro' | 'scale';
 
-export type Feature = 'drops' | 'customLogo' | 'analytics' | 'removeBranding';
+export type Feature = 'drops' | 'customLogo' | 'analytics' | 'removeBranding' | 'sectionsPro' | 'staticPages';
 
 export const UNLIMITED = -1;
 
@@ -20,13 +20,13 @@ export const PLANS: Record<Tier, Entitlement> = {
 	pro: {
 		label: 'Pro',
 		price: '$29',
-		features: ['drops', 'customLogo', 'analytics'],
+		features: ['drops', 'customLogo', 'analytics', 'sectionsPro', 'staticPages'],
 		productLimit: 300
 	},
 	scale: {
 		label: 'Scale',
 		price: '$99',
-		features: ['drops', 'customLogo', 'analytics', 'removeBranding'],
+		features: ['drops', 'customLogo', 'analytics', 'removeBranding', 'sectionsPro', 'staticPages'],
 		productLimit: UNLIMITED
 	}
 };

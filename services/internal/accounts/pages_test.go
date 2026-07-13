@@ -3,6 +3,8 @@ package accounts
 import (
 	"strings"
 	"testing"
+
+	"github.com/mateopavoni/archive-commerce/internal/platform/plan"
 )
 
 // TestSanitizePages pins the write-time invariants of standalone storefront pages: unknown types are
@@ -17,7 +19,7 @@ func TestSanitizePages(t *testing.T) {
 		{Type: "terms", Title: "Terms", Body: strings.Repeat("x", pageBodyMax+50)},
 	}
 
-	out := sanitizePages(in)
+	out := sanitizePages(in, plan.Scale)
 
 	if len(out) != 2 {
 		t.Fatalf("want 2 pages (about, terms), got %d: %+v", len(out), out)
@@ -31,10 +33,23 @@ func TestSanitizePages(t *testing.T) {
 }
 
 func TestSanitizePagesEmpty(t *testing.T) {
-	if got := sanitizePages(nil); got != nil {
+	if got := sanitizePages(nil, plan.Scale); got != nil {
 		t.Errorf("nil in → nil out, got %v", got)
 	}
-	if got := sanitizePages([]Page{{Type: "about", Body: "  "}}); got != nil {
+	if got := sanitizePages([]Page{{Type: "about", Body: "  "}}, plan.Scale); got != nil {
 		t.Errorf("all-empty-body in → nil out, got %v", got)
+	}
+}
+
+// TestSanitizePagesTierGating pins that standalone pages require plan.FeatureStaticPages: free tier
+// drops all pages regardless of content, pro/scale keep them.
+func TestSanitizePagesTierGating(t *testing.T) {
+	in := []Page{{Type: "about", Title: "About", Body: "We started in a garage."}}
+
+	if got := sanitizePages(in, plan.Free); got != nil {
+		t.Errorf("free tier must drop all standalone pages, got %v", got)
+	}
+	if got := sanitizePages(in, plan.Pro); len(got) != 1 {
+		t.Errorf("pro tier must keep standalone pages, got %v", got)
 	}
 }

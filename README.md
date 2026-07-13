@@ -44,8 +44,8 @@ automatically.
 - **Editorial storefront** — a monochrome "refined brutalism" design system, light/dark, in English,
   Spanish and Brazilian Portuguese.
 - **Multi-store SaaS** — a marketing landing at `/`, merchant onboarding (`/signup` creates the account
-  and the first store), per-store storefront at `/store/[slug]` (subdomain in production), and a merchant
-  dashboard at `/app` (products, stock, branding). Every store is isolated by `tenantId`.
+  and the first store), per-store storefront at `/store/[slug]`, and a merchant dashboard at `/app`
+  (products, stock, branding). Every store is isolated by `tenantId`.
 
 ## Quickstart
 

@@ -54,6 +54,11 @@
 	const tier = $derived(normalizeTier(activeStore?.plan));
 	const canDrops = $derived(hasFeature(tier, 'drops'));
 	const canLogo = $derived(hasFeature(tier, 'customLogo'));
+	const canSections = $derived(hasFeature(tier, 'sectionsPro'));
+	const canPages = $derived(hasFeature(tier, 'staticPages'));
+	// Mirrors proSectionTypes in services/internal/accounts/service.go — the accounts write-time
+	// sanitizer is the real gate; this only dims the controls before a merchant tries and gets stripped.
+	const PRO_SECTION_TYPES = new Set(['feature', 'contact', 'gallery', 'faq']);
 	const limit = $derived(productLimit(tier));
 	const atProductLimit = $derived(limit !== UNLIMITED && products.length >= limit);
 
@@ -432,6 +437,23 @@
 	const labelClass = 'font-mono text-metadata-sm uppercase tracking-[0.05em] text-text-muted';
 </script>
 
+<!-- Shared by the 3 image-upload spots below (product images, section image, item image) — same accept
+     list/file-input styling/uploading-disabled behavior, only the change handler differs per caller. -->
+{#snippet imageThumb(url: string, size: string = 'h-10 w-10')}
+	<img src={url} alt="" class="brutal-border {size} object-cover" />
+{/snippet}
+
+{#snippet imageFileInput(onchange: (e: Event) => void, disabled: boolean, multiple: boolean = false)}
+	<input
+		type="file"
+		accept="image/png,image/jpeg,image/webp,image/avif,image/gif"
+		{multiple}
+		{onchange}
+		{disabled}
+		class="mt-1 font-mono text-metadata-sm text-text-muted file:mr-3 file:brutal-border file:bg-surface file:px-3 file:py-1 file:font-mono file:text-metadata-sm file:text-text"
+	/>
+{/snippet}
+
 <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
 	<div class="flex items-center gap-3">
 		<h1 class="font-sans text-headline-lg tracking-tighter">{$t('app.title')}</h1>
@@ -501,7 +523,7 @@
 			{$t('app.stores.limitReached', { max: String(MAX_STORES) })}
 		</p>
 	{:else}
-		<div class="mt-6 flex flex-wrap items-end gap-3">
+		<div class="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
 			<label class="flex flex-col gap-1">
 				<span class={labelClass}>{$t('app.stores.slug')}</span>
 				<input bind:value={newSlug} placeholder="acme" class={inputClass} />
@@ -610,7 +632,7 @@
 			{/each}
 		</div>
 
-		<form onsubmit={doCreateProduct} class="flex flex-wrap items-end gap-3">
+		<form onsubmit={doCreateProduct} class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
 			<label class="flex flex-col gap-1">
 				<span class={labelClass}>{$t('app.products.name')}</span>
 				<input bind:value={pName} required class={inputClass} />
@@ -652,10 +674,10 @@
 					{#if uploading}<span class="text-accent">{$t('app.products.uploading')}</span>{/if}
 				</span>
 				{#if pImages.length}
-					<div class="flex flex-wrap gap-2">
+					<div class="grid grid-cols-4 gap-2 sm:grid-cols-6">
 						{#each pImages as img, i (img)}
 							<div class="relative">
-								<img src={img} alt="" class="brutal-border h-12 w-12 object-cover" />
+								{@render imageThumb(img, 'h-12 w-12')}
 								{#if i === 0}
 									<span class="absolute -bottom-2 left-0 brutal-border bg-bg px-1 font-mono text-[0.6rem] uppercase text-text-muted">{$t('app.products.main')}</span>
 								{/if}
@@ -671,14 +693,7 @@
 						{/each}
 					</div>
 				{/if}
-				<input
-					type="file"
-					accept="image/png,image/jpeg,image/webp,image/avif,image/gif"
-					multiple
-					onchange={onPickProductImage}
-					disabled={uploading}
-					class="mt-1 font-mono text-metadata-sm text-text-muted file:mr-3 file:brutal-border file:bg-surface file:px-3 file:py-1 file:font-mono file:text-metadata-sm file:text-text"
-				/>
+				{@render imageFileInput(onPickProductImage, uploading, true)}
 			</label>
 			<label class="flex flex-col gap-1">
 				<span class="{labelClass} flex items-center gap-1">
@@ -706,8 +721,9 @@
 	<!-- Settings -->
 	<section class="mb-12">
 		<h2 class="mb-4 font-sans text-headline-md tracking-tight">{$t('app.settings.title')}</h2>
+		<p class="mb-6 font-mono text-metadata-sm text-text-muted">{$t('app.settings.contentHint')}</p>
 		<form onsubmit={doSaveSettings} class="flex flex-col gap-8">
-			<div class="flex flex-wrap items-end gap-3">
+			<div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
 				<label class="flex flex-col gap-1">
 					<span class={labelClass}>{$t('app.settings.displayName')}</span>
 					<input bind:value={setName} class={inputClass} />
@@ -750,7 +766,8 @@
 				<div class="flex flex-col gap-px brutal-border bg-border">
 					{#each setLayout as section, i (section.type)}
 						{@const meta = SECTION_META[section.type as SectionType]}
-						<div class="flex flex-col gap-3 bg-bg p-4 {section.enabled ? '' : 'opacity-60'}">
+						{@const locked = PRO_SECTION_TYPES.has(section.type) && !canSections}
+						<div class="flex flex-col gap-3 bg-bg p-4 {section.enabled && !locked ? '' : 'opacity-60'}">
 							<div class="flex flex-wrap items-center gap-3">
 								<div class="flex flex-col">
 									<button
@@ -773,7 +790,9 @@
 									</button>
 								</div>
 								<div class="flex flex-1 flex-col">
-									<span class="font-sans text-body-md">{meta.label}</span>
+									<span class="font-sans text-body-md flex items-center gap-1">
+										{meta.label} {#if locked}<Lock size={11} /> {$t('app.pro')}{/if}
+									</span>
 									<span class={labelClass}>{meta.hint}</span>
 								</div>
 								{#if meta.fixed}
@@ -782,7 +801,9 @@
 									<button
 										type="button"
 										onclick={() => toggleSection(i)}
-										class="font-mono text-metadata-sm uppercase tracking-[0.1em] {section.enabled
+										disabled={locked}
+										title={locked ? $t('app.settings.sectionsLocked') : ''}
+										class="font-mono text-metadata-sm uppercase tracking-[0.1em] disabled:cursor-not-allowed disabled:opacity-40 {section.enabled
 											? 'text-accent'
 											: 'text-text-muted hover:text-text'}"
 									>
@@ -791,7 +812,7 @@
 								{/if}
 							</div>
 
-							{#if section.enabled && meta.fields.length}
+							{#if section.enabled && !locked && meta.fields.length}
 								<div class="flex flex-wrap gap-3 border-t border-border pt-3">
 									{#each meta.fields as field (field)}
 										<label class="flex flex-1 flex-col gap-1" style="min-width: 12rem">
@@ -807,9 +828,9 @@
 													class={inputClass}
 												></textarea>
 											{:else if field === 'imageUrl'}
-												<div class="flex items-center gap-3">
+												<div class="flex flex-col gap-3 sm:flex-row sm:items-center">
 													{#if section.imageUrl}
-														<img src={section.imageUrl} alt="" class="brutal-border h-10 w-10 object-cover" />
+														{@render imageThumb(section.imageUrl)}
 													{/if}
 													<input
 														value={section[field] ?? ''}
@@ -818,13 +839,7 @@
 														class="{inputClass} flex-1"
 													/>
 												</div>
-												<input
-													type="file"
-													accept="image/png,image/jpeg,image/webp,image/avif,image/gif"
-													onchange={(e) => onPickSectionImage(i, e)}
-													disabled={uploadingSection === i}
-													class="mt-1 font-mono text-metadata-sm text-text-muted file:mr-3 file:brutal-border file:bg-surface file:px-3 file:py-1 file:font-mono file:text-metadata-sm file:text-text"
-												/>
+												{@render imageFileInput((e) => onPickSectionImage(i, e), uploadingSection === i)}
 											{:else}
 												<input
 													value={section[field] ?? ''}
@@ -868,19 +883,13 @@
 								<div class="flex flex-col gap-3 border-t border-border pt-3">
 									<span class={labelClass}>{im.label}s</span>
 									{#each section.items ?? [] as item, ii (ii)}
-										<div class="flex flex-wrap items-start gap-3 brutal-border bg-surface p-3">
+										<div class="flex flex-col items-stretch gap-3 brutal-border bg-surface p-3 sm:flex-row sm:flex-wrap sm:items-start">
 											{#if im.kind === 'image'}
 												<div class="flex items-center gap-3">
 													{#if item.imageUrl}
-														<img src={item.imageUrl} alt="" class="brutal-border h-10 w-10 object-cover" />
+														{@render imageThumb(item.imageUrl)}
 													{/if}
-													<input
-														type="file"
-														accept="image/png,image/jpeg,image/webp,image/avif,image/gif"
-														onchange={(e) => onPickItemImage(i, ii, e)}
-														disabled={uploadingItem === i + ':' + ii}
-														class="font-mono text-metadata-sm text-text-muted file:mr-3 file:brutal-border file:bg-surface file:px-3 file:py-1 file:font-mono file:text-metadata-sm file:text-text"
-													/>
+													{@render imageFileInput((e) => onPickItemImage(i, ii, e), uploadingItem === i + ':' + ii)}
 												</div>
 												<input
 													value={item.imageUrl ?? ''}
@@ -946,9 +955,11 @@
 				</p>
 				<div class="flex flex-col gap-px brutal-border bg-border">
 					{#each PAGE_TYPES as type (type)}
-						<div class="flex flex-col gap-3 bg-bg p-4">
+						<div class="flex flex-col gap-3 bg-bg p-4 {canPages ? '' : 'opacity-60'}">
 							<div class="flex items-baseline justify-between gap-3">
-								<span class="font-sans text-body-md">{PAGE_META[type].defaultTitle}</span>
+								<span class="font-sans text-body-md flex items-center gap-1">
+									{PAGE_META[type].defaultTitle} {#if !canPages}<Lock size={11} /> {$t('app.pro')}{/if}
+								</span>
 								<span class={labelClass}>{PAGE_META[type].hint}</span>
 							</div>
 							<label class="flex flex-col gap-1">
@@ -956,12 +967,20 @@
 								<input
 									bind:value={setPages[type].title}
 									placeholder={PAGE_META[type].defaultTitle}
-									class={inputClass}
+									disabled={!canPages}
+									title={canPages ? '' : $t('app.settings.pagesLocked')}
+									class="{inputClass} disabled:cursor-not-allowed disabled:opacity-40"
 								/>
 							</label>
 							<label class="flex flex-col gap-1">
 								<span class={labelClass}>{$t('app.settings.pageContentField')}</span>
-								<textarea bind:value={setPages[type].body} rows="4" class={inputClass}></textarea>
+								<textarea
+									bind:value={setPages[type].body}
+									rows="4"
+									disabled={!canPages}
+									title={canPages ? '' : $t('app.settings.pagesLocked')}
+									class="{inputClass} disabled:cursor-not-allowed disabled:opacity-40"
+								></textarea>
 							</label>
 						</div>
 					{/each}

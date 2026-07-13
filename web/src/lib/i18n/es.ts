@@ -1,7 +1,7 @@
 import type { Messages } from './en';
 
 export const es: Messages = {
-	nav: { shop: 'Tienda', collection: 'Colección', about: 'Nosotros', journal: 'Journal', bag: 'Bolsa', catalog: 'Catálogo', home: 'Inicio', account: 'Mi cuenta' },
+	nav: { shop: 'Tienda', collection: 'Colección', about: 'Nosotros', journal: 'Journal', bag: 'Bolsa', catalog: 'Catálogo', home: 'Inicio', account: 'Mi cuenta', menu: 'Menú' },
 	common: {
 		addToBag: 'Agregar a la bolsa',
 		checkout: 'Finalizar compra',
@@ -100,12 +100,12 @@ export const es: Messages = {
 		email: 'Email',
 		password: 'Contraseña',
 		storeName: 'Nombre de la tienda',
-		storeSlug: 'Subdominio',
+		storeSlug: 'URL de la tienda',
 		toSignup: '¿No tenés cuenta? Creá tu tienda',
 		toLogin: '¿Ya tenés cuenta? Ingresá',
 		failed: 'Falló la autenticación',
 		sessionExpired: 'Tu sesión expiró — iniciá sesión de nuevo',
-		slugTaken: 'Ese subdominio ya está en uso — probá con otro'
+		slugTaken: 'Esa URL de tienda ya está en uso — probá con otra'
 	},
 	settings: { title: 'Configuración', language: 'Idioma', theme: 'Apariencia' },
 	account: {
@@ -140,7 +140,7 @@ export const es: Messages = {
 			'Armá un storefront editorial en minutos, cargá tus productos y vendé con un stock que se mantiene honesto bajo cualquier carga. Multi-tienda desde el día uno.',
 		cta: 'Creá tu tienda',
 		seeDemo: 'Ver una tienda en vivo',
-		subdomainNote: 'Cada tienda tiene su propio subdominio en {domain}.',
+		subdomainNote: 'Cada tienda tiene su propia página en {domain}/store/tu-nombre.',
 		feat1Title: 'Tu propio storefront',
 		feat1Body: 'Un storefront editorial pulido por tienda. Poné tu nombre, logo y acento — del resto nos encargamos.',
 		feat2Title: 'Hacela tuya',
@@ -162,7 +162,7 @@ export const es: Messages = {
 		plan_free_desc: 'Una tienda, storefront completo, con el motor de no-sobreventa incluido.',
 		plan_pro_name: 'Pro',
 		plan_pro_price: '$29/mes',
-		plan_pro_desc: 'Subdominio propio, caché prioritaria y métricas para una tienda en crecimiento.',
+		plan_pro_desc: 'Logo propio, caché prioritaria y métricas para una tienda en crecimiento.',
 		plan_scale_name: 'Scale',
 		plan_scale_price: 'Hablemos',
 		plan_scale_desc: 'Múltiples tiendas, límites más altos y soporte dedicado.',
@@ -225,11 +225,14 @@ export const es: Messages = {
 		},
 		settings: {
 			title: 'Configuración de la tienda',
+			contentHint: 'Todo lo que cargues abajo se muestra tal cual lo escribís — el idioma de la tienda solo traduce las etiquetas fijas del storefront, no tu propio contenido.',
 			displayName: 'Nombre visible',
 			accent: 'Color de acento',
 			theme: 'Tema',
 			logoUrl: 'URL del logo',
 			logoLocked: 'El logo propio es una función Pro — mejorá arriba',
+			sectionsLocked: 'Galería, FAQ, feature y contacto son función Pro — mejorá arriba',
+			pagesLocked: 'Las páginas independientes son función Pro — mejorá arriba',
 			layoutTitle: 'Diseño del storefront',
 			layoutHint: 'reordenar sin arrastrar · mostrar/ocultar · editar texto',
 			moveUp: 'Subir',

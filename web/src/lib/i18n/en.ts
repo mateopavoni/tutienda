@@ -1,6 +1,6 @@
 // English is the source of truth; other locales mirror this shape (enforced by `Messages = typeof en`).
 export const en = {
-	nav: { shop: 'Shop', collection: 'Collection', about: 'About', journal: 'Journal', bag: 'Bag', catalog: 'Catalog', home: 'Home', account: 'Account' },
+	nav: { shop: 'Shop', collection: 'Collection', about: 'About', journal: 'Journal', bag: 'Bag', catalog: 'Catalog', home: 'Home', account: 'Account', menu: 'Menu' },
 	common: {
 		addToBag: 'Add to bag',
 		checkout: 'Checkout',
@@ -99,12 +99,12 @@ export const en = {
 		email: 'Email',
 		password: 'Password',
 		storeName: 'Store name',
-		storeSlug: 'Subdomain',
+		storeSlug: 'Store URL',
 		toSignup: "Need an account? Create your store",
 		toLogin: 'Have an account? Sign in',
 		failed: 'Authentication failed',
 		sessionExpired: 'Your session expired — sign in again',
-		slugTaken: 'That subdomain is already taken — try another one'
+		slugTaken: 'That store URL is already taken — try another one'
 	},
 	settings: { title: 'Settings', language: 'Language', theme: 'Appearance' },
 	// Storefront customer accounts (/store/[slug]/cuenta). A shopper's own account, separate from the
@@ -142,7 +142,7 @@ export const en = {
 			'Spin up an editorial storefront in minutes, load your products, and sell with stock that stays honest under any load. Multi-tenant from day one.',
 		cta: 'Create your store',
 		seeDemo: 'See a live store',
-		subdomainNote: 'Every store gets its own {domain} subdomain.',
+		subdomainNote: 'Every store gets its own page at {domain}/store/your-name.',
 		feat1Title: 'Your own storefront',
 		feat1Body: 'A polished editorial storefront per store. Set your name, logo and accent — the rest is handled.',
 		feat2Title: 'Make it yours',
@@ -164,7 +164,7 @@ export const en = {
 		plan_free_desc: 'One store, full storefront, the no-oversell engine included.',
 		plan_pro_name: 'Pro',
 		plan_pro_price: '$29/mo',
-		plan_pro_desc: 'Custom subdomain, priority cache and analytics for a growing store.',
+		plan_pro_desc: 'Custom logo, priority cache and analytics for a growing store.',
 		plan_scale_name: 'Scale',
 		plan_scale_price: 'Talk to us',
 		plan_scale_desc: 'Multiple stores, higher rate limits and dedicated support.',
@@ -229,11 +229,14 @@ export const en = {
 		},
 		settings: {
 			title: 'Store settings',
+			contentHint: "Everything you type below is shown exactly as written — the store's language only translates the storefront's fixed labels, not your own content.",
 			displayName: 'Display name',
 			accent: 'Accent color',
 			theme: 'Theme',
 			logoUrl: 'Logo URL',
 			logoLocked: 'A custom logo is a Pro feature — upgrade above',
+			sectionsLocked: 'Gallery, FAQ, feature and contact sections are a Pro feature — upgrade above',
+			pagesLocked: 'Standalone pages are a Pro feature — upgrade above',
 			layoutTitle: 'Storefront layout',
 			layoutHint: 'drag-free reorder · toggle · edit copy',
 			moveUp: 'Move up',

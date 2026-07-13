@@ -35,6 +35,18 @@ func TestEntitlements(t *testing.T) {
 	if Tier("enterprise").Has(FeatureDrops) {
 		t.Error("unknown tier must not unlock paid features")
 	}
+	if Free.Has(FeatureSectionsPro) {
+		t.Error("free must not unlock sectionsPro")
+	}
+	if !Pro.Has(FeatureSectionsPro) {
+		t.Error("pro must unlock sectionsPro")
+	}
+	if Free.Has(FeatureStaticPages) {
+		t.Error("free must not unlock staticPages")
+	}
+	if !Scale.Has(FeatureStaticPages) {
+		t.Error("scale must unlock staticPages")
+	}
 }
 
 func TestProductLimits(t *testing.T) {

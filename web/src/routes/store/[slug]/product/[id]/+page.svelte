@@ -98,28 +98,30 @@
 
 <section class="flex flex-col lg:h-[calc(100vh-4rem)] lg:flex-row">
 	<!-- Image gallery -->
-	<div class="relative h-[60vh] w-full overflow-hidden bg-surface-variant lg:h-full lg:w-[70%]">
-		<img src={mainImage} alt={product.name} class="h-full w-full object-cover" />
-		{#if product.dropAt}
-			<span
-				class="absolute left-4 top-4 flex items-center gap-2 bg-accent px-3 py-1.5 font-mono text-metadata-sm uppercase tracking-[0.1em] text-on-accent"
-			>
-				{#if isUpcoming}
-					{$t('drop.badge')}
-				{:else}
-					<Radio size={13} strokeWidth={2} /> {$t('drop.liveNow')}
-				{/if}
-			</span>
-		{/if}
+	<div class="flex w-full flex-col bg-surface-variant lg:h-full lg:w-[70%]">
+		<div class="relative h-[50vh] w-full overflow-hidden sm:h-[60vh] md:h-[65vh] lg:flex-1">
+			<img src={mainImage} alt={product.name} class="h-full w-full object-cover" />
+			{#if product.dropAt}
+				<span
+					class="absolute left-4 top-4 flex items-center gap-2 bg-accent px-3 py-1.5 font-mono text-metadata-sm uppercase tracking-[0.1em] text-on-accent"
+				>
+					{#if isUpcoming}
+						{$t('drop.badge')}
+					{:else}
+						<Radio size={13} strokeWidth={2} /> {$t('drop.liveNow')}
+					{/if}
+				</span>
+			{/if}
+		</div>
 		{#if gallery.length > 1}
-			<div class="absolute bottom-4 left-4 right-4 flex flex-wrap gap-2">
+			<div class="flex gap-2 overflow-x-auto p-3">
 				{#each gallery as img, i (img)}
 					<button
 						type="button"
 						onclick={() => (activeImage = i)}
 						aria-label="View image {i + 1}"
 						aria-pressed={activeImage === i}
-						class="h-14 w-14 overflow-hidden border-2 bg-surface transition-opacity {activeImage === i
+						class="h-14 w-14 shrink-0 overflow-hidden border-2 bg-surface transition-opacity {activeImage === i
 							? 'border-accent'
 							: 'border-transparent opacity-70 hover:opacity-100'}"
 					>
