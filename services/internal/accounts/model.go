@@ -63,9 +63,9 @@ type Section struct {
 	// Overlay is the peak tint strength (0-100) of a gradient laid over a hero's background image, at the
 	// edge nearest the text (the storefront's copy is left-aligned, so the gradient starts strong on the
 	// left and fades to transparent towards the right — the photo stays visible, only the text's corner
-	// is protected). OverlayColor picks the tint: "black" (default, white text) or "white" (dark text, for
-	// a merchant who wants an airy/bright hero). Both merchant-adjustable; see sanitizeLayout for the
-	// clamped range/closed set.
+	// is protected). Merchant-adjustable; see sanitizeLayout for the clamped range. OverlayColor is a
+	// legacy field kept only so old stored settings round-trip: the storefront no longer reads it, the
+	// tint now follows the visitor's light/dark mode automatically instead of a merchant choice.
 	Overlay      int    `bson:"overlay,omitempty" json:"overlay,omitempty"`
 	OverlayColor string `bson:"overlayColor,omitempty" json:"overlayColor,omitempty"`
 }

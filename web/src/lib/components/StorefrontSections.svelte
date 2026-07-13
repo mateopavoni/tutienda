@@ -4,7 +4,7 @@
 	import { HERO_OVERLAY_DEFAULT } from '$lib/layout';
 	import ProductCard from '$lib/components/ProductCard.svelte';
 	import { t } from '$lib/i18n';
-	import { ArrowRight } from 'lucide-svelte';
+	import { ArrowRight, ChevronDown } from 'lucide-svelte';
 
 	// Renders a store's enabled sections in order, around the fixed product grid. Shared by the real
 	// storefront (store/[slug]/+page.svelte) and the live preview in the /app layout editor, so a
@@ -27,23 +27,24 @@
 	{:else if section.type === 'hero'}
 		<!-- Overlay is a left-to-right gradient, not a flat tint: strongest where the (left-aligned) text
 		     sits, fading to transparent so the rest of the photo shows through untouched — the standard
-		     photo-hero effect. overlayColor picks black (default, white text) or white (dark text). -->
-		{@const overlayColor = section.overlayColor ?? 'black'}
-		{@const overlayRGB = overlayColor === 'white' ? '255,255,255' : '0,0,0'}
+		     photo-hero effect. The tint follows the visitor's light/dark mode (white veil + dark text in
+		     light mode, black veil + light text in dark mode) via the `dark:` variant, not a merchant
+		     choice — text color is left to inherit the page's own text-text, which is already the right
+		     shade for each mode, so no JS branching is needed either. -->
 		{@const overlayAlpha = (section.overlay ?? HERO_OVERLAY_DEFAULT) / 100}
-		{@const overlayText = overlayColor === 'white' ? '' : 'text-on-inverse'}
 		<section class="relative flex min-h-screen w-full items-center border-b border-border">
 			{#if section.imageUrl}
 				<img src={section.imageUrl} alt={section.heading ?? storeName} class="absolute inset-0 h-full w-full object-cover" />
 				<div
-					class="absolute inset-0"
-					style="background: linear-gradient(to right, rgba({overlayRGB},{overlayAlpha}) 0%, rgba({overlayRGB},0) 65%)"
+					class="absolute inset-0 dark:hidden"
+					style="background: linear-gradient(to right, rgba(255,255,255,{overlayAlpha}) 0%, rgba(255,255,255,0) 65%)"
+				></div>
+				<div
+					class="absolute inset-0 hidden dark:block"
+					style="background: linear-gradient(to right, rgba(0,0,0,{overlayAlpha}) 0%, rgba(0,0,0,0) 65%)"
 				></div>
 			{/if}
-			<div
-				class="relative mx-auto flex w-full max-w-container flex-col items-start gap-6 px-4 py-20 md:px-12 md:py-28
-					{section.imageUrl ? overlayText : ''}"
-			>
+			<div class="relative mx-auto flex w-full max-w-container flex-col items-start gap-6 px-4 py-20 md:px-12 md:py-28">
 				{#if section.heading}
 					<h2 class="max-w-3xl font-sans uppercase leading-none tracking-tighter text-display-xl">
 						{section.heading}
@@ -111,11 +112,15 @@
 					{#if section.heading}
 						<h2 class="mb-8 font-sans uppercase leading-none tracking-tighter text-headline-md">{section.heading}</h2>
 					{/if}
-					<div class="grid grid-cols-2 gap-2 md:grid-cols-3">
+					<div class="grid grid-cols-2 gap-3 md:grid-cols-3">
 						{#each section.items ?? [] as item (item.imageUrl)}
 							{#if item.imageUrl}
-								<figure class="relative">
-									<img src={item.imageUrl} alt={item.heading ?? ''} class="aspect-square w-full object-cover" />
+								<figure class="group relative overflow-hidden brutal-border">
+									<img
+										src={item.imageUrl}
+										alt={item.heading ?? ''}
+										class="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-105"
+									/>
 									{#if item.heading}
 										<figcaption class="absolute bottom-0 left-0 right-0 bg-black/50 px-3 py-1 font-mono text-metadata-sm text-on-inverse">
 											{item.heading}
@@ -135,18 +140,21 @@
 					<h2 class="font-sans uppercase leading-none tracking-tighter text-headline-md md:col-span-4">
 						{section.heading}
 					</h2>
-					<dl class="flex flex-col divide-y divide-border md:col-span-8">
+					<div class="flex flex-col divide-y divide-border md:col-span-8">
 						{#each section.items ?? [] as item (item.heading)}
 							{#if item.heading || item.body}
-								<div class="py-4">
-									<dt class="font-sans text-body-lg">{item.heading}</dt>
+								<details class="group py-4">
+									<summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-sans text-body-lg marker:content-none [&::-webkit-details-marker]:hidden">
+										{item.heading}
+										<ChevronDown size={18} class="shrink-0 transition-transform group-open:rotate-180" />
+									</summary>
 									{#if item.body}
-										<dd class="mt-2 whitespace-pre-line font-sans text-body-md leading-relaxed text-text-muted">{item.body}</dd>
+										<p class="mt-2 whitespace-pre-line font-sans text-body-md leading-relaxed text-text-muted">{item.body}</p>
 									{/if}
-								</div>
+								</details>
 							{/if}
 						{/each}
-					</dl>
+					</div>
 				</div>
 			</section>
 		{/if}

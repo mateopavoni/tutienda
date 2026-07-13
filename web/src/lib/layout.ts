@@ -25,8 +25,9 @@ export interface SectionItem {
 	imageUrl?: string;
 }
 
-// OverlayColor is the hero's image tint: 'black' (default, white text — the classic photo-hero look) or
-// 'white' (dark text, for a merchant who wants an airy/bright hero). Mirrors Go's knownOverlayColors.
+// OverlayColor: legacy field, kept only so old stored settings round-trip through the API without
+// dropping data. The storefront no longer reads it — the hero's tint now follows the visitor's
+// light/dark mode automatically (see StorefrontSections.svelte). Mirrors Go's knownOverlayColors.
 export type OverlayColor = 'black' | 'white';
 
 export interface Section {
