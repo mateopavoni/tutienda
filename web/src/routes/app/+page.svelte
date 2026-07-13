@@ -24,6 +24,7 @@
 	import { THEMES, normalizeTheme } from '$lib/theme';
 	import {
 		normalizeLayout,
+		enabledSections,
 		SECTION_META,
 		HERO_OVERLAY_MIN,
 		HERO_OVERLAY_MAX,
@@ -34,6 +35,7 @@
 		type OverlayColor
 	} from '$lib/layout';
 	import { PAGE_TYPES, PAGE_META, type Page, type PageType } from '$lib/pages';
+	import StorefrontSections from '$lib/components/StorefrontSections.svelte';
 	import { ExternalLink, Lock, ArrowUp, ArrowDown } from 'lucide-svelte';
 
 	// Mirrors the server's MAX_STORES_PER_MERCHANT default (anti-abuse cap). The server is authoritative
@@ -90,6 +92,13 @@
 	let setLayout = $state<Section[]>(normalizeLayout());
 	// Standalone pages, one editable row per known type (blank ones are dropped on save / server-side).
 	let setPages = $state<Record<PageType, { title: string; body: string }>>(emptyPages());
+
+	// Live preview of the layout editor: the same component the storefront renders, fed straight from the
+	// unsaved `setLayout` state, so a merchant sees a change before hitting save. Real store slug/products
+	// so the preview looks (and links) like the real thing.
+	const previewBase = $derived('/store/' + (activeStore?.slug ?? ''));
+	const previewSections = $derived(enabledSections(setLayout));
+	const previewFeatured = $derived(products.slice(0, 6));
 
 	function emptyPages(): Record<PageType, { title: string; body: string }> {
 		return Object.fromEntries(PAGE_TYPES.map((t) => [t, { title: '', body: '' }])) as Record<
@@ -940,6 +949,23 @@
 							{/if}
 						</div>
 					{/each}
+				</div>
+			</div>
+
+			<!-- Live preview: same markup the storefront renders, fed from the unsaved edits above. -->
+			<div>
+				<div class="mb-1 flex items-baseline gap-3">
+					<h3 class="font-sans text-body-lg">{$t('app.settings.previewTitle')}</h3>
+					<span class="font-mono text-metadata-sm text-text-muted">{$t('app.settings.previewHint')}</span>
+				</div>
+				<div class="max-h-[70vh] overflow-y-auto brutal-border bg-bg">
+					<StorefrontSections
+						sections={previewSections}
+						featured={previewFeatured}
+						base={previewBase}
+						catalogHref={previewBase + '/catalogo'}
+						storeName={setName}
+					/>
 				</div>
 			</div>
 

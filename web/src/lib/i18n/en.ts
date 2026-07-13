@@ -245,6 +245,8 @@ export const en = {
 			alwaysOn: 'Always on',
 			shown: '● Shown',
 			hidden: '○ Hidden',
+			previewTitle: 'Preview',
+			previewHint: 'updates as you type · not yet saved',
 			pagesTitle: 'Pages',
 			pagesHint: 'footer links · blank = hidden',
 			pagesDesc: 'Standalone pages linked from your storefront footer. A page only appears once it has content.',

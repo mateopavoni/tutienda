@@ -8,6 +8,7 @@
 	import { enabledPages } from '$lib/pages';
 	import { normalizeTheme } from '$lib/theme';
 	import { theme } from '$lib/stores/theme';
+	import { storeInfo, fetchStoreInfo } from '$lib/stores/storeInfo';
 	import { browser } from '$app/environment';
 
 	let { children, data } = $props();
@@ -18,6 +19,19 @@
 		setBrowserSlug(data.storeSlug);
 		loadCustomer(data.storeSlug);
 		cart.hydrate(data.storeSlug);
+	});
+
+	// Live storefront settings: reset to the SSR snapshot on navigation, then poll so a merchant's saved
+	// branding/layout edits reach an already-open tab without a manual reload (same pattern as the live
+	// stock counter on the product page — poll while relevant, cheap enough at this interval).
+	$effect(() => {
+		storeInfo.set(data.store);
+		const slug = data.storeSlug;
+		const id = setInterval(async () => {
+			const fresh = await fetchStoreInfo(slug);
+			if (fresh) storeInfo.set(fresh);
+		}, 20000);
+		return () => clearInterval(id);
 	});
 
 	// Resolved light/dark scheme (mirrors the logic in $lib/stores/theme's applyTheme) so the accent can
@@ -33,12 +47,15 @@
 	});
 	let isDark = $derived($theme === 'dark' || ($theme === 'system' && prefersDark));
 
+	// $storeInfo is the live mirror seeded above (falls back to the SSR data before the effect runs).
+	const store = $derived($storeInfo ?? data.store);
+
 	// Per-store accent: the only chromatic token a store can override. Everything else stays fixed.
-	let accentVar = $derived(safeAccent(data.store?.settings?.accentColor, isDark));
+	let accentVar = $derived(safeAccent(store?.settings?.accentColor, isDark));
 
 	// Per-store visual theme (fonts + palette); see web/src/lib/theme.ts + app.css [data-store-theme].
 	// Defaults to monolith on any unknown/legacy value. The accent above still overrides the theme accent.
-	let storeTheme = $derived(normalizeTheme(data.store?.settings?.theme));
+	let storeTheme = $derived(normalizeTheme(store?.settings?.theme));
 
 	function safeAccent(hex: string | undefined, dark: boolean): string | undefined {
 		if (!hex) return undefined;
@@ -71,14 +88,10 @@
 	data-store-theme={storeTheme}
 	style={accentVar ? `--accent: ${accentVar}` : undefined}
 >
-	<Nav store={data.store} slug={data.storeSlug} pages={enabledPages(data.store?.settings?.pages)} />
+	<Nav {store} slug={data.storeSlug} pages={enabledPages(store?.settings?.pages)} />
 	<main class="flex-1 pt-16">
 		{@render children()}
 	</main>
-	<Footer
-		storeName={data.store?.displayName}
-		slug={data.storeSlug}
-		pages={enabledPages(data.store?.settings?.pages)}
-	/>
+	<Footer storeName={store?.displayName} slug={data.storeSlug} pages={enabledPages(store?.settings?.pages)} />
 	<CartDrawer slug={data.storeSlug} />
 </div>

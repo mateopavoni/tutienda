@@ -241,6 +241,8 @@ export const es: Messages = {
 			alwaysOn: 'Siempre visible',
 			shown: '● Visible',
 			hidden: '○ Oculto',
+			previewTitle: 'Vista previa',
+			previewHint: 'se actualiza al tipear · todavía sin guardar',
 			pagesTitle: 'Páginas',
 			pagesHint: 'links en el footer · vacío = oculto',
 			pagesDesc: 'Páginas independientes enlazadas desde el footer de tu tienda. Una página aparece solo cuando tiene contenido.',

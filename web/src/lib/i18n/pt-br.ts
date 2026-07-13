@@ -241,6 +241,8 @@ export const ptBR: Messages = {
 			alwaysOn: 'Sempre visível',
 			shown: '● Visível',
 			hidden: '○ Oculto',
+			previewTitle: 'Pré-visualização',
+			previewHint: 'atualiza ao digitar · ainda não salvo',
 			pagesTitle: 'Páginas',
 			pagesHint: 'links no rodapé · vazio = oculto',
 			pagesDesc: 'Páginas independentes vinculadas no rodapé da sua loja. Uma página só aparece quando tem conteúdo.',
