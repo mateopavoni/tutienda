@@ -214,6 +214,18 @@ func (r *Repository) updateDisabled(ctx context.Context, id, ownerID string, dis
 	return &s, nil
 }
 
+// deleteStore removes a store, guarded by ownership.
+func (r *Repository) deleteStore(ctx context.Context, id, ownerID string) error {
+	res, err := r.stores.DeleteOne(ctx, bson.M{"_id": id, "ownerId": ownerID})
+	if err != nil {
+		return err
+	}
+	if res.DeletedCount == 0 {
+		return ErrStoreNotFound
+	}
+	return nil
+}
+
 func (r *Repository) storeBySlug(ctx context.Context, slug string) (*Store, error) {
 	var s Store
 	err := r.stores.FindOne(ctx, bson.M{"slug": slug}).Decode(&s)

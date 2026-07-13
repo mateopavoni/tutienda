@@ -208,6 +208,16 @@ func (s *Service) Delete(ctx context.Context, tenant, id string) error {
 	return nil
 }
 
+// DeleteTenant removes every product owned by a store, called by accounts when the store itself is
+// deleted (cascade). Idempotent: an already-empty tenant is not an error.
+func (s *Service) DeleteTenant(ctx context.Context, tenant string) error {
+	if err := s.repo.DeleteByTenant(ctx, tenant); err != nil {
+		return err
+	}
+	cacheInvalidate(ctx, s.cache, tenant)
+	return nil
+}
+
 // gateDrop blocks scheduling a drop (any dropAt) on a plan that doesn't unlock the drops tool. The
 // storefront and the orders saga already gate buying before release; this stops a free store from
 // authoring a drop in the first place — the server is the authority, not the dimmed UI control.

@@ -47,6 +47,16 @@ func (r *Repository) EnsureIndexes(ctx context.Context) error {
 	return err
 }
 
+// deleteByTenant removes every stock and reservation document of a store (used when the store itself is
+// deleted). Reservations aren't compensated first: the store is gone, so there's nothing left to protect.
+func (r *Repository) deleteByTenant(ctx context.Context, tenant string) error {
+	if _, err := r.stocks.DeleteMany(ctx, bson.M{"tenantId": tenant}); err != nil {
+		return err
+	}
+	_, err := r.reservations.DeleteMany(ctx, bson.M{"tenantId": tenant})
+	return err
+}
+
 // TryReserve atomically moves qty from available to reserved for one store's SKU, but only if enough is
 // available. The {tenantId, sku, available: {$gte: qty}} guard means the update matches zero documents
 // when stock is short, so the operation fails cleanly instead of driving stock negative. This is the

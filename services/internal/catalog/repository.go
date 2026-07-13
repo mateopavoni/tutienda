@@ -107,3 +107,9 @@ func (r *Repository) Delete(ctx context.Context, tenant, id string) error {
 	}
 	return nil
 }
+
+// DeleteByTenant removes every product of a store (used when a store itself is deleted).
+func (r *Repository) DeleteByTenant(ctx context.Context, tenant string) error {
+	_, err := r.products.DeleteMany(ctx, bson.M{"tenantId": tenant})
+	return err
+}

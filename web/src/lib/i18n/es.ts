@@ -183,6 +183,8 @@ export const es: Messages = {
 			create: 'Crear tienda',
 			limitReached: 'Llegaste al límite de la demo: {max} tiendas por cuenta.',
 			disabled: 'Desactivada',
+			delete: 'Borrar tienda',
+			deleteConfirm: '¿Borrar {name}? Esto elimina la tienda y todos sus productos/stock para siempre. No se puede deshacer.',
 			enable: 'Activar tienda',
 			disable: 'Desactivar tienda'
 		},
@@ -256,10 +258,7 @@ export const es: Messages = {
 			body: 'Texto',
 			imageUrl: 'URL de imagen',
 			ctaLabel: 'Texto del botón',
-			overlay: 'Contraste de la imagen',
-			overlayColor: 'Color del velo',
-			overlayWhite: 'Claro (texto oscuro)',
-			overlayBlack: 'Oscuro (texto blanco)'
+			overlay: 'Contraste de la imagen'
 		},
 		items: { question: 'Pregunta', answer: 'Respuesta', caption: 'epígrafe (opcional)', imageUrl: 'URL de imagen', remove: 'Quitar' },
 		toast: {
@@ -270,6 +269,7 @@ export const es: Messages = {
 			storeCreated: 'Tienda creada',
 			storeDisabled: 'Tienda desactivada',
 			storeEnabled: 'Tienda activada',
+			storeDeleted: 'Tienda borrada',
 			managing: 'Gestionando {name}',
 			planChanged: 'Plan cambiado a {plan}',
 			productCreated: 'Producto creado',

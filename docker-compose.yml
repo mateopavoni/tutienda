@@ -121,6 +121,8 @@ services:
       MONGO_URI: ${MONGO_URI}
       ACCOUNTS_ADDR: ":8084"
       JWT_SECRET: ${JWT_SECRET}
+      CATALOG_URL: ${CATALOG_URL}
+      INVENTORY_URL: ${INVENTORY_URL}
     depends_on:
       mongo: { condition: service_healthy }
     restart: on-failure

@@ -179,3 +179,9 @@ func (s *Service) SetStock(ctx context.Context, tenant, sku string, available in
 	}
 	return s.repo.upsertStock(ctx, tenant, sku, available)
 }
+
+// DeleteTenant removes every stock and reservation of a store, called by accounts when the store itself
+// is deleted (cascade). Idempotent: an already-empty tenant is not an error.
+func (s *Service) DeleteTenant(ctx context.Context, tenant string) error {
+	return s.repo.deleteByTenant(ctx, tenant)
+}

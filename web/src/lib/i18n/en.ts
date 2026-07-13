@@ -188,7 +188,9 @@ export const en = {
 			limitReached: 'You\'ve reached the demo limit of {max} stores per account.',
 			disabled: 'Disabled',
 			enable: 'Enable store',
-			disable: 'Disable store'
+			disable: 'Disable store',
+			delete: 'Delete store',
+			deleteConfirm: 'Delete {name}? This permanently removes the store and all its products/stock. This cannot be undone.'
 		},
 		membership: {
 			title: 'Membership',
@@ -261,9 +263,6 @@ export const en = {
 			imageUrl: 'Image URL',
 			ctaLabel: 'Button label',
 			overlay: 'Image contrast',
-			overlayColor: 'Overlay color',
-			overlayWhite: 'Light (dark text)',
-			overlayBlack: 'Dark (white text)'
 		},
 		items: { question: 'Question', answer: 'Answer', caption: 'caption (optional)', imageUrl: 'image URL', remove: 'Remove' },
 		toast: {
@@ -274,6 +273,7 @@ export const en = {
 			storeCreated: 'Store created',
 			storeDisabled: 'Store disabled',
 			storeEnabled: 'Store enabled',
+			storeDeleted: 'Store deleted',
 			managing: 'Managing {name}',
 			planChanged: 'Plan changed to {plan}',
 			productCreated: 'Product created',

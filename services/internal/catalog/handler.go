@@ -32,6 +32,7 @@ func (h *Handler) Routes() http.Handler {
 	mux.HandleFunc("DELETE /products/{id}", h.remove)
 	mux.HandleFunc("POST /uploads", h.upload)
 	mux.HandleFunc("POST /seed", h.seed)
+	mux.HandleFunc("DELETE /admin/tenant", h.removeTenant)
 	// Lift the gateway-stamped X-Tenant-ID and X-Store-Plan into the context for every handler. The plan
 	// only rides admin (store-scoped) requests; storefront reads carry none and read back as free, which
 	// is fine since reads aren't gated.
@@ -158,6 +159,20 @@ func (h *Handler) remove(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		httpx.Fail(w, http.StatusInternalServerError, "could not delete product")
+		return
+	}
+	httpx.JSON(w, http.StatusNoContent, nil)
+}
+
+// removeTenant deletes every product of a store, an internal call from accounts when a store itself is
+// deleted (cascade). Not reachable through the gateway — only over the service's own internal network.
+func (h *Handler) removeTenant(w http.ResponseWriter, r *http.Request) {
+	tid, ok := tenant.Require(w, r)
+	if !ok {
+		return
+	}
+	if err := h.svc.DeleteTenant(r.Context(), tid); err != nil {
+		httpx.Fail(w, http.StatusInternalServerError, "could not delete store products")
 		return
 	}
 	httpx.JSON(w, http.StatusNoContent, nil)

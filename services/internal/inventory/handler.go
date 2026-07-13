@@ -30,6 +30,7 @@ func (h *Handler) Routes() http.Handler {
 	mux.HandleFunc("POST /reservations/{id}/confirm", h.confirm)
 	mux.HandleFunc("POST /reservations/{id}/release", h.release)
 	mux.HandleFunc("POST /seed", h.seed)
+	mux.HandleFunc("DELETE /admin/tenant", h.removeTenant)
 	// Lift the gateway-stamped X-Tenant-ID into the context for every handler.
 	return tenant.Middleware()(mux)
 }
@@ -147,4 +148,19 @@ func (h *Handler) seed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpx.JSON(w, http.StatusOK, map[string]any{"seeded": n})
+}
+
+// removeTenant deletes every stock and reservation of a store, an internal call from accounts when a
+// store itself is deleted (cascade). Not reachable through the gateway — only over the service's own
+// internal network.
+func (h *Handler) removeTenant(w http.ResponseWriter, r *http.Request) {
+	tid, ok := tenant.Require(w, r)
+	if !ok {
+		return
+	}
+	if err := h.svc.DeleteTenant(r.Context(), tid); err != nil {
+		httpx.Fail(w, http.StatusInternalServerError, "could not delete store stock")
+		return
+	}
+	httpx.JSON(w, http.StatusNoContent, nil)
 }

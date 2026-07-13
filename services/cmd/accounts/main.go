@@ -20,6 +20,8 @@ func main() {
 	addr := config.EnvString("ACCOUNTS_ADDR", ":8084")
 	tokenTTL := config.EnvDuration("ACCOUNTS_TOKEN_TTL_SECONDS", 24*60*60)
 	maxStores := config.EnvInt("MAX_STORES_PER_MERCHANT", 2) // demo anti-abuse; 0 = unlimited
+	catalogURL := config.EnvString("CATALOG_URL", "http://localhost:8081")
+	inventoryURL := config.EnvString("INVENTORY_URL", "http://localhost:8082")
 
 	ctx := context.Background()
 	client, err := mongox.Connect(ctx, common.MongoURI)
@@ -36,7 +38,8 @@ func main() {
 	}
 
 	issuer := authx.NewIssuer(common.JWTSecret, tokenTTL)
-	svc := accounts.NewService(repo, issuer, log, maxStores)
+	svc := accounts.NewService(repo, issuer, log, maxStores,
+		accounts.NewCatalogClient(catalogURL), accounts.NewInventoryClient(inventoryURL))
 
 	if seeded, err := svc.SeedDemoIfEmpty(ctx); err != nil {
 		log.Warn("seed-demo failed", "error", err)

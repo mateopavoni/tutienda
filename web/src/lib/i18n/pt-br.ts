@@ -183,6 +183,8 @@ export const ptBR: Messages = {
 			create: 'Criar loja',
 			limitReached: 'Você atingiu o limite da demo: {max} lojas por conta.',
 			disabled: 'Desativada',
+			delete: 'Excluir loja',
+			deleteConfirm: 'Excluir {name}? Isso remove a loja e todos os seus produtos/estoque para sempre. Não pode ser desfeito.',
 			enable: 'Ativar loja',
 			disable: 'Desativar loja'
 		},
@@ -256,10 +258,7 @@ export const ptBR: Messages = {
 			body: 'Texto',
 			imageUrl: 'URL da imagem',
 			ctaLabel: 'Texto do botão',
-			overlay: 'Contraste da imagem',
-			overlayColor: 'Cor do véu',
-			overlayWhite: 'Claro (texto escuro)',
-			overlayBlack: 'Escuro (texto branco)'
+			overlay: 'Contraste da imagem'
 		},
 		items: { question: 'Pergunta', answer: 'Resposta', caption: 'legenda (opcional)', imageUrl: 'URL da imagem', remove: 'Remover' },
 		toast: {
@@ -270,6 +269,7 @@ export const ptBR: Messages = {
 			storeCreated: 'Loja criada',
 			storeDisabled: 'Loja desativada',
 			storeEnabled: 'Loja ativada',
+			storeDeleted: 'Loja excluída',
 			managing: 'Gerenciando {name}',
 			planChanged: 'Plano alterado para {plan}',
 			productCreated: 'Produto criado',

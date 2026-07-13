@@ -121,6 +121,11 @@ export async function changePlan(id: string, plan: string): Promise<Store> {
 	);
 }
 
+// deleteStore permanently removes a store and cascades to its products/stock. Irreversible.
+export async function deleteStore(id: string): Promise<void> {
+	await call<void>('/api/accounts/stores/' + encodeURIComponent(id), { method: 'DELETE' }, session.merchantToken());
+}
+
 // setStoreDisabled toggles a store's storefront on/off.
 export async function setStoreDisabled(id: string, disabled: boolean): Promise<Store> {
 	return call<Store>(

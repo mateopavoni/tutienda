@@ -45,7 +45,7 @@ automatically.
   Spanish and Brazilian Portuguese.
 - **Multi-store SaaS** — a marketing landing at `/`, merchant onboarding (`/signup` creates the account
   and the first store), per-store storefront at `/store/[slug]`, and a merchant dashboard at `/app`
-  (products, stock, branding). Every store is isolated by `tenantId`.
+  (products, stock, branding, deleting the store itself). Every store is isolated by `tenantId`.
 
 ## Quickstart
 

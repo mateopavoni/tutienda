@@ -9,6 +9,7 @@
 		createStore,
 		selectStore,
 		setStoreDisabled,
+		deleteStore,
 		updateStore,
 		changePlan,
 		listProducts,
@@ -31,8 +32,7 @@
 		HERO_OVERLAY_DEFAULT,
 		type Section,
 		type SectionType,
-		type ContentField,
-		type OverlayColor
+		type ContentField
 	} from '$lib/layout';
 	import { PAGE_TYPES, PAGE_META, type Page, type PageType } from '$lib/pages';
 	import StorefrontSections from '$lib/components/StorefrontSections.svelte';
@@ -142,15 +142,11 @@
 		setLayout = next;
 	}
 
-	// Hero-only: gradient peak strength (0-100) and tint color (black/white).
+	// Hero-only: gradient peak strength (0-100). Tint color now follows the visitor's light/dark mode
+	// automatically (see StorefrontSections.svelte), so it's no longer a merchant choice.
 	function editSectionOverlay(i: number, overlay: number) {
 		const next = [...setLayout];
 		next[i] = { ...next[i], overlay };
-		setLayout = next;
-	}
-	function editSectionOverlayColor(i: number, overlayColor: OverlayColor) {
-		const next = [...setLayout];
-		next[i] = { ...next[i], overlayColor };
 		setLayout = next;
 	}
 
@@ -320,6 +316,21 @@
 			const updated = await setStoreDisabled(store.id, !store.disabled);
 			stores = stores.map((s) => (s.id === updated.id ? updated : s));
 			ok(updated.disabled ? $t('app.toast.storeDisabled') : $t('app.toast.storeEnabled'));
+		} catch (err) {
+			fail(err);
+		}
+	}
+
+	async function doDeleteStore(store: Store) {
+		if (!browser || !confirm($t('app.stores.deleteConfirm', { name: store.displayName }))) return;
+		try {
+			await deleteStore(store.id);
+			stores = stores.filter((s) => s.id !== store.id);
+			if (active?.id === store.id) {
+				session.clearStore();
+				active = null;
+			}
+			ok($t('app.toast.storeDeleted'));
 		} catch (err) {
 			fail(err);
 		}
@@ -519,6 +530,9 @@
 					</button>
 					<button onclick={() => doToggleStoreStatus(store)} class="btn-ghost">
 						{store.disabled ? $t('app.stores.enable') : $t('app.stores.disable')}
+					</button>
+					<button onclick={() => doDeleteStore(store)} class="btn-ghost text-error">
+						{$t('app.stores.delete')}
 					</button>
 				</div>
 			{:else}
@@ -862,6 +876,8 @@
 							{/if}
 
 							{#if section.enabled && meta.overlay && section.imageUrl}
+								<!-- Overlay tint (white/black) now follows the visitor's light/dark mode automatically
+								     (see StorefrontSections.svelte) — only the strength is still a merchant choice. -->
 								<div class="flex flex-wrap items-center gap-4 border-t border-border pt-3">
 									<label class="flex flex-1 flex-col gap-1" style="min-width: 12rem">
 										<span class={labelClass}>{$t('app.fields.overlay')} ({section.overlay ?? HERO_OVERLAY_DEFAULT}%)</span>
@@ -872,17 +888,6 @@
 											value={section.overlay ?? HERO_OVERLAY_DEFAULT}
 											oninput={(e) => editSectionOverlay(i, Number(e.currentTarget.value))}
 										/>
-									</label>
-									<label class="flex flex-col gap-1">
-										<span class={labelClass}>{$t('app.fields.overlayColor')}</span>
-										<select
-											value={section.overlayColor ?? 'black'}
-											onchange={(e) => editSectionOverlayColor(i, e.currentTarget.value as OverlayColor)}
-											class={inputClass}
-										>
-											<option value="black">{$t('app.fields.overlayBlack')}</option>
-											<option value="white">{$t('app.fields.overlayWhite')}</option>
-										</select>
 									</label>
 								</div>
 							{/if}

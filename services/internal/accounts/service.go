@@ -34,10 +34,12 @@ type Service struct {
 	issuer    *authx.Issuer
 	log       *slog.Logger
 	maxStores int // per-merchant cap on store creation (anti-abuse); <=0 means unlimited.
+	catalog   *CatalogClient   // cascades a store deletion to its products
+	inventory *InventoryClient // cascades a store deletion to its stock/reservations
 }
 
-func NewService(repo *Repository, issuer *authx.Issuer, log *slog.Logger, maxStores int) *Service {
-	return &Service{repo: repo, issuer: issuer, log: log, maxStores: maxStores}
+func NewService(repo *Repository, issuer *authx.Issuer, log *slog.Logger, maxStores int, catalog *CatalogClient, inventory *InventoryClient) *Service {
+	return &Service{repo: repo, issuer: issuer, log: log, maxStores: maxStores, catalog: catalog, inventory: inventory}
 }
 
 // Signup creates a merchant and returns a merchant-scoped session token.
@@ -188,6 +190,27 @@ func (s *Service) UpdateStore(ctx context.Context, ownerID, storeID, displayName
 	settings.Pages = sanitizePages(settings.Pages, tier)
 	settings.Theme = normalizeTheme(settings.Theme)
 	return s.repo.updateSettings(ctx, storeID, ownerID, displayName, settings)
+}
+
+// DeleteStore removes a store and cascades the delete to its products (catalog) and stock/reservations
+// (inventory), scoped to the owner. Cascade calls run before the store row itself is removed: if either
+// downstream delete fails, the store stays intact and the merchant sees the error instead of an
+// inconsistent half-deleted store.
+func (s *Service) DeleteStore(ctx context.Context, ownerID, storeID string) error {
+	store, err := s.repo.storeByID(ctx, storeID)
+	if err != nil {
+		return err
+	}
+	if store.OwnerID != ownerID {
+		return ErrStoreNotFound // don't reveal existence of stores the caller doesn't own
+	}
+	if err := s.catalog.DeleteTenant(ctx, storeID); err != nil {
+		return fmt.Errorf("delete store products: %w", err)
+	}
+	if err := s.inventory.DeleteTenant(ctx, storeID); err != nil {
+		return fmt.Errorf("delete store stock: %w", err)
+	}
+	return s.repo.deleteStore(ctx, storeID, ownerID)
 }
 
 // defaultTheme is the storefront template every store falls back to. knownThemes is the closed set a

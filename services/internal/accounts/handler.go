@@ -28,6 +28,7 @@ func (h *Handler) Routes() http.Handler {
 	mux.HandleFunc("PATCH /stores/{id}/plan", h.changePlan)
 	mux.HandleFunc("PATCH /stores/{id}/status", h.changeStatus)
 	mux.HandleFunc("PATCH /stores/{id}", h.updateStore)
+	mux.HandleFunc("DELETE /stores/{id}", h.deleteStore)
 	mux.HandleFunc("GET /stores/by-slug/{slug}", h.storeBySlug)
 	// Storefront customers (buyers). Tenant comes from the gateway-resolved slug (signup/login) or the
 	// buyer token's tenant claim (me); never from the client. Distinct buyer-token audience, enforced at
@@ -186,6 +187,23 @@ func (h *Handler) updateStore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpx.JSON(w, http.StatusOK, store)
+}
+
+func (h *Handler) deleteStore(w http.ResponseWriter, r *http.Request) {
+	ownerID, ok := h.merchant(w, r)
+	if !ok {
+		return
+	}
+	err := h.svc.DeleteStore(r.Context(), ownerID, r.PathValue("id"))
+	if errors.Is(err, ErrStoreNotFound) {
+		httpx.Fail(w, http.StatusNotFound, "store not found")
+		return
+	}
+	if err != nil {
+		httpx.Fail(w, http.StatusInternalServerError, "could not delete store")
+		return
+	}
+	httpx.JSON(w, http.StatusNoContent, nil)
 }
 
 func (h *Handler) changePlan(w http.ResponseWriter, r *http.Request) {
