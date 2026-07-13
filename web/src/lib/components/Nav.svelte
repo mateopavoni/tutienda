@@ -3,7 +3,7 @@
 	import { cartCount } from '$lib/stores/cart';
 	import { cartOpen } from '$lib/stores/ui';
 	import { customer } from '$lib/stores/customer';
-	import { Settings, User } from 'lucide-svelte';
+	import { Settings, User, Menu, X } from 'lucide-svelte';
 	import type { StoreInfo } from '$lib/tenant';
 	import { pageTitle, type Page } from '$lib/pages';
 
@@ -14,6 +14,9 @@
 	let catalog = $derived(home + '/catalogo');
 	// Account link points to the profile when signed in, otherwise to the login page.
 	let account = $derived(home + '/cuenta' + ($customer ? '' : '/login'));
+	// Below md, the Home/Catalog/pages links are hidden (see md:inline below) with no other way to reach
+	// them — this panel is that mobile replacement.
+	let mobileOpen = $state(false);
 </script>
 
 <header class="fixed top-0 z-50 w-full border-b border-border bg-bg">
@@ -69,6 +72,41 @@
 			>
 				{$t('nav.bag')} ({$cartCount})
 			</button>
+			<button
+				onclick={() => (mobileOpen = !mobileOpen)}
+				class="p-2 text-text-muted transition-colors hover:text-text md:hidden"
+				aria-label={$t('nav.menu')}
+				aria-expanded={mobileOpen}
+			>
+				{#if mobileOpen}<X size={18} strokeWidth={1.5} />{:else}<Menu size={18} strokeWidth={1.5} />{/if}
+			</button>
 		</div>
 	</div>
+	{#if mobileOpen}
+		<div class="flex flex-col gap-px border-t border-border bg-border md:hidden">
+			<a
+				href={home}
+				onclick={() => (mobileOpen = false)}
+				class="bg-bg px-4 py-3 font-sans text-label-caps uppercase tracking-[0.1em] text-text-muted transition-colors hover:text-text"
+			>
+				{$t('nav.home')}
+			</a>
+			<a
+				href={catalog}
+				onclick={() => (mobileOpen = false)}
+				class="bg-bg px-4 py-3 font-sans text-label-caps uppercase tracking-[0.1em] text-text-muted transition-colors hover:text-text"
+			>
+				{$t('nav.catalog')}
+			</a>
+			{#each pages as p (p.type)}
+				<a
+					href="{home}/{p.type}"
+					onclick={() => (mobileOpen = false)}
+					class="bg-bg px-4 py-3 font-sans text-label-caps uppercase tracking-[0.1em] text-text-muted transition-colors hover:text-text"
+				>
+					{pageTitle(p)}
+				</a>
+			{/each}
+		</div>
+	{/if}
 </header>
