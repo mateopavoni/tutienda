@@ -16,6 +16,10 @@ describe('plan mirror (matches Go entitlements)', () => {
 		expect(hasFeature('pro', 'removeBranding')).toBe(false); // scale-only
 		expect(hasFeature('scale', 'removeBranding')).toBe(true);
 		expect(hasFeature('bogus', 'drops')).toBe(false); // tampered → free
+		expect(hasFeature('free', 'sectionsPro')).toBe(false);
+		expect(hasFeature('pro', 'sectionsPro')).toBe(true);
+		expect(hasFeature('free', 'staticPages')).toBe(false);
+		expect(hasFeature('scale', 'staticPages')).toBe(true);
 	});
 
 	it('reports product limits, with scale unlimited', () => {

@@ -170,10 +170,22 @@ func (s *Service) SetDisabled(ctx context.Context, ownerID, storeID string, disa
 	return s.repo.updateDisabled(ctx, storeID, ownerID, disabled)
 }
 
-// UpdateStore patches a store's settings/displayName, scoped to the owner.
+// UpdateStore patches a store's settings/displayName, scoped to the owner. It reads the store's own
+// tier first (accounts never runs plan.Middleware, so the tier isn't in context like it is in catalog)
+// to gate plan-locked sections/pages the same way it gates a bad section type or theme: silently, on
+// write, no error — the dashboard keeps the merchant from even trying via the same lock-icon pattern
+// used for a custom logo.
 func (s *Service) UpdateStore(ctx context.Context, ownerID, storeID, displayName string, settings Settings) (*Store, error) {
-	settings.Layout = sanitizeLayout(settings.Layout)
-	settings.Pages = sanitizePages(settings.Pages)
+	store, err := s.repo.storeByID(ctx, storeID)
+	if err != nil {
+		return nil, err
+	}
+	if store.OwnerID != ownerID {
+		return nil, ErrStoreNotFound // don't reveal existence of stores the caller doesn't own
+	}
+	tier := plan.Normalize(store.Plan)
+	settings.Layout = sanitizeLayout(settings.Layout, tier)
+	settings.Pages = sanitizePages(settings.Pages, tier)
 	settings.Theme = normalizeTheme(settings.Theme)
 	return s.repo.updateSettings(ctx, storeID, ownerID, displayName, settings)
 }
@@ -225,6 +237,15 @@ var knownSectionTypes = map[string]bool{
 	"faq":          true,
 }
 
+// proSectionTypes gates the more elaborate blocks behind plan.FeatureSectionsPro; free keeps
+// announcement/hero/catalog/about only. Mirrors the lock the /app editor shows for these types.
+var proSectionTypes = map[string]bool{
+	"feature": true,
+	"contact": true,
+	"gallery": true,
+	"faq":     true,
+}
+
 // sectionFieldMax caps each piece of section copy so a merchant can't store an unbounded blob in the
 // store document (which the storefront SSR would then have to ship on every page load). maxSectionItems
 // bounds the repeatable items (gallery images / FAQ entries) for the same reason.
@@ -252,7 +273,7 @@ var knownOverlayColors = map[string]bool{
 // trims/caps the copy, and forces the mandatory product grid ("catalog") to stay enabled. The storefront
 // also normalizes at render time (normalizeLayout), but sanitizing on write keeps the stored document
 // clean and trustworthy regardless of which client wrote it.
-func sanitizeLayout(raw []Section) []Section {
+func sanitizeLayout(raw []Section, tier plan.Tier) []Section {
 	if len(raw) == 0 {
 		return nil
 	}
@@ -260,6 +281,9 @@ func sanitizeLayout(raw []Section) []Section {
 	seen := map[string]bool{}
 	for _, sec := range raw {
 		if !knownSectionTypes[sec.Type] || seen[sec.Type] {
+			continue
+		}
+		if proSectionTypes[sec.Type] && !tier.Has(plan.FeatureSectionsPro) {
 			continue
 		}
 		seen[sec.Type] = true
@@ -331,8 +355,9 @@ const pageBodyMax = 20000
 // sanitizePages normalizes the pages on write: keeps only known types, drops duplicates, trims/caps the
 // title and body, and drops any page with an empty body (an empty page is treated as absent — nothing to
 // route or link). Write-time guarantee mirroring sanitizeLayout: the stored document is always clean.
-func sanitizePages(raw []Page) []Page {
-	if len(raw) == 0 {
+// Standalone pages are gated behind plan.FeatureStaticPages — free tier stores keep none.
+func sanitizePages(raw []Page, tier plan.Tier) []Page {
+	if len(raw) == 0 || !tier.Has(plan.FeatureStaticPages) {
 		return nil
 	}
 	out := make([]Page, 0, len(raw))

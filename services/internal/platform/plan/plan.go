@@ -37,6 +37,11 @@ const (
 	FeatureAnalytics Feature = "analytics"
 	// FeatureRemoveBranding gates hiding the "powered by" platform mark from the storefront footer.
 	FeatureRemoveBranding Feature = "removeBranding"
+	// FeatureSectionsPro gates the gallery/faq/feature/contact storefront section types (free keeps
+	// announcement/hero/catalog/about only).
+	FeatureSectionsPro Feature = "sectionsPro"
+	// FeatureStaticPages gates the standalone about/faq/contact/terms pages.
+	FeatureStaticPages Feature = "staticPages"
 )
 
 // Unlimited is the sentinel ProductLimit for a tier with no product cap.
@@ -56,9 +61,11 @@ var registry = map[Tier]entitlement{
 	},
 	Pro: {
 		features: map[Feature]bool{
-			FeatureDrops:      true,
-			FeatureCustomLogo: true,
-			FeatureAnalytics:  true,
+			FeatureDrops:       true,
+			FeatureCustomLogo:  true,
+			FeatureAnalytics:   true,
+			FeatureSectionsPro: true,
+			FeatureStaticPages: true,
 		},
 		productLimit: 300,
 	},
@@ -68,6 +75,8 @@ var registry = map[Tier]entitlement{
 			FeatureCustomLogo:     true,
 			FeatureAnalytics:      true,
 			FeatureRemoveBranding: true,
+			FeatureSectionsPro:    true,
+			FeatureStaticPages:    true,
 		},
 		productLimit: Unlimited,
 	},
