@@ -19,6 +19,18 @@ import (
 // every catalog read).
 const maxProductImages = 8
 
+// variantLabelMax caps Product.VariantLabel — it's a short selector caption ("Storage"), not free text.
+const variantLabelMax = 40
+
+// capRunes truncates s to at most n runes (not bytes, to avoid splitting a multi-byte character).
+func capRunes(s string, n int) string {
+	r := []rune(s)
+	if len(r) <= n {
+		return s
+	}
+	return string(r[:n])
+}
+
 // ErrInvalidProduct is returned when an admin product payload is missing required fields.
 var ErrInvalidProduct = errors.New("invalid product")
 
@@ -152,18 +164,23 @@ func normalizeImages(p *Product) {
 	}
 }
 
-// normalizeVariants cleans the variant list on write: trims fields, drops blank-SKU rows and duplicate
-// SKUs (inventory keys on {tenantId, sku}, so a repeated SKU would make two variants fight over one stock
-// document), and falls back the label to the SKU. Same defensive write-time stance as normalizeImages and
-// the layout sanitizers — a multi-variant product (sizes/colors) can't be saved into an inconsistent state.
+// normalizeVariants cleans the variant list on write: trims fields, auto-generates a SKU for any row left
+// blank (from the product name + variant label, so a merchant doesn't have to invent one — they can still
+// edit it), drops rows that are still duplicates after that (inventory keys on {tenantId, sku}, so a
+// repeated SKU would make two variants fight over one stock document), and falls back the label to the
+// SKU. Same defensive write-time stance as normalizeImages and the layout sanitizers.
 func normalizeVariants(p *Product) {
+	p.VariantLabel = capRunes(strings.TrimSpace(p.VariantLabel), variantLabelMax)
 	out := make([]Variant, 0, len(p.Variants))
 	seen := map[string]bool{}
 	for _, v := range p.Variants {
 		v.SKU = strings.TrimSpace(v.SKU)
 		v.Label = strings.TrimSpace(v.Label)
 		v.Color = strings.TrimSpace(v.Color)
-		if v.SKU == "" || seen[v.SKU] {
+		if v.SKU == "" {
+			v.SKU = autoSKU(p.Name, v.Label, seen)
+		}
+		if seen[v.SKU] {
 			continue
 		}
 		if v.Label == "" {
@@ -173,6 +190,46 @@ func normalizeVariants(p *Product) {
 		out = append(out, v)
 	}
 	p.Variants = out
+}
+
+// autoSKU derives a readable SKU from the product name and, if present, the variant label (e.g. "Concrete
+// Lamp 01" + "Black" -> "CONCRETE-LAMP-01-BLACK"). Bumps a numeric suffix until it's unique within this
+// product's own variant list — good enough here since the merchant can always edit the result before saving.
+func autoSKU(name, label string, seen map[string]bool) string {
+	base := slugify(name)
+	if l := slugify(label); l != "" {
+		if base != "" {
+			base += "-" + l
+		} else {
+			base = l
+		}
+	}
+	if base == "" {
+		base = "SKU"
+	}
+	sku := base
+	for n := 2; seen[sku]; n++ {
+		sku = fmt.Sprintf("%s-%d", base, n)
+	}
+	return sku
+}
+
+// slugify uppercases and keeps only [A-Z0-9], collapsing everything else to a single dash — matches the
+// SKU style already used across the seeded demo catalogs (e.g. "CB-STOOL-BLK").
+func slugify(s string) string {
+	var b strings.Builder
+	dash := true // true right after start/a dash, so we never emit a leading or doubled dash
+	for _, r := range strings.ToUpper(s) {
+		switch {
+		case r >= 'A' && r <= 'Z' || r >= '0' && r <= '9':
+			b.WriteRune(r)
+			dash = false
+		case !dash:
+			b.WriteByte('-')
+			dash = true
+		}
+	}
+	return strings.TrimSuffix(b.String(), "-")
 }
 
 // Update replaces an existing product within a store, preserving its creation time. Invalidates cache.
