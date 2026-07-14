@@ -33,7 +33,7 @@ type Service struct {
 	repo      *Repository
 	issuer    *authx.Issuer
 	log       *slog.Logger
-	maxStores int // per-merchant cap on store creation (anti-abuse); <=0 means unlimited.
+	maxStores int              // per-merchant cap on store creation (anti-abuse); <=0 means unlimited.
 	catalog   *CatalogClient   // cascades a store deletion to its products
 	inventory *InventoryClient // cascades a store deletion to its stock/reservations
 }
@@ -361,14 +361,12 @@ func sanitizeItems(raw []SectionItem) []SectionItem {
 	return out
 }
 
-// knownPageTypes is the closed set of standalone storefront pages. Same defensive stance as
-// knownSectionTypes: an unknown type is a typo/tampered request and gets dropped. Mirrors PAGE_TYPES in
-// web/src/lib/pages.ts.
+// knownPageTypes is the closed set of standalone storefront pages — just Terms (about/faq/contact were
+// dropped 2026-07-14: no store had content in them yet, and the platform's own marketing site now covers
+// that ground at /about /faq /contact instead of per-store). Same defensive stance as knownSectionTypes:
+// an unknown type is a typo/tampered request and gets dropped. Mirrors PAGE_TYPES in web/src/lib/pages.ts.
 var knownPageTypes = map[string]bool{
-	"about":   true,
-	"faq":     true,
-	"contact": true,
-	"terms":   true,
+	"terms": true,
 }
 
 // pageBodyMax caps a page body. Bigger than a section field (a terms/policy page is legitimately long)
@@ -376,17 +374,19 @@ var knownPageTypes = map[string]bool{
 const pageBodyMax = 20000
 
 // sanitizePages normalizes the pages on write: keeps only known types, drops duplicates, trims/caps the
-// title and body, and drops any page with an empty body (an empty page is treated as absent — nothing to
-// route or link). Write-time guarantee mirroring sanitizeLayout: the stored document is always clean.
-// Standalone pages are gated behind plan.FeatureStaticPages — free tier stores keep none.
+// title and body, derives the route slug, and drops any page with an empty body (an empty page is treated
+// as absent — nothing to route or link). Write-time guarantee mirroring sanitizeLayout: the stored
+// document is always clean. Standalone pages are gated behind plan.FeatureStaticPages — free tier stores
+// keep none.
 func sanitizePages(raw []Page, tier plan.Tier) []Page {
 	if len(raw) == 0 || !tier.Has(plan.FeatureStaticPages) {
 		return nil
 	}
 	out := make([]Page, 0, len(raw))
-	seen := map[string]bool{}
+	seenType := map[string]bool{}
+	seenSlug := map[string]bool{}
 	for _, p := range raw {
-		if !knownPageTypes[p.Type] || seen[p.Type] {
+		if !knownPageTypes[p.Type] || seenType[p.Type] {
 			continue
 		}
 		p.Title = capRunes(strings.TrimSpace(p.Title), sectionFieldMax)
@@ -394,13 +394,56 @@ func sanitizePages(raw []Page, tier plan.Tier) []Page {
 		if p.Body == "" {
 			continue
 		}
-		seen[p.Type] = true
+		p.Slug = pageSlug(p.Slug, p.Title, p.Type, seenSlug)
+		seenType[p.Type] = true
+		seenSlug[p.Slug] = true
 		out = append(out, p)
 	}
 	if len(out) == 0 {
 		return nil
 	}
 	return out
+}
+
+// slugRe also bounds a page slug (same shape as a store slug); pageSlugRe additionally allows a bare
+// single character since page titles are shorter and less predictable than a merchant-chosen store name.
+var pageSlugRe = regexp.MustCompile(`^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$`)
+
+// pageSlug picks the route segment for a page: the merchant's own slug if it's valid, else one derived
+// from the title, else the type — falling back a step further whenever the candidate is empty or already
+// used by an earlier page in this same list (two pages can't share a URL). A merchant can always rename it
+// afterwards; this only guarantees the stored document is never left with a missing or colliding route.
+func pageSlug(candidate, title, pageType string, seen map[string]bool) string {
+	for _, s := range []string{slugify(candidate), slugify(title), pageType} {
+		if s != "" && pageSlugRe.MatchString(s) && !seen[s] {
+			return s
+		}
+	}
+	// Every candidate was empty or already taken (e.g. two pages titled the same) — bump a numeric suffix
+	// off the type itself, which is always a valid slug even if it collides with another page's title-slug.
+	s := pageType
+	for n := 2; seen[s]; n++ {
+		s = fmt.Sprintf("%s-%d", pageType, n)
+	}
+	return s
+}
+
+// slugify lowercases and keeps only [a-z0-9], collapsing everything else to a single dash — the URL-slug
+// counterpart of catalog's uppercase SKU slugify.
+func slugify(s string) string {
+	var b strings.Builder
+	dash := true
+	for _, r := range strings.ToLower(s) {
+		switch {
+		case r >= 'a' && r <= 'z' || r >= '0' && r <= '9':
+			b.WriteRune(r)
+			dash = false
+		case !dash:
+			b.WriteByte('-')
+			dash = true
+		}
+	}
+	return capRunes(strings.TrimSuffix(b.String(), "-"), 40)
 }
 
 // capRunes truncates s to at most n runes (not bytes, to avoid splitting a multi-byte character).

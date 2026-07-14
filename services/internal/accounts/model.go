@@ -22,7 +22,11 @@ type Merchant struct {
 type Settings struct {
 	LogoURL     string `bson:"logoUrl,omitempty" json:"logoUrl,omitempty"`
 	AccentColor string `bson:"accentColor,omitempty" json:"accentColor,omitempty"`
-	Currency    string `bson:"currency,omitempty" json:"currency,omitempty"`
+	// TitleColor overrides the color of each page's main headline (home hero, catalog, product, Terms).
+	// Same #rrggbb shape as AccentColor and the same contrast guard client-side (web/src/lib/colorGuard.ts)
+	// — blank/invalid falls back to the design system's default text color, never an unreadable custom one.
+	TitleColor string `bson:"titleColor,omitempty" json:"titleColor,omitempty"`
+	Currency   string `bson:"currency,omitempty" json:"currency,omitempty"`
 	// Theme is the storefront visual template (fonts + palette); see knownThemes and web/src/lib/theme.ts.
 	// Unknown/empty ⇒ the default "monolith", same defensive stance as an unknown plan tier falling to free.
 	Theme string `bson:"theme,omitempty" json:"theme,omitempty"`
@@ -35,10 +39,13 @@ type Settings struct {
 	Pages []Page `bson:"pages,omitempty" json:"pages,omitempty"`
 }
 
-// Page is a standalone storefront page (about/faq/contact/terms). Type is the route segment; Title is the
-// heading (falls back to a default per type in the UI); Body is free text rendered with line breaks kept.
+// Page is a standalone storefront page (about/faq/contact/terms). Type identifies which of the closed
+// set of content kinds this is; Slug is the actual route segment (auto-derived from Title, but editable —
+// falls back to Type when blank/colliding, see sanitizePages). Title is the heading (falls back to a
+// default per type in the UI); Body is free text rendered with line breaks kept.
 type Page struct {
 	Type  string `bson:"type" json:"type"`
+	Slug  string `bson:"slug,omitempty" json:"slug,omitempty"`
 	Title string `bson:"title,omitempty" json:"title,omitempty"`
 	Body  string `bson:"body,omitempty" json:"body,omitempty"`
 }
@@ -82,11 +89,11 @@ type SectionItem struct {
 // Store is a tenant. Its id (ObjectID hex) is the tenantId threaded through every other service; the
 // slug is the human-facing handle used to resolve the tenant from a subdomain/header.
 type Store struct {
-	ID          string    `bson:"_id" json:"id"`
-	Slug        string    `bson:"slug" json:"slug"`
-	OwnerID     string    `bson:"ownerId" json:"ownerId"`
-	DisplayName string    `bson:"displayName" json:"displayName"`
-	Settings    Settings  `bson:"settings" json:"settings"`
+	ID          string   `bson:"_id" json:"id"`
+	Slug        string   `bson:"slug" json:"slug"`
+	OwnerID     string   `bson:"ownerId" json:"ownerId"`
+	DisplayName string   `bson:"displayName" json:"displayName"`
+	Settings    Settings `bson:"settings" json:"settings"`
 	// Plan is the store's membership tier (see platform/plan). It rides into the store-scoped JWT so the
 	// gateway/services can gate paid features, and is exposed to the dashboard so it can dim locked tools.
 	Plan string `bson:"plan" json:"plan"`
