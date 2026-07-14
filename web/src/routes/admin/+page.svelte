@@ -183,7 +183,7 @@
 
 			<!-- Stores with inline plan control -->
 			<section class="mb-12">
-				<h2 class="mb-4 font-sans text-headline-md tracking-tight">All stores</h2>
+				<h2 class="mb-4 font-sans uppercase leading-none tracking-tight text-headline-md">All stores</h2>
 				<div class="flex flex-col gap-px brutal-border bg-border">
 					{#each stores as store (store.id)}
 						<div class="flex flex-wrap items-center justify-between gap-4 bg-bg p-4">
@@ -217,7 +217,7 @@
 
 			<!-- Merchants -->
 			<section class="mb-12">
-				<h2 class="mb-4 font-sans text-headline-md tracking-tight">Merchants</h2>
+				<h2 class="mb-4 font-sans uppercase leading-none tracking-tight text-headline-md">Merchants</h2>
 				<div class="flex flex-col gap-px brutal-border bg-border">
 					{#each merchants as m (m.id)}
 						<div class="flex items-center justify-between gap-4 bg-bg p-4">

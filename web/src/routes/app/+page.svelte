@@ -23,6 +23,7 @@
 	import type { ApiError, Product } from '$lib/types';
 	import { PLANS, TIERS, hasFeature, productLimit, normalizeTier, UNLIMITED } from '$lib/plan';
 	import { THEMES, normalizeTheme } from '$lib/theme';
+	import { theme } from '$lib/stores/theme';
 	import {
 		normalizeLayout,
 		enabledSections,
@@ -34,9 +35,10 @@
 		type SectionType,
 		type ContentField
 	} from '$lib/layout';
-	import { PAGE_TYPES, PAGE_META, type Page, type PageType } from '$lib/pages';
+	import { PAGE_TYPES, PAGE_META, enabledPages, type Page, type PageType } from '$lib/pages';
 	import StorefrontSections from '$lib/components/StorefrontSections.svelte';
-	import { ExternalLink, Lock, ArrowUp, ArrowDown } from 'lucide-svelte';
+	import { safeAccent, safeTitleColor } from '$lib/colorGuard';
+	import { ExternalLink, Lock, ArrowUp, ArrowDown, X } from 'lucide-svelte';
 
 	// Mirrors the server's MAX_STORES_PER_MERCHANT default (anti-abuse cap). The server is authoritative
 	// (409 on create); this only gates the UI so the button disables before the round-trip.
@@ -76,6 +78,14 @@
 	// One or more sellable variants (size/color); each carries its own SKU and starting stock. Inventory
 	// keys on SKU, so blank/duplicate SKUs are filtered on submit (and again server-side in normalizeVariants).
 	let pVariants = $state<{ label: string; sku: string; qty: number }[]>([{ label: '', sku: '', qty: 0 }]);
+	// What the variant rows above actually mean for this product (Size/Color/Model/Storage/custom/none) —
+	// sent as Product.variantLabel so the storefront selector says "Storage" instead of a hardcoded "Size".
+	// "unico" collapses the editor to a single implicit variant with no selector on the storefront.
+	let pVariantType = $state<'talle' | 'color' | 'modelo' | 'almacenamiento' | 'personalizado' | 'unico'>('talle');
+	let pVariantLabelCustom = $state(''); // free text, only used when pVariantType === 'personalizado'
+	$effect(() => {
+		if (pVariantType === 'unico' && pVariants.length !== 1) pVariants = [{ label: '', sku: '', qty: 0 }];
+	});
 	let pDrop = $state(''); // datetime-local; empty = on sale now, a future value schedules a drop
 	let uploading = $state(false); // true while a product image is being uploaded to the object store
 
@@ -85,13 +95,14 @@
 	// Settings form
 	let setName = $state('');
 	let setAccent = $state('#5433eb');
+	let setTitleColor = $state(''); // blank = design system default (text-text), same as accent's blank case
 	let setTheme = $state('monolith');
 	let setLogo = $state('');
 	// Storefront layout: the normalized, full list of sections (every known block exactly once, in order).
 	// The merchant toggles, reorders and edits copy here; only enabled sections render on the storefront.
 	let setLayout = $state<Section[]>(normalizeLayout());
 	// Standalone pages, one editable row per known type (blank ones are dropped on save / server-side).
-	let setPages = $state<Record<PageType, { title: string; body: string }>>(emptyPages());
+	let setPages = $state<Record<PageType, { slug: string; title: string; body: string }>>(emptyPages());
 
 	// Live preview of the layout editor: the same component the storefront renders, fed straight from the
 	// unsaved `setLayout` state, so a merchant sees a change before hitting save. Real store slug/products
@@ -99,11 +110,31 @@
 	const previewBase = $derived('/store/' + (activeStore?.slug ?? ''));
 	const previewSections = $derived(enabledSections(setLayout));
 	const previewFeatured = $derived(products.slice(0, 6));
+	// The preview opens in a full-size drawer (see the modal at the bottom of this file) instead of a
+	// cramped inline box — a merchant couldn't judge how a hero/layout actually looks in a 70vh strip.
+	let previewOpen = $state(false);
+	// Resolved light/dark scheme, same pattern as store/[slug]/+layout.svelte, so the preview's dark:
+	// classes (the hero overlay, etc.) match whatever mode is actually on screen.
+	let prefersDark = $state(false);
+	$effect(() => {
+		if (!browser) return;
+		const mq = window.matchMedia('(prefers-color-scheme: dark)');
+		const update = () => (prefersDark = mq.matches);
+		update();
+		mq.addEventListener('change', update);
+		return () => mq.removeEventListener('change', update);
+	});
+	const previewIsDark = $derived($theme === 'dark' || ($theme === 'system' && prefersDark));
+	// Fed live from the color pickers below (setAccent/setTitleColor), same contrast guard as the real
+	// storefront — this is what fixes the preview always showing the design-system default purple/text
+	// color regardless of what the merchant just picked.
+	const previewAccent = $derived(safeAccent(setAccent, previewIsDark));
+	const previewTitleColor = $derived(safeTitleColor(setTitleColor, previewIsDark));
 
-	function emptyPages(): Record<PageType, { title: string; body: string }> {
-		return Object.fromEntries(PAGE_TYPES.map((t) => [t, { title: '', body: '' }])) as Record<
+	function emptyPages(): Record<PageType, { slug: string; title: string; body: string }> {
+		return Object.fromEntries(PAGE_TYPES.map((t) => [t, { slug: '', title: '', body: '' }])) as Record<
 			PageType,
-			{ title: string; body: string }
+			{ slug: string; title: string; body: string }
 		>;
 	}
 
@@ -111,15 +142,24 @@
 	function loadStoreSettings(s: Store) {
 		setName = s.displayName;
 		setAccent = s.settings.accentColor ?? '#5433eb';
+		setTitleColor = s.settings.titleColor ?? '';
 		setTheme = normalizeTheme(s.settings.theme);
 		setLogo = s.settings.logoUrl ?? '';
 		setLayout = normalizeLayout(s.settings.layout);
 		const p = emptyPages();
 		for (const pg of s.settings.pages ?? []) {
-			if (pg.type in p) p[pg.type] = { title: pg.title ?? '', body: pg.body ?? '' };
+			if (pg.type in p) p[pg.type] = { slug: pg.slug ?? '', title: pg.title ?? '', body: pg.body ?? '' };
 		}
+		// A store with no Terms yet starts from a generic ecommerce boilerplate (client-side only — nothing
+		// is persisted until the merchant hits Save) instead of a blank textarea, so there's something
+		// complete to edit down rather than write from scratch.
+		if (!p.terms.body.trim()) p.terms.body = $t('app.settings.termsDefaultBody');
 		setPages = p;
 	}
+
+	// Whether Terms is actually live on the storefront right now — from the last-saved store, not the
+	// (possibly still-unsaved, possibly boilerplate-prefilled) editor state above.
+	const termsPublished = $derived(enabledPages(activeStore?.settings?.pages).length > 0);
 
 	// A section can move up/down within the list; the mandatory grid stays in the flow but can be reordered.
 	function moveSection(i: number, dir: -1 | 1) {
@@ -321,8 +361,19 @@
 		}
 	}
 
-	async function doDeleteStore(store: Store) {
-		if (!browser || !confirm($t('app.stores.deleteConfirm', { name: store.displayName }))) return;
+	// Delete is destructive, so it goes through the in-page confirm dialog below instead of a native
+	// browser confirm() — those get silently blocked/misbehave in some embedded/mobile contexts.
+	let confirmDeleteTarget = $state<Store | null>(null);
+
+	function doDeleteStore(store: Store) {
+		if (!browser) return;
+		confirmDeleteTarget = store;
+	}
+
+	async function confirmDeleteStore() {
+		const store = confirmDeleteTarget;
+		confirmDeleteTarget = null;
+		if (!store) return;
 		try {
 			await deleteStore(store.id);
 			stores = stores.filter((s) => s.id !== store.id);
@@ -359,11 +410,23 @@
 
 	async function doCreateProduct(e: SubmitEvent) {
 		e.preventDefault();
-		// Keep only variants with a SKU; the server dedupes/normalizes again, but filtering here also tells us
-		// which rows carry a starting stock to seed after the product exists.
-		const rows = pVariants.filter((v) => v.sku.trim());
+		// Keep any row the merchant actually touched (label, SKU or a starting quantity) — the SKU itself
+		// can be left blank: the server auto-generates one from the product name + label (normalizeVariants),
+		// which is why we seed stock from the *returned* product below instead of the typed SKU.
+		// "Único" always keeps exactly the one row the effect above forces — no label/SKU typed, both
+		// auto-generate server-side — so it's exempt from the "did the merchant touch this row" filter.
+		const rows =
+			pVariantType === 'unico'
+				? pVariants
+				: pVariants.filter((v) => v.sku.trim() || v.label.trim() || v.qty > 0);
+		const variantLabel =
+			pVariantType === 'unico'
+				? ''
+				: pVariantType === 'personalizado'
+					? pVariantLabelCustom.trim()
+					: $t('app.products.variantType.' + pVariantType);
 		try {
-			await createProduct({
+			const created = await createProduct({
 				name: pName,
 				category: pCategory,
 				priceCents: Math.round(pPrice * 100),
@@ -371,17 +434,21 @@
 				imageUrl: pImages[0] ?? '',
 				images: pImages,
 				variants: rows.map((v) => ({ sku: v.sku.trim(), label: v.label.trim() })),
+				variantLabel,
 				// A future drop date schedules a drop (storefront countdown + server-side checkout gate).
 				dropAt: pDrop ? new Date(pDrop).toISOString() : undefined
 			});
-			// Seed starting stock per variant (inventory is a separate service keyed by SKU).
-			for (const v of rows) {
-				if (v.qty > 0) await setStock(v.sku.trim(), Math.max(0, Math.round(v.qty)));
+			// Seed starting stock per variant, paired positionally with what came back (inventory is a
+			// separate service keyed by SKU, and normalizeVariants preserves row order).
+			for (let i = 0; i < rows.length && i < created.variants.length; i++) {
+				if (rows[i].qty > 0) await setStock(created.variants[i].sku, Math.max(0, Math.round(rows[i].qty)));
 			}
 			pName = '';
 			pPrice = 0;
 			pImages = [];
 			pVariants = [{ label: '', sku: '', qty: 0 }];
+			pVariantType = 'talle';
+			pVariantLabelCustom = '';
 			pDrop = '';
 			await refreshProducts();
 			ok($t('app.toast.productCreated'));
@@ -432,11 +499,13 @@
 			// Only ship pages that have body content; the server drops empty ones too, this just keeps the payload tidy.
 			const pages: Page[] = PAGE_TYPES.filter((t) => setPages[t].body.trim()).map((t) => ({
 				type: t,
+				slug: setPages[t].slug.trim(),
 				title: setPages[t].title.trim(),
 				body: setPages[t].body.trim()
 			}));
 			const updated = await updateStore(active.id, setName, {
 				accentColor: setAccent,
+				titleColor: setTitleColor,
 				theme: setTheme,
 				logoUrl: setLogo,
 				currency: 'USD',
@@ -476,7 +545,7 @@
 
 <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
 	<div class="flex items-center gap-3">
-		<h1 class="font-sans text-headline-lg tracking-tighter">{$t('app.title')}</h1>
+		<h1 class="font-sans uppercase leading-none tracking-tighter text-headline-lg">{$t('app.title')}</h1>
 		{#if activeStore}
 			<span class="brutal-border bg-accent px-2 py-1 font-mono text-metadata-sm uppercase tracking-[0.1em] text-on-accent">
 				{PLANS[tier].label}
@@ -500,7 +569,7 @@
 
 <!-- Stores -->
 <section class="mb-12">
-	<h2 class="mb-4 font-sans text-headline-md tracking-tight">{$t('app.stores.title')}</h2>
+	<h2 class="mb-4 font-sans uppercase leading-none tracking-tight text-headline-md">{$t('app.stores.title')}</h2>
 	<div class="grid gap-px brutal-border bg-border sm:grid-cols-2 lg:grid-cols-3">
 		{#if loading}
 			{#each { length: 3 } as _}
@@ -563,7 +632,7 @@
 {#if active && session.storeToken()}
 	<!-- Membership -->
 	<section class="mb-12">
-		<h2 class="mb-4 font-sans text-headline-md tracking-tight">{$t('app.membership.title')}</h2>
+		<h2 class="mb-4 font-sans uppercase leading-none tracking-tight text-headline-md">{$t('app.membership.title')}</h2>
 		<div class="grid gap-px brutal-border bg-border md:grid-cols-3">
 			{#each TIERS as pt (pt)}
 				<div class="flex flex-col gap-3 bg-bg p-4 {pt === tier ? 'ring-2 ring-inset ring-accent' : ''}">
@@ -597,7 +666,7 @@
 
 	<!-- Products -->
 	<section class="mb-12">
-		<h2 class="mb-4 font-sans text-headline-md tracking-tight">
+		<h2 class="mb-4 font-sans uppercase leading-none tracking-tight text-headline-md">
 			{$t('app.products.title')} — {active.displayName}
 			<span class="ml-2 font-mono text-metadata-sm text-text-muted">
 				{products.length}{limit === UNLIMITED ? '' : '/' + limit}
@@ -668,29 +737,54 @@
 				<span class={labelClass}>{$t('app.products.price')}</span>
 				<input type="number" min="0" step="0.01" bind:value={pPrice} class="{inputClass} w-32" />
 			</label>
-			<div class="flex w-full flex-col gap-2">
-				<span class={labelClass}>{$t('app.products.variantsLabel')}</span>
-				{#each pVariants as v, i (i)}
-					<div class="flex flex-wrap items-end gap-2">
-						<input bind:value={v.label} placeholder={$t('app.products.variantLabelPh')} class={inputClass} />
-						<input bind:value={v.sku} placeholder={$t('app.products.variantSkuPh')} class={inputClass} />
-						<input type="number" min="0" bind:value={v.qty} placeholder={$t('app.products.variantStockPh')} class="{inputClass} w-24" />
-						{#if pVariants.length > 1}
-							<button
-								type="button"
-								onclick={() => removeVariant(i)}
-								aria-label={$t('app.products.removeVariant')}
-								class="flex h-12 w-12 items-center justify-center brutal-border bg-bg font-mono text-text hover:text-error"
-							>
-								×
-							</button>
-						{/if}
-					</div>
-				{/each}
-				<button type="button" onclick={addVariant} class="self-start font-mono text-metadata-sm text-accent hover:underline">
-					{$t('app.products.addVariant')}
-				</button>
-			</div>
+			<label class="flex flex-col gap-1">
+				<span class={labelClass}>{$t('app.products.variantTypeLabel')}</span>
+				<select bind:value={pVariantType} class={inputClass}>
+					<option value="talle">{$t('app.products.variantType.talle')}</option>
+					<option value="color">{$t('app.products.variantType.color')}</option>
+					<option value="modelo">{$t('app.products.variantType.modelo')}</option>
+					<option value="almacenamiento">{$t('app.products.variantType.almacenamiento')}</option>
+					<option value="personalizado">{$t('app.products.variantTypeCustom')}</option>
+					<option value="unico">{$t('app.products.variantTypeUnico')}</option>
+				</select>
+				{#if pVariantType === 'personalizado'}
+					<input
+						bind:value={pVariantLabelCustom}
+						placeholder={$t('app.products.variantTypeCustomPh')}
+						class="{inputClass} mt-1"
+					/>
+				{/if}
+			</label>
+			{#if pVariantType === 'unico'}
+				<label class="flex flex-col gap-1">
+					<span class={labelClass}>{$t('app.products.unicoQty')}</span>
+					<input type="number" min="0" bind:value={pVariants[0].qty} class="{inputClass} w-32" />
+				</label>
+			{:else}
+				<div class="flex w-full flex-col gap-2">
+					<span class={labelClass}>{$t('app.products.variantsLabel')}</span>
+					{#each pVariants as v, i (i)}
+						<div class="flex flex-wrap items-end gap-2">
+							<input bind:value={v.label} placeholder={$t('app.products.variantLabelPh')} class={inputClass} />
+							<input bind:value={v.sku} placeholder={$t('app.products.variantSkuPh')} class={inputClass} />
+							<input type="number" min="0" bind:value={v.qty} placeholder={$t('app.products.variantStockPh')} class="{inputClass} w-24" />
+							{#if pVariants.length > 1}
+								<button
+									type="button"
+									onclick={() => removeVariant(i)}
+									aria-label={$t('app.products.removeVariant')}
+									class="flex h-12 w-12 items-center justify-center brutal-border bg-bg font-mono text-text hover:text-error"
+								>
+									×
+								</button>
+							{/if}
+						</div>
+					{/each}
+					<button type="button" onclick={addVariant} class="self-start font-mono text-metadata-sm text-accent hover:underline">
+						{$t('app.products.addVariant')}
+					</button>
+				</div>
+			{/if}
 			<label class="flex flex-col gap-1">
 				<span class="{labelClass} flex items-center gap-2">
 					{$t('app.products.images')}
@@ -717,6 +811,7 @@
 					</div>
 				{/if}
 				{@render imageFileInput(onPickProductImage, uploading, true)}
+				<span class="font-mono text-metadata-sm text-text-muted">{$t('app.products.imageHint')}</span>
 			</label>
 			<label class="flex flex-col gap-1">
 				<span class="{labelClass} flex items-center gap-1">
@@ -743,7 +838,7 @@
 
 	<!-- Settings -->
 	<section class="mb-12">
-		<h2 class="mb-4 font-sans text-headline-md tracking-tight">{$t('app.settings.title')}</h2>
+		<h2 class="mb-4 font-sans uppercase leading-none tracking-tight text-headline-md">{$t('app.settings.title')}</h2>
 		<p class="mb-6 font-mono text-metadata-sm text-text-muted">{$t('app.settings.contentHint')}</p>
 		<form onsubmit={doSaveSettings} class="flex flex-col gap-8">
 			<div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
@@ -754,6 +849,26 @@
 				<label class="flex flex-col gap-1">
 					<span class={labelClass}>{$t('app.settings.accent')}</span>
 					<input type="color" bind:value={setAccent} class="brutal-border h-12 w-16 bg-surface" />
+				</label>
+				<label class="flex flex-col gap-1">
+					<span class={labelClass}>{$t('app.settings.titleColor')}</span>
+					<div class="flex items-center gap-2">
+						<input
+							type="color"
+							value={setTitleColor || '#111111'}
+							oninput={(e) => (setTitleColor = e.currentTarget.value)}
+							class="brutal-border h-12 w-16 bg-surface"
+						/>
+						{#if setTitleColor}
+							<button
+								type="button"
+								onclick={() => (setTitleColor = '')}
+								class="font-mono text-metadata-sm text-text-muted hover:text-text hover:underline"
+							>
+								{$t('app.settings.titleColorReset')}
+							</button>
+						{/if}
+					</div>
 				</label>
 				<label class="flex flex-col gap-1">
 					<span class={labelClass}>{$t('app.settings.theme')}</span>
@@ -863,6 +978,9 @@
 													/>
 												</div>
 												{@render imageFileInput((e) => onPickSectionImage(i, e), uploadingSection === i)}
+												<span class="font-mono text-metadata-sm text-text-muted">
+													{section.type === 'hero' ? $t('app.settings.heroImageHint') : $t('app.settings.sectionImageHint')}
+												</span>
 											{:else}
 												<input
 													value={section[field] ?? ''}
@@ -957,25 +1075,21 @@
 				</div>
 			</div>
 
-			<!-- Live preview: same markup the storefront renders, fed from the unsaved edits above. -->
+			<!-- Live preview: same markup the storefront renders, fed from the unsaved edits above. Opens in
+			     a full-size drawer (below) instead of a cramped inline box. -->
 			<div>
 				<div class="mb-1 flex items-baseline gap-3">
 					<h3 class="font-sans text-body-lg">{$t('app.settings.previewTitle')}</h3>
 					<span class="font-mono text-metadata-sm text-text-muted">{$t('app.settings.previewHint')}</span>
 				</div>
-				<div class="max-h-[70vh] overflow-y-auto brutal-border bg-bg">
-					<StorefrontSections
-						sections={previewSections}
-						featured={previewFeatured}
-						base={previewBase}
-						catalogHref={previewBase + '/catalogo'}
-						storeName={setName}
-					/>
-				</div>
+				<button type="button" onclick={() => (previewOpen = true)} class="btn-ghost">
+					{$t('app.settings.previewOpen')}
+				</button>
 			</div>
 
-			<!-- Standalone pages (About / FAQ / Contact / Terms): each gets its own storefront route and a
-			     footer link, but only once it has content. Leave a page blank to keep it hidden. -->
+			<!-- Standalone pages (just Terms — about/faq/contact live on the platform's own marketing site
+			     now, not per-store): gets its own storefront route and footer link, but only once it has
+			     content. Leave the body blank to keep it unpublished. -->
 			<div>
 				<div class="mb-1 flex items-baseline gap-3">
 					<h3 class="font-sans text-body-lg">{$t('app.settings.pagesTitle')}</h3>
@@ -990,6 +1104,13 @@
 							<div class="flex items-baseline justify-between gap-3">
 								<span class="font-sans text-body-md flex items-center gap-1">
 									{PAGE_META[type].defaultTitle} {#if !canPages}<Lock size={11} /> {$t('app.pro')}{/if}
+									<span
+										class="ml-2 brutal-border px-2 py-0.5 font-mono text-metadata-sm uppercase {termsPublished
+											? 'text-accent'
+											: 'text-text-muted'}"
+									>
+										{termsPublished ? $t('app.settings.pagePublished') : $t('app.settings.pageUnpublished')}
+									</span>
 								</span>
 								<span class={labelClass}>{PAGE_META[type].hint}</span>
 							</div>
@@ -998,6 +1119,16 @@
 								<input
 									bind:value={setPages[type].title}
 									placeholder={PAGE_META[type].defaultTitle}
+									disabled={!canPages}
+									title={canPages ? '' : $t('app.settings.pagesLocked')}
+									class="{inputClass} disabled:cursor-not-allowed disabled:opacity-40"
+								/>
+							</label>
+							<label class="flex flex-col gap-1">
+								<span class={labelClass}>{$t('app.settings.pageSlugField')}</span>
+								<input
+									bind:value={setPages[type].slug}
+									placeholder={$t('app.settings.pageSlugPh')}
 									disabled={!canPages}
 									title={canPages ? '' : $t('app.settings.pagesLocked')}
 									class="{inputClass} disabled:cursor-not-allowed disabled:opacity-40"
@@ -1021,4 +1152,83 @@
 			<button type="submit" class="btn-primary self-start">{$t('app.settings.save')}</button>
 		</form>
 	</section>
+{/if}
+
+{#if previewOpen}
+	<div
+		class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-6"
+		role="presentation"
+		onclick={() => (previewOpen = false)}
+		onkeydown={(e) => e.key === 'Escape' && (previewOpen = false)}
+	>
+		<div
+			class="flex h-[95vh] w-[95vw] flex-col brutal-border bg-bg"
+			role="dialog"
+			tabindex="-1"
+			aria-modal="true"
+			aria-label={$t('app.settings.previewTitle')}
+			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
+		>
+			<div class="flex items-center justify-between border-b border-border px-4 py-3">
+				<span class="font-mono text-metadata-sm uppercase tracking-[0.1em] text-text-muted">
+					{$t('app.settings.previewTitle')} — {$t('app.settings.previewHint')}
+				</span>
+				<button
+					type="button"
+					onclick={() => (previewOpen = false)}
+					aria-label={$t('app.settings.previewClose')}
+					class="p-2 text-text-muted hover:text-text"
+				>
+					<X size={18} strokeWidth={1.5} />
+				</button>
+			</div>
+			<div
+				class="flex-1 overflow-y-auto"
+				style="{previewAccent ? `--accent: ${previewAccent};` : ''}{previewTitleColor
+					? `--title-color: ${previewTitleColor};`
+					: ''}"
+			>
+				<StorefrontSections
+					sections={previewSections}
+					featured={previewFeatured}
+					base={previewBase}
+					catalogHref={previewBase + '/catalogo'}
+					storeName={setName}
+				/>
+			</div>
+		</div>
+	</div>
+{/if}
+
+{#if confirmDeleteTarget}
+	<div
+		class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+		role="presentation"
+		onclick={() => (confirmDeleteTarget = null)}
+		onkeydown={(e) => e.key === 'Escape' && (confirmDeleteTarget = null)}
+	>
+		<div
+			class="w-full max-w-sm brutal-border bg-bg p-6"
+			role="alertdialog"
+			tabindex="-1"
+			aria-modal="true"
+			aria-labelledby="delete-store-heading"
+			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
+		>
+			<h2 id="delete-store-heading" class="font-sans uppercase leading-none tracking-tight text-headline-md text-text">{$t('app.stores.delete')}</h2>
+			<p class="mt-3 font-sans text-body-md text-text-muted">
+				{$t('app.stores.deleteConfirm', { name: confirmDeleteTarget.displayName })}
+			</p>
+			<div class="mt-6 flex justify-end gap-3">
+				<button type="button" class="btn-ghost" onclick={() => (confirmDeleteTarget = null)}>
+					{$t('app.stores.cancel')}
+				</button>
+				<button type="button" class="btn-ghost text-error" onclick={confirmDeleteStore}>
+					{$t('app.stores.delete')}
+				</button>
+			</div>
+		</div>
+	</div>
 {/if}
