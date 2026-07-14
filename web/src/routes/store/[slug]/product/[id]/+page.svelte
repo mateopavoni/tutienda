@@ -73,6 +73,11 @@
 	});
 
 	let selectedSku = $state<string | null>(null);
+	// A single-variant product (the merchant picked "Único / sin variantes") has nothing to choose — skip
+	// the selector below and just pick the only option, same reset-on-navigation pattern as activeImage.
+	$effect(() => {
+		selectedSku = product.variants.length === 1 ? product.variants[0].sku : null;
+	});
 	const selectedVariant = $derived(product.variants.find((v) => v.sku === selectedSku) ?? null);
 	const selectedAvailable = $derived(selectedSku ? (live[selectedSku] ?? 0) : 0);
 	const canAdd = $derived(!isUpcoming && selectedVariant !== null && selectedAvailable > 0);
@@ -148,6 +153,7 @@
 			<div class="flex flex-col gap-4">
 				<h1
 					class="font-sans uppercase leading-none tracking-tighter text-headline-md md:text-headline-lg text-text"
+					style="color: rgb(var(--title-color))"
 				>
 					{product.name}
 				</h1>
@@ -187,38 +193,46 @@
 					</div>
 				{/if}
 
-				<!-- Size selector -->
-				<div class="flex flex-col gap-4">
-					<span class="font-mono text-metadata-sm uppercase text-text-muted">{$t('product.size')}</span>
-					<div class="grid grid-cols-4 gap-px border border-border bg-border">
-						{#each product.variants as variant (variant.sku)}
-							{@const available = live[variant.sku] ?? 0}
-							<button
-								onclick={() => (selectedSku = variant.sku)}
-								disabled={available <= 0}
-								class="relative py-3 font-mono text-metadata-sm transition-colors
-									{selectedSku === variant.sku ? 'bg-primary text-on-primary' : 'bg-surface text-text hover:bg-surface-variant'}
-									{available <= 0 ? 'cursor-not-allowed opacity-40' : ''}"
-								aria-pressed={selectedSku === variant.sku}
-							>
-								{variant.label}
-								{#if available <= 0}
-									<span
-										class="pointer-events-none absolute inset-0 flex items-center justify-center"
-										aria-hidden="true"
-									>
-										<span class="h-px w-[140%] -rotate-45 bg-text"></span>
-									</span>
-								{/if}
-							</button>
-						{/each}
-					</div>
-					{#if selectedVariant && selectedAvailable > 0 && selectedAvailable <= 10}
-						<span class="font-mono text-metadata-sm uppercase text-accent">
-							{$t('common.lowStock', { n: selectedAvailable })}
+				{#if product.variants.length > 1}
+					<!-- Variant selector: labeled per-product (Size/Color/Storage/...), not a hardcoded "Size". -->
+					<div class="flex flex-col gap-4">
+						<span class="font-mono text-metadata-sm uppercase text-text-muted">
+							{product.variantLabel || $t('product.size')}
 						</span>
-					{/if}
-				</div>
+						<div class="grid grid-cols-4 gap-px border border-border bg-border">
+							{#each product.variants as variant (variant.sku)}
+								{@const available = live[variant.sku] ?? 0}
+								<button
+									onclick={() => (selectedSku = variant.sku)}
+									disabled={available <= 0}
+									class="relative py-3 font-mono text-metadata-sm transition-colors
+										{selectedSku === variant.sku ? 'bg-primary text-on-primary' : 'bg-surface text-text hover:bg-surface-variant'}
+										{available <= 0 ? 'cursor-not-allowed opacity-40' : ''}"
+									aria-pressed={selectedSku === variant.sku}
+								>
+									{variant.label}
+									{#if available <= 0}
+										<span
+											class="pointer-events-none absolute inset-0 flex items-center justify-center"
+											aria-hidden="true"
+										>
+											<span class="h-px w-[140%] -rotate-45 bg-text"></span>
+										</span>
+									{/if}
+								</button>
+							{/each}
+						</div>
+						{#if selectedVariant && selectedAvailable > 0 && selectedAvailable <= 10}
+							<span class="font-mono text-metadata-sm uppercase text-accent">
+								{$t('common.lowStock', { n: selectedAvailable })}
+							</span>
+						{/if}
+					</div>
+				{:else if selectedVariant && selectedAvailable > 0 && selectedAvailable <= 10}
+					<span class="font-mono text-metadata-sm uppercase text-accent">
+						{$t('common.lowStock', { n: selectedAvailable })}
+					</span>
+				{/if}
 
 				<div class="mt-auto flex flex-col gap-4">
 					<button

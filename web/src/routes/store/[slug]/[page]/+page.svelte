@@ -13,7 +13,10 @@
 </svelte:head>
 
 <section class="mx-auto w-full max-w-3xl px-4 py-16 md:px-12 md:py-24">
-	<h1 class="font-sans uppercase leading-none tracking-tighter text-headline-lg text-text">
+	<h1
+		class="font-sans uppercase leading-none tracking-tighter text-headline-lg text-text"
+		style="color: rgb(var(--title-color))"
+	>
 		{title}
 	</h1>
 	<!-- Body is plain text the merchant typed; whitespace-pre-line keeps their line breaks without HTML. -->

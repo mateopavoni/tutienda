@@ -9,6 +9,7 @@
 	import { normalizeTheme } from '$lib/theme';
 	import { theme } from '$lib/stores/theme';
 	import { storeInfo, fetchStoreInfo } from '$lib/stores/storeInfo';
+	import { safeAccent, safeTitleColor } from '$lib/colorGuard';
 	import { browser } from '$app/environment';
 
 	let { children, data } = $props();
@@ -52,41 +53,20 @@
 
 	// Per-store accent: the only chromatic token a store can override. Everything else stays fixed.
 	let accentVar = $derived(safeAccent(store?.settings?.accentColor, isDark));
+	// Per-store title color: applied to each page's main headline (see the `--title-color` consumers in
+	// StorefrontSections.svelte, catalogo/product/[page] headings) — falls back to the design system's
+	// text-text when unset or when it'd be unreadable against the page background.
+	let titleColorVar = $derived(safeTitleColor(store?.settings?.titleColor, isDark));
 
 	// Per-store visual theme (fonts + palette); see web/src/lib/theme.ts + app.css [data-store-theme].
 	// Defaults to monolith on any unknown/legacy value. The accent above still overrides the theme accent.
 	let storeTheme = $derived(normalizeTheme(store?.settings?.theme));
-
-	function safeAccent(hex: string | undefined, dark: boolean): string | undefined {
-		if (!hex) return undefined;
-		const m = /^#?([0-9a-fA-F]{6})$/.exec(hex.trim());
-		if (!m) return undefined;
-		const n = parseInt(m[1], 16);
-		let r = (n >> 16) & 255;
-		let g = (n >> 8) & 255;
-		let b = n & 255;
-		// Relative luminance: if the accent is too light, white text on it would vanish — fall back to the
-		// design-system accent rather than render an unreadable button (a real multi-tenant contrast bug).
-		const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-		if (lum > 0.7) return undefined;
-		// Mirror problem in dark mode: the same accent is also used as plain foreground text (nav links,
-		// tags, prices) over the app's naturally dark surfaces. A merchant's dark brand color (e.g. a
-		// chocolate brown or forest green) reads fine as dark-on-light but nearly disappears as
-		// dark-on-dark. Lighten it towards white until it clears a legible-on-dark threshold.
-		if (dark && lum < 0.4) {
-			const mix = (c: number) => Math.round(c + (255 - c) * 0.5);
-			r = mix(r);
-			g = mix(g);
-			b = mix(b);
-		}
-		return `${r} ${g} ${b}`;
-	}
 </script>
 
 <div
 	class="flex min-h-screen flex-col bg-bg text-text"
 	data-store-theme={storeTheme}
-	style={accentVar ? `--accent: ${accentVar}` : undefined}
+	style="{accentVar ? `--accent: ${accentVar};` : ''}{titleColorVar ? `--title-color: ${titleColorVar};` : ''}"
 >
 	<Nav {store} slug={data.storeSlug} pages={enabledPages(store?.settings?.pages)} />
 	<main class="flex-1 pt-16">

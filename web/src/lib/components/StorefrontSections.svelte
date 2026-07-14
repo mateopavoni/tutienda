@@ -25,28 +25,25 @@
 			{section.body}
 		</div>
 	{:else if section.type === 'hero'}
-		<!-- Overlay is a left-to-right gradient, not a flat tint: strongest where the (left-aligned) text
-		     sits, fading to transparent so the rest of the photo shows through untouched — the standard
-		     photo-hero effect. The tint follows the visitor's light/dark mode (white veil + dark text in
-		     light mode, black veil + light text in dark mode) via the `dark:` variant, not a merchant
-		     choice — text color is left to inherit the page's own text-text, which is already the right
-		     shade for each mode, so no JS branching is needed either. -->
+		<!-- Overlay is a flat tint over the whole photo (not a left-to-right vignette — that left most of
+		     the image untouched and made the 0-100 slider barely perceptible). The tint follows the
+		     visitor's light/dark mode (white veil + dark text in light mode, black veil + light text in
+		     dark mode) via the `dark:` variant, not a merchant choice — text color is left to inherit the
+		     page's own text-text, which is already the right shade for each mode, so no JS branching is
+		     needed either. -->
 		{@const overlayAlpha = (section.overlay ?? HERO_OVERLAY_DEFAULT) / 100}
 		<section class="relative flex min-h-screen w-full items-center border-b border-border">
 			{#if section.imageUrl}
 				<img src={section.imageUrl} alt={section.heading ?? storeName} class="absolute inset-0 h-full w-full object-cover" />
-				<div
-					class="absolute inset-0 dark:hidden"
-					style="background: linear-gradient(to right, rgba(255,255,255,{overlayAlpha}) 0%, rgba(255,255,255,0) 65%)"
-				></div>
-				<div
-					class="absolute inset-0 hidden dark:block"
-					style="background: linear-gradient(to right, rgba(0,0,0,{overlayAlpha}) 0%, rgba(0,0,0,0) 65%)"
-				></div>
+				<div class="absolute inset-0 dark:hidden" style="background: rgba(255,255,255,{overlayAlpha})"></div>
+				<div class="absolute inset-0 hidden dark:block" style="background: rgba(0,0,0,{overlayAlpha})"></div>
 			{/if}
 			<div class="relative mx-auto flex w-full max-w-container flex-col items-start gap-6 px-4 py-20 md:px-12 md:py-28">
 				{#if section.heading}
-					<h2 class="max-w-3xl font-sans uppercase leading-none tracking-tighter text-display-xl">
+					<h2
+						class="max-w-3xl font-sans uppercase leading-none tracking-tighter text-display-xl"
+						style="color: rgb(var(--title-color))"
+					>
 						{section.heading}
 					</h2>
 				{/if}

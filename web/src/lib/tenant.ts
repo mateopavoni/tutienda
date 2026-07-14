@@ -24,6 +24,7 @@ export interface StoreInfo {
 	settings: {
 		logoUrl?: string;
 		accentColor?: string;
+		titleColor?: string;
 		theme?: string;
 		currency?: string;
 		layout?: import('$lib/layout').Section[];

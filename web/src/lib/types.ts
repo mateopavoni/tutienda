@@ -18,6 +18,9 @@ export interface Product {
 	/** Full image gallery shown on the product detail page. */
 	images?: string[];
 	variants: Variant[];
+	/** What a variant's label means for this product ("Size", "Color", "Storage"...). Blank/absent falls
+	 *  back to a generic "Size" in the storefront selector. */
+	variantLabel?: string;
 	createdAt: string;
 	/** ISO release time for a scheduled drop. Absent/null = on sale now. */
 	dropAt?: string | null;

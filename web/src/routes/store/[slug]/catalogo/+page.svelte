@@ -30,7 +30,10 @@
 <section class="mx-auto w-full max-w-container px-4 pb-24 pt-12 md:px-12 md:pt-16">
 	<header class="mb-12 grid grid-cols-12 gap-px md:mb-16">
 		<div class="col-span-12 md:col-span-8">
-			<h1 class="font-sans uppercase leading-none tracking-tighter text-headline-lg md:text-display-xl">
+			<h1
+				class="font-sans uppercase leading-none tracking-tighter text-headline-lg md:text-display-xl"
+				style="color: rgb(var(--title-color))"
+			>
 				{storeName}
 			</h1>
 		</div>
