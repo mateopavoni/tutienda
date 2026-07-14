@@ -14,9 +14,11 @@
 			</p>
 		</div>
 		<nav class="flex flex-wrap gap-8 font-mono text-metadata-sm md:col-span-6 md:justify-end">
-			<a href="/signup" class="text-text-muted transition-colors hover:text-accent">{$t('landing.cta')}</a>
+			<a href="/about" class="text-text-muted transition-colors hover:text-accent">{$t('nav.about')}</a>
+			<a href="/faq" class="text-text-muted transition-colors hover:text-accent">{$t('nav.faq')}</a>
+			<a href="/contact" class="text-text-muted transition-colors hover:text-accent">{$t('nav.contact')}</a>
+			<a href="/terms" class="text-text-muted transition-colors hover:text-accent">{$t('marketing.terms.title')}</a>
 			<a href="/login" class="text-text-muted transition-colors hover:text-accent">{$t('auth.login')}</a>
-			<a href="/configuracion" class="text-text-muted transition-colors hover:text-accent">{$t('settings.title')}</a>
 		</nav>
 	</div>
 </footer>

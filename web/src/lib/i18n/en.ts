@@ -1,6 +1,6 @@
 // English is the source of truth; other locales mirror this shape (enforced by `Messages = typeof en`).
 export const en = {
-	nav: { shop: 'Shop', collection: 'Collection', about: 'About', journal: 'Journal', bag: 'Bag', catalog: 'Catalog', home: 'Home', account: 'Account', menu: 'Menu' },
+	nav: { shop: 'Shop', collection: 'Collection', about: 'About', journal: 'Journal', bag: 'Bag', catalog: 'Catalog', home: 'Home', account: 'Account', menu: 'Menu', faq: 'FAQ', contact: 'Contact' },
 	common: {
 		addToBag: 'Add to bag',
 		checkout: 'Checkout',
@@ -136,13 +136,11 @@ export const en = {
 		orderStatus: 'Status'
 	},
 	landing: {
-		kicker: 'Multi-store ecommerce builder',
 		tagline: 'Launch your store. Never oversell.',
 		subtitle:
 			'Spin up an editorial storefront in minutes, load your products, and sell with stock that stays honest under any load. Multi-tenant from day one.',
 		cta: 'Create your store',
 		seeDemo: 'See a live store',
-		subdomainNote: 'Every store gets its own page at {domain}/store/your-name.',
 		feat1Title: 'Your own storefront',
 		feat1Body: 'A polished editorial storefront per store. Set your name, logo and accent — the rest is handled.',
 		feat2Title: 'Make it yours',
@@ -171,6 +169,89 @@ export const en = {
 		finalTitle: 'Your store, online in minutes.',
 		footerNote: 'Built for merchants who refuse to oversell.'
 	},
+	// Platform marketing pages (/about /faq /contact /terms) — about the SaaS itself, distinct from a
+	// merchant's own storefront pages ($lib/pages, e.g. their own Terms at /store/[slug]/terms).
+	marketing: {
+		about: {
+			kicker: 'About the platform',
+			title: 'A storefront builder that never oversells.',
+			intro:
+				'{brand} started from one hard problem: under a flash crowd, most storefronts sell more of the last unit than they actually have. We built the fix first — atomic, per-store stock guarantees — and the storefront builder around it.',
+			missionKicker: '01 — Why we exist',
+			missionTitle: 'Merchants shouldn’t have to apologize for their own success',
+			missionBody:
+				'A viral post, a limited drop, a restock — the moments that should be a merchant’s best day are exactly when generic platforms oversell and erode trust. {brand} exists so that never happens: every store runs on the same atomic reservation engine, isolated from every other store on the platform.',
+			principlesKicker: '02 — How we build',
+			principlesTitle: 'Three things we don’t compromise on',
+			principle1Title: 'Correctness under load',
+			principle1Body: 'Stock guarantees are enforced server-side, at the database layer — never a client-side check that a fast enough buyer can race past.',
+			principle2Title: 'One store, one blast radius',
+			principle2Body: 'Every store is isolated by tenant. A flood of traffic or a mistake on one storefront never touches another merchant’s stock or data.',
+			principle3Title: 'No dark patterns',
+			principle3Body: 'Clear pricing, a real free tier, and an account you can close yourself, in one click, without calling anyone.',
+			ctaTitle: 'See it running on a live store',
+			cta: 'View a demo store',
+			ctaSecondary: 'Start your own'
+		},
+		faq: {
+			kicker: 'Questions',
+			title: 'Frequently asked questions',
+			subtitle: 'Everything prospective merchants ask us before signing up. Still stuck? See Contact below.',
+			q1Title: 'Is there really a free plan?',
+			q1Body: 'Yes — one store, a full storefront and the no-oversell engine included, no credit card required. Pro and Scale add a custom logo, priority cache, analytics, timed drops and higher limits.',
+			q2Title: 'Can I use my own domain?',
+			q2Body: 'Every store gets a {brand} URL at /store/your-slug out of the box. Custom domains are on our roadmap; until then this is the one honest limitation we’ll tell you about upfront.',
+			q3Title: 'What actually stops overselling?',
+			q3Body: 'An atomic database operation on every purchase: it only succeeds if there’s still stock, scoped to your store alone. No distributed locks, no race condition, no oversold order to apologize for.',
+			q4Title: 'Can I migrate my existing catalog?',
+			q4Body: 'You can add products and stock straight from the merchant dashboard as soon as you sign up. Bulk import is on our roadmap; reach out and we’ll help with a one-off migration in the meantime.',
+			q5Title: 'What happens to my data if I close my account?',
+			q5Body: 'Deleting a store removes its products and stock immediately and permanently — see our Terms for the full policy. It’s a one-click action from your dashboard, no support ticket needed.',
+			q6Title: 'Do you take a cut of my sales?',
+			q6Body: 'No. Plans are a flat monthly fee based on features and limits, never a percentage of what you sell.',
+			q7Title: 'Can I run a limited/timed drop?',
+			q7Body: 'Yes, on Pro and Scale — schedule a release time, the storefront shows a countdown, and checkout is blocked server-side until it goes live. The same no-oversell engine backs the drop itself.',
+			q8Title: 'Is my customers’ data safe?',
+			q8Body: 'Every store’s data is isolated by tenant and never shared across stores. See our Terms for the full data-handling policy.'
+		},
+		contact: {
+			kicker: 'Get in touch',
+			title: 'We read every message',
+			subtitle: 'Questions about plans, a bug, a migration, or just curious — this reaches a real person, not a ticket queue.',
+			emailLabel: 'Email',
+			emailNote: 'Usually a reply within one business day.',
+			hoursLabel: 'Hours',
+			hoursBody: 'Monday to Friday, 9am–6pm (Argentina time).',
+			demoLabel: 'See it in action first',
+			demoBody: 'Most questions get answered by just poking around a live store.',
+			demoCta: 'Open a demo store'
+		},
+		terms: {
+			kicker: 'Legal',
+			title: 'Platform Terms of Service',
+			updated: 'Last updated 2026-07-14',
+			intro:
+				'These terms cover your use of {brand} as a merchant building and running a store on the platform. They are separate from the terms a store itself publishes to its own customers, which each merchant writes at /store/[slug]/terms.',
+			s1Heading: '1. Your account',
+			s1Body: 'You must provide accurate signup information and are responsible for activity under your account. You may close your account at any time from the merchant dashboard, which permanently deletes your stores’ products and stock.',
+			s2Heading: '2. Plans & billing',
+			s2Body: 'Free, Pro and Scale plans differ in features and limits, not in the no-oversell guarantee, which applies to every store regardless of tier. Upgrading or downgrading takes effect immediately; no refunds are given for partial billing periods.',
+			s3Heading: '3. Acceptable use',
+			s3Body: 'You may not use {brand} to sell illegal goods, commit fraud, or attempt to circumvent the stock/reservation engine. We may suspend a store that violates this without notice if it puts other tenants or the platform at risk.',
+			s4Heading: '4. Your store, your content',
+			s4Body: 'You own the product data, images and copy you upload. We only use it to operate your storefront and never sell it to third parties. Deleting a store deletes this content permanently across catalog and inventory.',
+			s5Heading: '5. Reliability',
+			s5Body: 'We engineer for correctness under concurrent load (the no-oversell guarantee) and make a good-faith effort at uptime, but the platform is provided without warranty of uninterrupted availability.',
+			s6Heading: '6. Data & privacy',
+			s6Body: 'Merchant and customer data is isolated per store (tenant) and never shared across stores. We collect only what’s needed to operate accounts, stores and orders.',
+			s7Heading: '7. Limitation of liability',
+			s7Body: 'To the extent permitted by law, {brand} is not liable for indirect or consequential damages arising from use of the platform, including lost sales during any downtime.',
+			s8Heading: '8. Changes to these terms',
+			s8Body: 'We may update these terms; material changes will be reflected here with an updated date. Continued use of the platform after a change means you accept it.',
+			s9Heading: '9. Contact',
+			s9Body: 'Questions about these terms? Reach us at the email on our Contact page.'
+		}
+	},
 	// Merchant dashboard (/app). Section/page block *names* still come from layout.ts / pages.ts metadata
 	// (shared with the storefront) and stay English for now; everything the dashboard itself renders is here.
 	app: {
@@ -190,7 +271,8 @@ export const en = {
 			enable: 'Enable store',
 			disable: 'Disable store',
 			delete: 'Delete store',
-			deleteConfirm: 'Delete {name}? This permanently removes the store and all its products/stock. This cannot be undone.'
+			deleteConfirm: 'Delete {name}? This permanently removes the store and all its products/stock. This cannot be undone.',
+			cancel: 'Cancel'
 		},
 		membership: {
 			title: 'Membership',
@@ -213,13 +295,20 @@ export const en = {
 			name: 'Name',
 			category: 'Category',
 			price: 'Price (USD)',
-			variantsLabel: 'Variants (size / color — each its own SKU + starting stock)',
-			variantLabelPh: 'Label (e.g. M / Black)',
-			variantSkuPh: 'SKU (e.g. ACME-01-M)',
+			variantTypeLabel: 'Variant type',
+			variantType: { talle: 'Size', color: 'Color', modelo: 'Model', almacenamiento: 'Storage' },
+			variantTypeCustom: 'Custom',
+			variantTypeCustomPh: 'Custom label (e.g. Capacity)',
+			variantTypeUnico: 'Single (no variants)',
+			unicoQty: 'Starting stock',
+			variantsLabel: 'Variants (each its own SKU + starting stock)',
+			variantLabelPh: 'Value (e.g. M / Black / 128GB)',
+			variantSkuPh: 'SKU (auto if left blank)',
 			variantStockPh: 'Stock',
 			removeVariant: 'Remove variant',
 			addVariant: '+ Add variant',
 			images: 'Images',
+			imageHint: 'Recommended: 1000×1250px (4:5), max 5MB.',
 			uploading: 'uploading…',
 			main: 'main',
 			removeImage: 'Remove image',
@@ -234,6 +323,8 @@ export const en = {
 			contentHint: "Everything you type below is shown exactly as written — the store's language only translates the storefront's fixed labels, not your own content.",
 			displayName: 'Display name',
 			accent: 'Accent color',
+			titleColor: 'Page title color',
+			titleColorReset: 'Reset to default',
 			theme: 'Theme',
 			logoUrl: 'Logo URL',
 			logoLocked: 'A custom logo is a Pro feature — upgrade above',
@@ -249,12 +340,30 @@ export const en = {
 			hidden: '○ Hidden',
 			previewTitle: 'Preview',
 			previewHint: 'updates as you type · not yet saved',
+			previewOpen: 'Open full preview',
+			previewClose: 'Close preview',
 			pagesTitle: 'Pages',
 			pagesHint: 'footer links · blank = hidden',
 			pagesDesc: 'Standalone pages linked from your storefront footer. A page only appears once it has content.',
 			pageTitleField: 'Title (optional)',
+			pageSlugField: 'Page URL (optional)',
+			pageSlugPh: 'auto from title if left blank',
 			pageContentField: 'Content',
 			imageUrlPh: 'upload or paste a URL',
+			heroImageHint: 'Recommended: 1920×1080px (16:9), max 5MB.',
+			sectionImageHint: 'Recommended: 1200×900px, max 5MB.',
+			pagePublished: 'Published',
+			pageUnpublished: 'Not published',
+			termsDefaultBody:
+				'1. GENERAL\nBy placing an order with [Store Name] you agree to these Terms & Conditions. We may update this page at any time; the version shown at checkout is the one that applies to your order.\n\n' +
+				'2. PRODUCTS & PRICING\nAll prices are shown in the currency displayed at checkout and include any taxes required by law unless stated otherwise. We reserve the right to correct pricing errors before an order is confirmed.\n\n' +
+				'3. ORDERS & PAYMENT\nAn order is confirmed once payment is authorized. We may cancel an order if a product turns out to be unavailable, refunding any amount already charged in full.\n\n' +
+				'4. SHIPPING\nEstimated delivery times are shown at checkout and are not guaranteed. Risk of loss passes to the buyer once the order is handed to the carrier.\n\n' +
+				'5. RETURNS & REFUNDS\nYou may request a return within 30 days of delivery, provided the product is unused and in its original packaging. Once we receive and inspect the returned item, we will issue a refund to the original payment method within 10 business days. Shipping costs for returns are covered by [Store Name / the customer — edit as applies].\n\n' +
+				'6. PRIVACY\nWe only collect the personal data needed to process your order (name, address, contact details, payment information) and never sell it to third parties. See our privacy practices for more detail if you have one published separately.\n\n' +
+				'7. LIMITATION OF LIABILITY\nTo the extent permitted by law, [Store Name] is not liable for indirect or consequential damages arising from the use of our products.\n\n' +
+				'8. GOVERNING LAW\nThese terms are governed by the laws of [your country/state]. Any dispute will be resolved in the competent courts of that jurisdiction.\n\n' +
+				'9. CONTACT\nQuestions about these terms? Reach us at [contact email/phone].',
 			save: 'Save settings'
 		},
 		fields: {

@@ -1,7 +1,7 @@
 <script lang="ts">
 	// Marketing landing for the SaaS. This is NOT a storefront — it sells the platform. The actual stores
 	// live under /store/[slug]. Brand name comes from $lib/brand.
-	import { BRAND, ROOT_DOMAIN } from '$lib/brand';
+	import { BRAND } from '$lib/brand';
 	import { t } from '$lib/i18n';
 	import SiteHeader from '$lib/components/SiteHeader.svelte';
 	import SiteFooter from '$lib/components/SiteFooter.svelte';
@@ -32,12 +32,8 @@
 	<SiteHeader />
 
 	<main class="flex-1">
-		<!-- Hero — editorial masthead: accent tick, mono kicker, oversized display type, generous space. -->
+		<!-- Hero — editorial masthead: oversized display type, generous space. -->
 		<section class="mx-auto w-full max-w-container px-4 pb-24 pt-20 md:px-12 md:pb-36 md:pt-32">
-			<p class="mb-8 flex items-center gap-3 font-mono text-metadata-sm uppercase tracking-[0.2em] text-text-muted">
-				<span class="inline-block h-3 w-1.5 bg-accent"></span>
-				{$t('landing.kicker')}
-			</p>
 			<h1 class="max-w-5xl font-sans uppercase leading-[0.95] tracking-tighter text-display-xl">
 				{$t('landing.tagline')}
 			</h1>
@@ -51,9 +47,6 @@
 				</a>
 				<a href="/store/system-archive" class="btn-ghost">{$t('landing.seeDemo')}</a>
 			</div>
-			<p class="mt-8 font-mono text-metadata-sm uppercase tracking-[0.1em] text-text-muted">
-				{$t('landing.subdomainNote', { domain: ROOT_DOMAIN })}
-			</p>
 		</section>
 
 		<!-- Features — numbered editorial grid -->

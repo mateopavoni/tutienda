@@ -1,7 +1,7 @@
 import type { Messages } from './en';
 
 export const es: Messages = {
-	nav: { shop: 'Tienda', collection: 'Colección', about: 'Nosotros', journal: 'Journal', bag: 'Bolsa', catalog: 'Catálogo', home: 'Inicio', account: 'Mi cuenta', menu: 'Menú' },
+	nav: { shop: 'Tienda', collection: 'Colección', about: 'Nosotros', journal: 'Journal', bag: 'Bolsa', catalog: 'Catálogo', home: 'Inicio', account: 'Mi cuenta', menu: 'Menú', faq: 'Preguntas frecuentes', contact: 'Contacto' },
 	common: {
 		addToBag: 'Agregar a la bolsa',
 		checkout: 'Finalizar compra',
@@ -134,13 +134,11 @@ export const es: Messages = {
 		orderStatus: 'Estado'
 	},
 	landing: {
-		kicker: 'Constructor de ecommerce multi-tienda',
 		tagline: 'Lanzá tu tienda. Nunca sobrevendas.',
 		subtitle:
 			'Armá un storefront editorial en minutos, cargá tus productos y vendé con un stock que se mantiene honesto bajo cualquier carga. Multi-tienda desde el día uno.',
 		cta: 'Creá tu tienda',
 		seeDemo: 'Ver una tienda en vivo',
-		subdomainNote: 'Cada tienda tiene su propia página en {domain}/store/tu-nombre.',
 		feat1Title: 'Tu propio storefront',
 		feat1Body: 'Un storefront editorial pulido por tienda. Poné tu nombre, logo y acento — del resto nos encargamos.',
 		feat2Title: 'Hacela tuya',
@@ -169,6 +167,87 @@ export const es: Messages = {
 		finalTitle: 'Tu tienda, online en minutos.',
 		footerNote: 'Hecho para comerciantes que se niegan a sobrevender.'
 	},
+	marketing: {
+		about: {
+			kicker: 'Sobre la plataforma',
+			title: 'Un constructor de tiendas que nunca sobrevende.',
+			intro:
+				'{brand} nació de un problema concreto: bajo una ola de demanda, la mayoría de las plataformas venden más de la última unidad de la que realmente tienen. Primero resolvimos eso — garantías atómicas de stock por tienda — y construimos el builder alrededor.',
+			missionKicker: '01 — Por qué existimos',
+			missionTitle: 'Un comerciante no debería pagar caro por su propio éxito',
+			missionBody:
+				'Un posteo viral, un drop limitado, una reposición — los momentos que deberían ser el mejor día de un comerciante son justo cuando las plataformas genéricas sobrevenden y rompen la confianza. {brand} existe para que eso nunca pase: cada tienda corre sobre el mismo motor de reservas atómico, aislado del resto.',
+			principlesKicker: '02 — Cómo construimos',
+			principlesTitle: 'Tres cosas en las que no negociamos',
+			principle1Title: 'Corrección bajo carga',
+			principle1Body: 'Las garantías de stock se aplican del lado del servidor, en la base de datos — nunca un chequeo del lado del cliente que un comprador rápido pueda esquivar.',
+			principle2Title: 'Una tienda, un radio de impacto',
+			principle2Body: 'Cada tienda está aislada por tenant. Un pico de tráfico o un error en una tienda nunca toca el stock ni los datos de otro comerciante.',
+			principle3Title: 'Sin dark patterns',
+			principle3Body: 'Precios claros, un plan gratis real, y una cuenta que podés cerrar vos mismo, con un clic, sin llamar a nadie.',
+			ctaTitle: 'Miralo funcionando en una tienda real',
+			cta: 'Ver una tienda demo',
+			ctaSecondary: 'Crear la tuya'
+		},
+		faq: {
+			kicker: 'Preguntas',
+			title: 'Preguntas frecuentes',
+			subtitle: 'Todo lo que nos preguntan los comerciantes antes de registrarse. ¿Seguís con dudas? Mirá Contacto más abajo.',
+			q1Title: '¿De verdad hay un plan gratis?',
+			q1Body: 'Sí — una tienda, storefront completo y el motor de no-sobreventa incluido, sin tarjeta de crédito. Pro y Scale suman logo propio, caché prioritaria, analytics, drops programados y límites más altos.',
+			q2Title: '¿Puedo usar mi propio dominio?',
+			q2Body: 'Cada tienda arranca con una URL de {brand} en /store/tu-slug. Los dominios propios están en nuestro roadmap; mientras tanto, es la única limitación honesta que te vamos a avisar de entrada.',
+			q3Title: '¿Qué evita realmente la sobreventa?',
+			q3Body: 'Una operación atómica en la base de datos en cada compra: solo tiene éxito si todavía hay stock, acotada a tu propia tienda. Sin locks distribuidos, sin condición de carrera, sin un pedido de más que pedir disculpas.',
+			q4Title: '¿Puedo migrar mi catálogo actual?',
+			q4Body: 'Podés cargar productos y stock directo desde el panel del comerciante apenas te registrás. La importación masiva está en el roadmap; escribinos y te ayudamos con una migración puntual mientras tanto.',
+			q5Title: '¿Qué pasa con mis datos si cierro la cuenta?',
+			q5Body: 'Borrar una tienda elimina sus productos y stock de forma inmediata y permanente — el detalle completo está en nuestros Términos. Es una acción de un clic desde tu panel, sin necesidad de abrir un ticket.',
+			q6Title: '¿Se quedan con un porcentaje de mis ventas?',
+			q6Body: 'No. Los planes son una tarifa mensual fija según funciones y límites, nunca un porcentaje de lo que vendés.',
+			q7Title: '¿Puedo hacer un drop limitado/programado?',
+			q7Body: 'Sí, en Pro y Scale — programás un horario de lanzamiento, el storefront muestra la cuenta regresiva, y la compra queda bloqueada del lado del servidor hasta que se libera. El mismo motor de no-sobreventa respalda el drop.',
+			q8Title: '¿Los datos de mis clientes están seguros?',
+			q8Body: 'Los datos de cada tienda están aislados por tenant y nunca se comparten entre tiendas. El detalle completo está en nuestros Términos.'
+		},
+		contact: {
+			kicker: 'Contacto',
+			title: 'Leemos todos los mensajes',
+			subtitle: 'Preguntas sobre planes, un bug, una migración, o simple curiosidad — esto llega a una persona real, no a una cola de tickets.',
+			emailLabel: 'Email',
+			emailNote: 'Normalmente respondemos dentro de un día hábil.',
+			hoursLabel: 'Horario',
+			hoursBody: 'Lunes a viernes, 9 a 18hs (hora Argentina).',
+			demoLabel: 'Primero miralo en acción',
+			demoBody: 'La mayoría de las preguntas se responden solas dando una vuelta por una tienda real.',
+			demoCta: 'Abrir una tienda demo'
+		},
+		terms: {
+			kicker: 'Legal',
+			title: 'Términos de servicio de la plataforma',
+			updated: 'Última actualización: 2026-07-14',
+			intro:
+				'Estos términos cubren tu uso de {brand} como comerciante que arma y opera una tienda en la plataforma. Son distintos de los términos que cada tienda publica para sus propios clientes, que cada comerciante escribe en /store/[slug]/terms.',
+			s1Heading: '1. Tu cuenta',
+			s1Body: 'Tenés que dar datos correctos al registrarte y sos responsable de la actividad bajo tu cuenta. Podés cerrar tu cuenta en cualquier momento desde el panel del comerciante, lo que borra permanentemente los productos y el stock de tus tiendas.',
+			s2Heading: '2. Planes y facturación',
+			s2Body: 'Los planes Free, Pro y Scale difieren en funciones y límites, no en la garantía de no-sobreventa, que aplica a toda tienda sin importar el plan. Mejorar o bajar de plan tiene efecto inmediato; no se reembolsan períodos de facturación parciales.',
+			s3Heading: '3. Uso aceptable',
+			s3Body: 'No podés usar {brand} para vender bienes ilegales, cometer fraude, o intentar eludir el motor de stock/reservas. Podemos suspender una tienda que viole esto sin previo aviso si pone en riesgo a otros comerciantes o a la plataforma.',
+			s4Heading: '4. Tu tienda, tu contenido',
+			s4Body: 'Vos sos dueño de los datos de producto, imágenes y textos que subís. Solo los usamos para operar tu storefront y nunca los vendemos a terceros. Borrar una tienda elimina este contenido de forma permanente en catálogo e inventario.',
+			s5Heading: '5. Disponibilidad',
+			s5Body: 'Diseñamos para que sea correcto bajo carga concurrente (la garantía de no-sobreventa) y hacemos un esfuerzo de buena fe por mantener el uptime, pero la plataforma se ofrece sin garantía de disponibilidad ininterrumpida.',
+			s6Heading: '6. Datos y privacidad',
+			s6Body: 'Los datos de comerciantes y clientes están aislados por tienda (tenant) y nunca se comparten entre tiendas. Solo recolectamos lo necesario para operar cuentas, tiendas y pedidos.',
+			s7Heading: '7. Limitación de responsabilidad',
+			s7Body: 'En la medida permitida por ley, {brand} no es responsable por daños indirectos o consecuentes derivados del uso de la plataforma, incluyendo ventas perdidas durante una caída del servicio.',
+			s8Heading: '8. Cambios a estos términos',
+			s8Body: 'Podemos actualizar estos términos; los cambios importantes se van a reflejar acá con una fecha actualizada. Seguir usando la plataforma después de un cambio implica que lo aceptás.',
+			s9Heading: '9. Contacto',
+			s9Body: '¿Dudas sobre estos términos? Escribinos al email que figura en nuestra página de Contacto.'
+		}
+	},
 	app: {
 		title: 'Panel',
 		viewStore: 'Ver mi tienda',
@@ -185,6 +264,7 @@ export const es: Messages = {
 			disabled: 'Desactivada',
 			delete: 'Borrar tienda',
 			deleteConfirm: '¿Borrar {name}? Esto elimina la tienda y todos sus productos/stock para siempre. No se puede deshacer.',
+			cancel: 'Cancelar',
 			enable: 'Activar tienda',
 			disable: 'Desactivar tienda'
 		},
@@ -209,13 +289,20 @@ export const es: Messages = {
 			name: 'Nombre',
 			category: 'Categoría',
 			price: 'Precio (USD)',
-			variantsLabel: 'Variantes (talle / color — cada una con su SKU y stock inicial)',
-			variantLabelPh: 'Etiqueta (ej. M / Negro)',
-			variantSkuPh: 'SKU (ej. ACME-01-M)',
+			variantTypeLabel: 'Tipo de variante',
+			variantType: { talle: 'Talle', color: 'Color', modelo: 'Modelo', almacenamiento: 'Almacenamiento' },
+			variantTypeCustom: 'Personalizado',
+			variantTypeCustomPh: 'Etiqueta personalizada (ej. Capacidad)',
+			variantTypeUnico: 'Único (sin variantes)',
+			unicoQty: 'Stock inicial',
+			variantsLabel: 'Variantes (cada una con su SKU y stock inicial)',
+			variantLabelPh: 'Valor (ej. M / Negro / 128GB)',
+			variantSkuPh: 'SKU (automático si lo dejás vacío)',
 			variantStockPh: 'Stock',
 			removeVariant: 'Quitar variante',
 			addVariant: '+ Agregar variante',
 			images: 'Imágenes',
+			imageHint: 'Recomendado: 1000×1250px (4:5), máx. 5MB.',
 			uploading: 'subiendo…',
 			main: 'principal',
 			removeImage: 'Quitar imagen',
@@ -230,6 +317,8 @@ export const es: Messages = {
 			contentHint: 'Todo lo que cargues abajo se muestra tal cual lo escribís — el idioma de la tienda solo traduce las etiquetas fijas del storefront, no tu propio contenido.',
 			displayName: 'Nombre visible',
 			accent: 'Color de acento',
+			titleColor: 'Color del título de página',
+			titleColorReset: 'Restablecer al default',
 			theme: 'Tema',
 			logoUrl: 'URL del logo',
 			logoLocked: 'El logo propio es una función Pro — mejorá arriba',
@@ -245,12 +334,30 @@ export const es: Messages = {
 			hidden: '○ Oculto',
 			previewTitle: 'Vista previa',
 			previewHint: 'se actualiza al tipear · todavía sin guardar',
+			previewOpen: 'Ver vista previa completa',
+			previewClose: 'Cerrar vista previa',
 			pagesTitle: 'Páginas',
 			pagesHint: 'links en el footer · vacío = oculto',
 			pagesDesc: 'Páginas independientes enlazadas desde el footer de tu tienda. Una página aparece solo cuando tiene contenido.',
 			pageTitleField: 'Título (opcional)',
+			pageSlugField: 'URL de la página (opcional)',
+			pageSlugPh: 'automática desde el título si lo dejás vacío',
 			pageContentField: 'Contenido',
 			imageUrlPh: 'subí o pegá una URL',
+			heroImageHint: 'Recomendado: 1920×1080px (16:9), máx. 5MB.',
+			sectionImageHint: 'Recomendado: 1200×900px, máx. 5MB.',
+			pagePublished: 'Publicada',
+			pageUnpublished: 'Sin publicar',
+			termsDefaultBody:
+				'1. GENERAL\nAl hacer un pedido en [Nombre de la tienda] aceptás estos Términos y Condiciones. Podemos actualizar esta página en cualquier momento; la versión que ves al pagar es la que aplica a tu pedido.\n\n' +
+				'2. PRODUCTOS Y PRECIOS\nLos precios se muestran en la moneda indicada al pagar e incluyen los impuestos que correspondan por ley, salvo que se aclare lo contrario. Nos reservamos el derecho de corregir errores de precio antes de confirmar un pedido.\n\n' +
+				'3. PEDIDOS Y PAGO\nUn pedido queda confirmado cuando el pago es autorizado. Podemos cancelar un pedido si un producto no está disponible, reembolsando en su totalidad cualquier monto ya cobrado.\n\n' +
+				'4. ENVÍOS\nLos plazos de entrega estimados se muestran al pagar y no son garantizados. El riesgo de pérdida pasa al comprador una vez que el pedido se entrega al transportista.\n\n' +
+				'5. CAMBIOS Y DEVOLUCIONES\nPodés solicitar una devolución dentro de los 30 días desde la entrega, siempre que el producto no esté usado y esté en su empaque original. Una vez que recibamos e inspeccionemos el producto devuelto, procesaremos el reembolso al medio de pago original dentro de los 10 días hábiles. Los costos de envío de la devolución corren por cuenta de [la tienda / el cliente — ajustá según corresponda].\n\n' +
+				'6. PRIVACIDAD\nSolo recolectamos los datos personales necesarios para procesar tu pedido (nombre, dirección, contacto, datos de pago) y nunca los vendemos a terceros. Consultá nuestra política de privacidad si tenés una publicada por separado.\n\n' +
+				'7. LIMITACIÓN DE RESPONSABILIDAD\nEn la medida permitida por ley, [Nombre de la tienda] no es responsable por daños indirectos o consecuentes derivados del uso de nuestros productos.\n\n' +
+				'8. LEY APLICABLE\nEstos términos se rigen por las leyes de [tu país/provincia]. Cualquier conflicto se resolverá en los tribunales competentes de esa jurisdicción.\n\n' +
+				'9. CONTACTO\n¿Dudas sobre estos términos? Escribinos a [email/teléfono de contacto].',
 			save: 'Guardar configuración'
 		},
 		fields: {
