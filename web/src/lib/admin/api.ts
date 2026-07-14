@@ -30,7 +30,15 @@ export interface Store {
 	slug: string;
 	ownerId: string;
 	displayName: string;
-	settings: { logoUrl?: string; accentColor?: string; theme?: string; currency?: string; layout?: Section[]; pages?: Page[] };
+	settings: {
+		logoUrl?: string;
+		accentColor?: string;
+		titleColor?: string;
+		theme?: string;
+		currency?: string;
+		layout?: Section[];
+		pages?: Page[];
+	};
 	/** Membership tier (see $lib/plan). Defaults to 'free' for stores created before plans existed. */
 	plan: string;
 	/** When true, the storefront is switched off (404s at the gateway) without deleting the store. */
@@ -42,15 +50,33 @@ interface Session {
 	store?: Store;
 }
 
-async function call<T>(path: string, init: RequestInit, token?: string): Promise<T> {
+async function call<T>(path: string, init: RequestInit, token?: string, retried = false): Promise<T> {
 	const headers = new Headers(init.headers);
 	headers.set('Content-Type', 'application/json');
 	if (token) headers.set('Authorization', 'Bearer ' + token);
 	const res = await fetch(base() + path, { ...init, headers });
 	// A 401 on a call that carried a token means the session died server-side (expiry, not a bad
-	// login attempt — those never pass a token). Bounce to /login instead of letting it surface as a
-	// generic "request failed" toast the user has no way to act on.
+	// login attempt — those never pass a token). The store token is the one that expires mid-session
+	// most often (every /app write uses it); if the merchant token is still alive, re-mint the store
+	// token once (same endpoint as selectStore) instead of nuking the whole session over a token the
+	// user didn't even know had a separate lifetime. Only bounce to /login when that recovery isn't
+	// possible (merchant token itself expired, or the retry still 401s).
 	if (res.status === 401 && token) {
+		const merchantToken = session.merchantToken();
+		const active = session.activeStore();
+		if (!retried && token === session.storeToken() && merchantToken && active) {
+			try {
+				const fresh = await call<{ token: string }>(
+					'/api/accounts/stores/' + encodeURIComponent(active.id) + '/token',
+					{ method: 'POST' },
+					merchantToken
+				);
+				session.setStore(fresh.token, active);
+				return call<T>(path, init, fresh.token, true);
+			} catch {
+				// merchant token is also dead — fall through to the hard logout below
+			}
+		}
 		session.clearAll();
 		if (browser) goto('/login?expired=1');
 		throw { error: 'session expired' } as ApiError;
