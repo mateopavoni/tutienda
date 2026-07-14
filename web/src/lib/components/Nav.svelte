@@ -5,7 +5,7 @@
 	import { customer } from '$lib/stores/customer';
 	import { Settings, User, Menu, X } from 'lucide-svelte';
 	import type { StoreInfo } from '$lib/tenant';
-	import { pageTitle, type Page } from '$lib/pages';
+	import { pageTitle, pageSlug, type Page } from '$lib/pages';
 
 	let { store, slug, pages = [] }: { store?: StoreInfo | null; slug: string; pages?: Page[] } = $props();
 	// Per-store wordmark; the type/scale stay fixed by the design system.
@@ -44,7 +44,7 @@
 			</a>
 			{#each pages as p (p.type)}
 				<a
-					href="{home}/{p.type}"
+					href="{home}/{pageSlug(p)}"
 					class="hidden font-sans text-label-caps uppercase tracking-[0.1em] text-text-muted transition-colors hover:text-text md:inline"
 				>
 					{pageTitle(p)}
@@ -100,7 +100,7 @@
 			</a>
 			{#each pages as p (p.type)}
 				<a
-					href="{home}/{p.type}"
+					href="{home}/{pageSlug(p)}"
 					onclick={() => (mobileOpen = false)}
 					class="bg-bg px-4 py-3 font-sans text-label-caps uppercase tracking-[0.1em] text-text-muted transition-colors hover:text-text"
 				>
