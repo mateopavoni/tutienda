@@ -53,9 +53,10 @@ func demoProducts() []Product {
 			ID: "aero-strata-x1", Name: "Aero Strata_X1", Category: "footwear",
 			Description: "Engineered for structural integrity and momentum. A hyper-ventilated architectural mesh upper integrated with a brutalist kinetic sole system. Manufactured without excess.",
 			PriceCents:  28500, Currency: "USD", ImageURL: asset("aero-strata-x1.jpg"),
-			Images:    []string{asset("aero-strata-x1.jpg")},
-			Variants:  sizes("AX1", "7", "7.5", "8", "8.5", "9", "9.5", "10", "10.5"),
-			CreatedAt: at(0),
+			Images:       []string{asset("aero-strata-x1.jpg")},
+			Variants:     sizes("AX1", "7", "7.5", "8", "8.5", "9", "9.5", "10", "10.5"),
+			VariantLabel: "Size",
+			CreatedAt:    at(0),
 		},
 		{
 			ID: "system-jacket-xt", Name: "System Jacket X-T", Category: "outerwear",
@@ -66,8 +67,9 @@ func demoProducts() []Product {
 				{SKU: "SJX-S", Label: "S"}, {SKU: "SJX-M", Label: "M"},
 				{SKU: "SJX-L", Label: "L"}, {SKU: "SJX-XL", Label: "XL"},
 			},
-			CreatedAt: at(1),
-			DropAt:    &dropAt, // scheduled drop — see comment above
+			VariantLabel: "Size",
+			CreatedAt:    at(1),
+			DropAt:       &dropAt, // scheduled drop — see comment above
 		},
 		{
 			ID: "void-parka", Name: "Void Parka", Category: "outerwear",
@@ -76,21 +78,23 @@ func demoProducts() []Product {
 			Variants: []Variant{
 				{SKU: "VP-S", Label: "S"}, {SKU: "VP-M", Label: "M"}, {SKU: "VP-L", Label: "L"},
 			},
-			CreatedAt: at(2),
+			VariantLabel: "Size",
+			CreatedAt:    at(2),
 		},
 		{
 			ID: "utility-rig", Name: "Utility Rig", Category: "accessories",
 			Description: "Modular carry system. Heavy matte black hardware on rigid geometric webbing.",
 			PriceCents:  22000, Currency: "USD", ImageURL: asset("utility-rig.avif"),
-			Variants:    []Variant{{SKU: "UR-OS", Label: "One Size"}},
-			CreatedAt:   at(3),
+			Variants:  []Variant{{SKU: "UR-OS", Label: "One Size"}},
+			CreatedAt: at(3),
 		},
 		{
 			ID: "aero-tread-01", Name: "Aero-Tread Unit 01", Category: "footwear",
 			Description: "Aggressive geometric rubber outsole, minimalist upper. Industrial technical footwear.",
 			PriceCents:  45000, Currency: "USD", ImageURL: asset("aero-tread-01.webp"),
-			Variants:  sizes("ATU", "8", "9", "10"),
-			CreatedAt: at(4),
+			Variants:     sizes("ATU", "8", "9", "10"),
+			VariantLabel: "Size",
+			CreatedAt:    at(4),
 		},
 		{
 			ID: "tactical-vest", Name: "Tactical Vest", Category: "apparel",
@@ -99,14 +103,15 @@ func demoProducts() []Product {
 			Variants: []Variant{
 				{SKU: "TV-M", Label: "M"}, {SKU: "TV-L", Label: "L"}, {SKU: "TV-XL", Label: "XL"},
 			},
-			CreatedAt: at(5),
+			VariantLabel: "Size",
+			CreatedAt:    at(5),
 		},
 		{
 			ID: "utility-tote", Name: "Utility Tote", Category: "accessories",
 			Description: "Heavy industrial canvas tote with an uncompromising brutalist structure.",
 			PriceCents:  12000, Currency: "USD", ImageURL: asset("utility-tote.avif"),
-			Variants:    []Variant{{SKU: "UT-OS", Label: "One Size"}},
-			CreatedAt:   at(6),
+			Variants:  []Variant{{SKU: "UT-OS", Label: "One Size"}},
+			CreatedAt: at(6),
 		},
 	}
 }
@@ -133,7 +138,8 @@ func casaBrutaProducts() []Product {
 			Variants: []Variant{
 				{SKU: "CB-STOOL-BLK", Label: "Black"}, {SKU: "CB-STOOL-GRY", Label: "Grey"},
 			},
-			CreatedAt: at(1),
+			VariantLabel: "Color",
+			CreatedAt:    at(1),
 		},
 		{
 			ID: "linen-throw", Name: "Linen Throw", Category: "textiles",
@@ -142,7 +148,8 @@ func casaBrutaProducts() []Product {
 			Variants: []Variant{
 				{SKU: "CB-THROW-SND", Label: "Sand"}, {SKU: "CB-THROW-SLT", Label: "Slate"},
 			},
-			CreatedAt: at(2),
+			VariantLabel: "Color",
+			CreatedAt:    at(2),
 		},
 		{
 			ID: "ceramic-vessel", Name: "Ceramic Vessel", Category: "objects",
@@ -151,14 +158,15 @@ func casaBrutaProducts() []Product {
 			Variants: []Variant{
 				{SKU: "CB-VES-S", Label: "Small"}, {SKU: "CB-VES-M", Label: "Medium"}, {SKU: "CB-VES-L", Label: "Large"},
 			},
-			CreatedAt: at(3),
+			VariantLabel: "Size",
+			CreatedAt:    at(3),
 		},
 		{
 			ID: "steel-shelf", Name: "Steel Shelf", Category: "furniture",
 			Description: "Folded raw steel wall shelf. Bracket and surface are one continuous plane.",
 			PriceCents:  13500, Currency: "USD", ImageURL: asset("steel-shelf.webp"),
-			Variants:    one("CB-SHELF"),
-			CreatedAt:   at(4),
+			Variants:  one("CB-SHELF"),
+			CreatedAt: at(4),
 		},
 	}
 }
@@ -182,29 +190,29 @@ func papelYTintaProducts() []Product {
 			ID: "concrete-poems", Name: "Concrete Poems", Category: "poetry",
 			Description: "Typographic poetry where the layout is the line. Letterpress cover, 96 pages.",
 			PriceCents:  2400, Currency: "USD", ImageURL: asset("concrete-poems.jpg"),
-			Variants:    one("PT-POEMS"),
-			CreatedAt:   at(1),
+			Variants:  one("PT-POEMS"),
+			CreatedAt: at(1),
 		},
 		{
 			ID: "essays-on-form", Name: "Essays on Form", Category: "essays",
 			Description: "Twelve essays on design, structure and restraint. Pocket format, thread-bound.",
 			PriceCents:  3100, Currency: "USD", ImageURL: asset("essays-on-form.webp"),
-			Variants:    one("PT-ESSAYS"),
-			CreatedAt:   at(2),
+			Variants:  one("PT-ESSAYS"),
+			CreatedAt: at(2),
 		},
 		{
 			ID: "the-grid-novel", Name: "The Grid (Novel)", Category: "fiction",
 			Description: "A novel about a city planned to the millimetre, and the one street that refuses the grid.",
 			PriceCents:  2800, Currency: "USD", ImageURL: asset("the-grid-novel.webp"),
-			Variants:    one("PT-GRID"),
-			CreatedAt:   at(3),
+			Variants:  one("PT-GRID"),
+			CreatedAt: at(3),
 		},
 		{
 			ID: "type-specimen", Name: "Type Specimen", Category: "art",
 			Description: "A specimen book of a single grotesque typeface across every weight. Oversized, 180 pages.",
 			PriceCents:  4500, Currency: "USD", ImageURL: asset("type-specimen.webp"),
-			Variants:    one("PT-TYPE"),
-			CreatedAt:   at(4),
+			Variants:  one("PT-TYPE"),
+			CreatedAt: at(4),
 		},
 	}
 }
@@ -223,37 +231,39 @@ func cafeNoventaProducts() []Product {
 			ID: "single-origin-ethiopia", Name: "Single Origin — Ethiopia", Category: "beans",
 			Description: "Washed Yirgacheffe. Floral, citric, tea-like. Roasted light to keep the origin loud.",
 			PriceCents:  1800, Currency: "USD", ImageURL: asset("single-origin-ethiopia.jpg"),
-			Images:    []string{asset("single-origin-ethiopia.jpg")},
-			Variants:  bag("CN-ETH"),
-			CreatedAt: at(0),
+			Images:       []string{asset("single-origin-ethiopia.jpg")},
+			Variants:     bag("CN-ETH"),
+			VariantLabel: "Weight",
+			CreatedAt:    at(0),
 		},
 		{
 			ID: "espresso-blend-90", Name: "Espresso Blend 90", Category: "beans",
 			Description: "A dark, cocoa-heavy blend built for espresso. Thick crema, low acidity, no apologies.",
 			PriceCents:  1600, Currency: "USD", ImageURL: asset("espresso-blend-90.jpg"),
-			Variants:    bag("CN-ESP"),
-			CreatedAt:   at(1),
+			Variants:     bag("CN-ESP"),
+			VariantLabel: "Weight",
+			CreatedAt:    at(1),
 		},
 		{
 			ID: "cold-brew-concentrate", Name: "Cold Brew Concentrate", Category: "beans",
 			Description: "Coarse-ground blend for an 18-hour cold extraction. Dilute to taste.",
 			PriceCents:  1400, Currency: "USD", ImageURL: asset("cold-brew-concentrate.webp"),
-			Variants:    one("CN-COLD"),
-			CreatedAt:   at(2),
+			Variants:  one("CN-COLD"),
+			CreatedAt: at(2),
 		},
 		{
 			ID: "steel-dripper", Name: "Steel Dripper", Category: "equipment",
 			Description: "A single-piece stainless pour-over cone. No paper filter, no waste.",
 			PriceCents:  3800, Currency: "USD", ImageURL: asset("steel-dripper.jpeg"),
-			Variants:    one("CN-DRIP"),
-			CreatedAt:   at(3),
+			Variants:  one("CN-DRIP"),
+			CreatedAt: at(3),
 		},
 		{
 			ID: "mono-mug", Name: "Mono Mug", Category: "merch",
 			Description: "Matte black stoneware mug, 300 ml. Heavy base, severe handle.",
 			PriceCents:  2200, Currency: "USD", ImageURL: asset("mono-mug.webp"),
-			Variants:    one("CN-MUG"),
-			CreatedAt:   at(4),
+			Variants:  one("CN-MUG"),
+			CreatedAt: at(4),
 		},
 	}
 }
