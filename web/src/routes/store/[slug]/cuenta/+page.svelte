@@ -6,7 +6,7 @@
 	import { myOrders } from '$lib/api/customer';
 	import { customer, customerToken, loadCustomer, clearCustomer } from '$lib/stores/customer';
 	import { FULFILLMENT_STAGES, fulfillmentIndex } from '$lib/order';
-	import type { Order } from '$lib/types';
+	import type { ApiError, Order } from '$lib/types';
 
 	let { data } = $props();
 	const slug = $derived(data.storeSlug);
@@ -27,7 +27,14 @@
 		}
 		try {
 			orders = await myOrders(token);
-		} catch {
+		} catch (err) {
+			// A 401 means the session is stale/mismatched (not a real failure to load) — clear it and send
+			// the customer back to login instead of showing a generic "couldn't load" error.
+			if ((err as ApiError).status === 401) {
+				clearCustomer(slug);
+				await goto('/store/' + slug + '/cuenta/login');
+				return;
+			}
 			failed = true;
 		} finally {
 			loading = false;
@@ -83,20 +90,25 @@
 	{:else}
 		<ul class="flex flex-col gap-px bg-border">
 			{#each orders as order (order.id)}
-				<li class="flex flex-col gap-3 bg-bg p-5 md:flex-row md:items-center md:justify-between">
-					<div class="flex flex-col gap-1">
+				<li class="flex flex-col gap-3 bg-bg p-5 md:flex-row md:items-start md:justify-between">
+					<div class="flex flex-col gap-2">
 						<span class="font-mono text-metadata-sm uppercase tracking-[0.05em] text-text-muted">
-							{$t('account.orderDate')} · {fmtDate(order.createdAt)}
+							{$t('account.orderNumber')} {order.id.slice(-8)} · {fmtDate(order.createdAt)}
 						</span>
-						<span class="font-sans text-body-md text-text">
-							{order.items.map((i) => i.name + ' ×' + i.qty).join(', ')}
-						</span>
+						<ul class="flex flex-col gap-0.5">
+							{#each order.items as item (item.sku)}
+								<li class="font-sans text-body-md text-text">{item.name} ×{item.qty}</li>
+							{/each}
+						</ul>
 					</div>
-					<div class="flex items-center gap-6">
+					<div class="flex items-center gap-4 md:flex-col md:items-end md:gap-2">
 						<span
-							class="font-mono text-metadata-sm uppercase tracking-[0.05em] {order.status === 'CONFIRMED'
+							class="brutal-border px-2 py-0.5 font-mono text-metadata-sm uppercase tracking-[0.05em] {order.status ===
+							'CONFIRMED'
 								? 'text-accent'
-								: 'text-text-muted'}"
+								: order.status === 'FAILED'
+									? 'text-error'
+									: 'text-text-muted'}"
 						>
 							{statusLabel(order)}
 						</span>

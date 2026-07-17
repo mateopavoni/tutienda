@@ -65,4 +65,6 @@ export interface ApiError {
 	error: string;
 	detail?: string;
 	sku?: string;
+	/** HTTP status of the failed response, stamped by the client — not sent by the server. */
+	status?: number;
 }

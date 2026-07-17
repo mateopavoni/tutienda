@@ -22,7 +22,7 @@ async function call<T>(path: string, init: RequestInit, token?: string): Promise
 	const res = await fetch(base() + path, { ...init, headers });
 	if (res.status === 204) return undefined as T;
 	const data = (await res.json().catch(() => ({}))) as unknown;
-	if (!res.ok) throw data as ApiError;
+	if (!res.ok) throw { ...(data as ApiError), status: res.status };
 	return data as T;
 }
 
