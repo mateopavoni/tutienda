@@ -68,7 +68,7 @@
 	data-store-theme={storeTheme}
 	style="{accentVar ? `--accent: ${accentVar};` : ''}{titleColorVar ? `--title-color: ${titleColorVar};` : ''}"
 >
-	<Nav {store} slug={data.storeSlug} pages={enabledPages(store?.settings?.pages)} />
+	<Nav {store} slug={data.storeSlug} />
 	<main class="flex-1 pt-16">
 		{@render children()}
 	</main>

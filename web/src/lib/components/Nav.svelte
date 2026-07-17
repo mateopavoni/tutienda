@@ -5,17 +5,16 @@
 	import { customer } from '$lib/stores/customer';
 	import { Settings, User, Menu, X } from 'lucide-svelte';
 	import type { StoreInfo } from '$lib/tenant';
-	import { pageTitle, pageSlug, type Page } from '$lib/pages';
 
-	let { store, slug, pages = [] }: { store?: StoreInfo | null; slug: string; pages?: Page[] } = $props();
+	let { store, slug }: { store?: StoreInfo | null; slug: string } = $props();
 	// Per-store wordmark; the type/scale stay fixed by the design system.
 	let wordmark = $derived((store?.displayName ?? slug).toUpperCase());
 	let home = $derived('/store/' + slug);
 	let catalog = $derived(home + '/catalogo');
 	// Account link points to the profile when signed in, otherwise to the login page.
 	let account = $derived(home + '/cuenta' + ($customer ? '' : '/login'));
-	// Below md, the Home/Catalog/pages links are hidden (see md:inline below) with no other way to reach
-	// them — this panel is that mobile replacement.
+	// Below md, the Home/Catalog links are hidden (see md:inline below) with no other way to reach them —
+	// this panel is that mobile replacement. Standalone pages (Terms) live in the footer only, not here.
 	let mobileOpen = $state(false);
 </script>
 
@@ -42,14 +41,6 @@
 			>
 				{$t('nav.catalog')}
 			</a>
-			{#each pages as p (p.type)}
-				<a
-					href="{home}/{pageSlug(p)}"
-					class="hidden font-sans text-label-caps uppercase tracking-[0.1em] text-text-muted transition-colors hover:text-text md:inline"
-				>
-					{pageTitle(p)}
-				</a>
-			{/each}
 			<a
 				href={account}
 				class="p-2 transition-colors hover:text-text {$customer ? 'text-text' : 'text-text-muted'}"
@@ -98,15 +89,6 @@
 			>
 				{$t('nav.catalog')}
 			</a>
-			{#each pages as p (p.type)}
-				<a
-					href="{home}/{pageSlug(p)}"
-					onclick={() => (mobileOpen = false)}
-					class="bg-bg px-4 py-3 font-sans text-label-caps uppercase tracking-[0.1em] text-text-muted transition-colors hover:text-text"
-				>
-					{pageTitle(p)}
-				</a>
-			{/each}
 		</div>
 	{/if}
 </header>
