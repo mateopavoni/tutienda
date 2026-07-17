@@ -183,6 +183,14 @@ export async function createProduct(p: Partial<Product>): Promise<Product> {
 	return call<Product>('/api/admin/catalog/products', { method: 'POST', body: JSON.stringify(p) }, session.storeToken());
 }
 
+export async function updateProduct(id: string, p: Partial<Product>): Promise<Product> {
+	return call<Product>(
+		'/api/admin/catalog/products/' + encodeURIComponent(id),
+		{ method: 'PUT', body: JSON.stringify(p) },
+		session.storeToken()
+	);
+}
+
 export async function deleteProduct(id: string): Promise<void> {
 	await call<void>('/api/admin/catalog/products/' + encodeURIComponent(id), { method: 'DELETE' }, session.storeToken());
 }

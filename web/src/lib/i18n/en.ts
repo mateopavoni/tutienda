@@ -65,7 +65,8 @@ export const en = {
 		fieldCountry: 'Country',
 		continueToPayment: 'Continue to payment',
 		paymentTitle: 'Payment',
-		demoNote: 'Demo checkout — no real card is charged.',
+		demoNote: "Demo checkout: the card details below are already filled in as an example, nothing to type. Pick Approve or Decline to simulate the payment outcome.",
+		demoExample: 'Example',
 		cardNumber: 'Card number',
 		cardExpiry: 'Expiry',
 		cardCvc: 'CVC',
@@ -132,6 +133,7 @@ export const en = {
 		ordersEmpty: 'No orders yet.',
 		ordersFailed: 'Could not load your orders.',
 		orderDate: 'Date',
+		orderNumber: 'Order',
 		orderTotal: 'Total',
 		orderStatus: 'Status'
 	},
@@ -260,7 +262,7 @@ export const en = {
 		pro: 'Pro',
 		stores: {
 			title: 'Your stores',
-			active: 'Active',
+			active: 'Managing',
 			manage: 'Manage',
 			empty: 'No stores yet — create one below.',
 			slug: 'Slug',
@@ -289,6 +291,9 @@ export const en = {
 		products: {
 			title: 'Products',
 			delete: 'Delete',
+			edit: 'Edit',
+			save: 'Save changes',
+			cancelEdit: 'Cancel edit',
 			imgs: '{n} imgs',
 			stock: 'Stock',
 			empty: 'No products yet.',
@@ -326,7 +331,8 @@ export const en = {
 			titleColor: 'Page title color',
 			titleColorReset: 'Reset to default',
 			theme: 'Theme',
-			logoUrl: 'Logo URL',
+			logoUrl: 'Logo',
+			logoUrlPh: 'Or paste a URL',
 			logoLocked: 'A custom logo is a Pro feature — upgrade above',
 			sectionsLocked: 'Gallery, FAQ, feature and contact sections are a Pro feature — upgrade above',
 			pagesLocked: 'Standalone pages are a Pro feature — upgrade above',
@@ -386,6 +392,7 @@ export const en = {
 			managing: 'Managing {name}',
 			planChanged: 'Plan changed to {plan}',
 			productCreated: 'Product created',
+			productUpdated: 'Product updated',
 			productDeleted: 'Product deleted',
 			settingsSaved: 'Settings saved'
 		}

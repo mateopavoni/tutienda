@@ -66,7 +66,8 @@ export const es: Messages = {
 		fieldCountry: 'País',
 		continueToPayment: 'Continuar al pago',
 		paymentTitle: 'Pago',
-		demoNote: 'Checkout de demo — no se cobra ninguna tarjeta real.',
+		demoNote: 'Checkout de demo: los datos de tarjeta de abajo ya son de ejemplo, no hace falta completar nada. Elegí Aprobar o Rechazar para simular el resultado del pago.',
+		demoExample: 'Ejemplo',
 		cardNumber: 'Número de tarjeta',
 		cardExpiry: 'Vencimiento',
 		cardCvc: 'CVC',
@@ -130,6 +131,7 @@ export const es: Messages = {
 		ordersEmpty: 'Todavía no tenés pedidos.',
 		ordersFailed: 'No pudimos cargar tus pedidos.',
 		orderDate: 'Fecha',
+		orderNumber: 'Pedido',
 		orderTotal: 'Total',
 		orderStatus: 'Estado'
 	},
@@ -254,7 +256,7 @@ export const es: Messages = {
 		pro: 'Pro',
 		stores: {
 			title: 'Tus tiendas',
-			active: 'Activa',
+			active: 'Gestionando',
 			manage: 'Gestionar',
 			empty: 'Todavía no hay tiendas — creá una abajo.',
 			slug: 'Slug',
@@ -283,6 +285,9 @@ export const es: Messages = {
 		products: {
 			title: 'Productos',
 			delete: 'Eliminar',
+			edit: 'Editar',
+			save: 'Guardar cambios',
+			cancelEdit: 'Cancelar edición',
 			imgs: '{n} imgs',
 			stock: 'Stock',
 			empty: 'Todavía no hay productos.',
@@ -320,7 +325,8 @@ export const es: Messages = {
 			titleColor: 'Color del título de página',
 			titleColorReset: 'Restablecer al default',
 			theme: 'Tema',
-			logoUrl: 'URL del logo',
+			logoUrl: 'Logo',
+			logoUrlPh: 'O pegá una URL',
 			logoLocked: 'El logo propio es una función Pro — mejorá arriba',
 			sectionsLocked: 'Galería, FAQ, feature y contacto son función Pro — mejorá arriba',
 			pagesLocked: 'Las páginas independientes son función Pro — mejorá arriba',
@@ -380,6 +386,7 @@ export const es: Messages = {
 			managing: 'Gestionando {name}',
 			planChanged: 'Plan cambiado a {plan}',
 			productCreated: 'Producto creado',
+			productUpdated: 'Producto actualizado',
 			productDeleted: 'Producto eliminado',
 			settingsSaved: 'Configuración guardada'
 		}

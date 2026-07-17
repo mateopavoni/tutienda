@@ -66,7 +66,8 @@ export const ptBR: Messages = {
 		fieldCountry: 'País',
 		continueToPayment: 'Continuar para o pagamento',
 		paymentTitle: 'Pagamento',
-		demoNote: 'Checkout de demonstração — nenhum cartão real é cobrado.',
+		demoNote: 'Checkout de demonstração: os dados do cartão abaixo já são de exemplo, não precisa preencher nada. Escolha Aprovar ou Recusar para simular o resultado do pagamento.',
+		demoExample: 'Exemplo',
 		cardNumber: 'Número do cartão',
 		cardExpiry: 'Validade',
 		cardCvc: 'CVC',
@@ -130,6 +131,7 @@ export const ptBR: Messages = {
 		ordersEmpty: 'Nenhum pedido ainda.',
 		ordersFailed: 'Não foi possível carregar seus pedidos.',
 		orderDate: 'Data',
+		orderNumber: 'Pedido',
 		orderTotal: 'Total',
 		orderStatus: 'Status'
 	},
@@ -254,7 +256,7 @@ export const ptBR: Messages = {
 		pro: 'Pro',
 		stores: {
 			title: 'Suas lojas',
-			active: 'Ativa',
+			active: 'Gerenciando',
 			manage: 'Gerenciar',
 			empty: 'Ainda não há lojas — crie uma abaixo.',
 			slug: 'Slug',
@@ -283,6 +285,9 @@ export const ptBR: Messages = {
 		products: {
 			title: 'Produtos',
 			delete: 'Excluir',
+			edit: 'Editar',
+			save: 'Salvar alterações',
+			cancelEdit: 'Cancelar edição',
 			imgs: '{n} imgs',
 			stock: 'Estoque',
 			empty: 'Ainda não há produtos.',
@@ -320,7 +325,8 @@ export const ptBR: Messages = {
 			titleColor: 'Cor do título da página',
 			titleColorReset: 'Restaurar padrão',
 			theme: 'Tema',
-			logoUrl: 'URL do logo',
+			logoUrl: 'Logo',
+			logoUrlPh: 'Ou cole uma URL',
 			logoLocked: 'Logo próprio é um recurso Pro — faça upgrade acima',
 			sectionsLocked: 'Galeria, FAQ, feature e contato são recurso Pro — faça upgrade acima',
 			pagesLocked: 'Páginas independentes são recurso Pro — faça upgrade acima',
@@ -380,6 +386,7 @@ export const ptBR: Messages = {
 			managing: 'Gerenciando {name}',
 			planChanged: 'Plano alterado para {plan}',
 			productCreated: 'Produto criado',
+			productUpdated: 'Produto atualizado',
 			productDeleted: 'Produto excluído',
 			settingsSaved: 'Configurações salvas'
 		}

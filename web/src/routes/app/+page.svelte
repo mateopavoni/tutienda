@@ -14,6 +14,7 @@
 		changePlan,
 		listProducts,
 		createProduct,
+		updateProduct,
 		deleteProduct,
 		setStock,
 		listStock,
@@ -88,6 +89,9 @@
 	});
 	let pDrop = $state(''); // datetime-local; empty = on sale now, a future value schedules a drop
 	let uploading = $state(false); // true while a product image is being uploaded to the object store
+	// Non-null while the form above is editing an existing product instead of creating a new one — the
+	// form/fields are fully shared, only the submit target (create vs. update) and its reset differ.
+	let editingId = $state<string | null>(null);
 
 	// Current on-hand per SKU across the active store's products, for the inline per-variant stock editor.
 	let stockMap = $state<Record<string, number>>({});
@@ -206,6 +210,24 @@
 			fail(err);
 		} finally {
 			uploadingSection = null;
+			input.value = '';
+		}
+	}
+
+	// Logo upload: same object-store flow as product/section images, into setLogo instead of a pasted URL.
+	let uploadingLogo = $state(false);
+	async function onPickLogo(e: Event) {
+		const input = e.currentTarget as HTMLInputElement;
+		const file = input.files?.[0];
+		if (!file) return;
+		uploadingLogo = true;
+		try {
+			setLogo = await uploadImage(file);
+			ok($t('app.toast.imageUploaded'));
+		} catch (err) {
+			fail(err);
+		} finally {
+			uploadingLogo = false;
 			input.value = '';
 		}
 	}
@@ -408,7 +430,50 @@
 		if (pVariants.length > 1) pVariants = pVariants.filter((_, k) => k !== i);
 	}
 
-	async function doCreateProduct(e: SubmitEvent) {
+	function resetProductForm() {
+		pName = '';
+		pPrice = 0;
+		pImages = [];
+		pVariants = [{ label: '', sku: '', qty: 0 }];
+		pVariantType = 'talle';
+		pVariantLabelCustom = '';
+		pDrop = '';
+		editingId = null;
+	}
+
+	// startEditProduct loads an existing product into the same create form (below), which switches to
+	// update mode for as long as editingId is set. Reuses every field/snippet instead of a second form.
+	function startEditProduct(p: Product) {
+		editingId = p.id;
+		pName = p.name;
+		pCategory = p.category;
+		pPrice = p.priceCents / 100;
+		pImages = p.images?.length ? [...p.images] : p.imageUrl ? [p.imageUrl] : [];
+		pVariants = p.variants.length
+			? p.variants.map((v) => ({ label: v.label, sku: v.sku, qty: stockMap[v.sku] ?? 0 }))
+			: [{ label: '', sku: '', qty: 0 }];
+		const preset = (['talle', 'color', 'modelo', 'almacenamiento'] as const).find(
+			(k) => $t('app.products.variantType.' + k) === p.variantLabel
+		);
+		if (preset) {
+			pVariantType = preset;
+			pVariantLabelCustom = '';
+		} else if (!p.variantLabel && p.variants.length <= 1) {
+			pVariantType = 'unico';
+			pVariantLabelCustom = '';
+		} else {
+			pVariantType = 'personalizado';
+			pVariantLabelCustom = p.variantLabel ?? '';
+		}
+		pDrop = p.dropAt ? p.dropAt.slice(0, 16) : '';
+		if (browser) window.scrollTo({ top: 0, behavior: 'smooth' });
+	}
+
+	function cancelEditProduct() {
+		resetProductForm();
+	}
+
+	async function doSubmitProduct(e: SubmitEvent) {
 		e.preventDefault();
 		// Keep any row the merchant actually touched (label, SKU or a starting quantity) — the SKU itself
 		// can be left blank: the server auto-generates one from the product name + label (normalizeVariants),
@@ -425,31 +490,36 @@
 				: pVariantType === 'personalizado'
 					? pVariantLabelCustom.trim()
 					: $t('app.products.variantType.' + pVariantType);
+		const payload = {
+			name: pName,
+			category: pCategory,
+			priceCents: Math.round(pPrice * 100),
+			currency: 'USD',
+			imageUrl: pImages[0] ?? '',
+			images: pImages,
+			variants: rows.map((v) => ({ sku: v.sku.trim(), label: v.label.trim() })),
+			variantLabel,
+			// A future drop date schedules a drop (storefront countdown + server-side checkout gate).
+			dropAt: pDrop ? new Date(pDrop).toISOString() : undefined
+		};
 		try {
-			const created = await createProduct({
-				name: pName,
-				category: pCategory,
-				priceCents: Math.round(pPrice * 100),
-				currency: 'USD',
-				imageUrl: pImages[0] ?? '',
-				images: pImages,
-				variants: rows.map((v) => ({ sku: v.sku.trim(), label: v.label.trim() })),
-				variantLabel,
-				// A future drop date schedules a drop (storefront countdown + server-side checkout gate).
-				dropAt: pDrop ? new Date(pDrop).toISOString() : undefined
-			});
+			if (editingId) {
+				// Editing doesn't touch stock — that's the inline per-variant editor in the list below, and
+				// re-running setStock here from whatever qty happened to be on screen at edit-open time
+				// would silently clobber real inventory with a stale number.
+				await updateProduct(editingId, payload);
+				resetProductForm();
+				await refreshProducts();
+				ok($t('app.toast.productUpdated'));
+				return;
+			}
+			const created = await createProduct(payload);
 			// Seed starting stock per variant, paired positionally with what came back (inventory is a
 			// separate service keyed by SKU, and normalizeVariants preserves row order).
 			for (let i = 0; i < rows.length && i < created.variants.length; i++) {
 				if (rows[i].qty > 0) await setStock(created.variants[i].sku, Math.max(0, Math.round(rows[i].qty)));
 			}
-			pName = '';
-			pPrice = 0;
-			pImages = [];
-			pVariants = [{ label: '', sku: '', qty: 0 }];
-			pVariantType = 'talle';
-			pVariantLabelCustom = '';
-			pDrop = '';
+			resetProductForm();
 			await refreshProducts();
 			ok($t('app.toast.productCreated'));
 		} catch (err) {
@@ -591,12 +661,13 @@
 						{/if}
 					</span>
 					<span class={labelClass}>{store.slug}</span>
-					<button
-						onclick={() => doSelectStore(store)}
-						class="mt-2 {active?.id === store.id ? 'btn-accent' : 'btn-ghost'}"
-					>
-						{active?.id === store.id ? $t('app.stores.active') : $t('app.stores.manage')}
-					</button>
+					{#if active?.id === store.id}
+						<span class="btn-accent mt-2 cursor-default text-center">{$t('app.stores.active')}</span>
+					{:else}
+						<button onclick={() => doSelectStore(store)} class="btn-ghost mt-2">
+							{$t('app.stores.manage')}
+						</button>
+					{/if}
 					<button onclick={() => doToggleStoreStatus(store)} class="btn-ghost">
 						{store.disabled ? $t('app.stores.enable') : $t('app.stores.disable')}
 					</button>
@@ -693,12 +764,20 @@
 								</span>
 							</div>
 						</div>
-						<button
-							onclick={() => doDeleteProduct(product.id)}
-							class="font-mono text-metadata-sm uppercase tracking-[0.05em] text-text-muted hover:text-error"
-						>
-							{$t('app.products.delete')}
-						</button>
+						<div class="flex items-center gap-4">
+							<button
+								onclick={() => startEditProduct(product)}
+								class="font-mono text-metadata-sm uppercase tracking-[0.05em] text-text-muted hover:text-text"
+							>
+								{$t('app.products.edit')}
+							</button>
+							<button
+								onclick={() => doDeleteProduct(product.id)}
+								class="font-mono text-metadata-sm uppercase tracking-[0.05em] text-text-muted hover:text-error"
+							>
+								{$t('app.products.delete')}
+							</button>
+						</div>
 					</div>
 					{#if product.variants.length}
 						<div class="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-3">
@@ -724,7 +803,7 @@
 			{/each}
 		</div>
 
-		<form onsubmit={doCreateProduct} class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+		<form onsubmit={doSubmitProduct} class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
 			<label class="flex flex-col gap-1">
 				<span class={labelClass}>{$t('app.products.name')}</span>
 				<input bind:value={pName} required class={inputClass} />
@@ -825,11 +904,20 @@
 					class="{inputClass} disabled:cursor-not-allowed disabled:opacity-40"
 				/>
 			</label>
-			<button type="submit" disabled={atProductLimit} class="btn-primary disabled:cursor-not-allowed disabled:opacity-40">
-				{$t('app.products.add')}
+			<button
+				type="submit"
+				disabled={!editingId && atProductLimit}
+				class="btn-primary disabled:cursor-not-allowed disabled:opacity-40"
+			>
+				{editingId ? $t('app.products.save') : $t('app.products.add')}
 			</button>
+			{#if editingId}
+				<button type="button" onclick={cancelEditProduct} class="btn-ghost">
+					{$t('app.products.cancelEdit')}
+				</button>
+			{/if}
 		</form>
-		{#if atProductLimit}
+		{#if !editingId && atProductLimit}
 			<p class="mt-3 font-mono text-metadata-sm text-text-muted">
 				{$t('app.products.limitHit', { plan: PLANS[tier].label, limit })}
 			</p>
@@ -881,12 +969,18 @@
 				<label class="flex flex-col gap-1">
 					<span class="{labelClass} flex items-center gap-1">
 						{$t('app.settings.logoUrl')} {#if !canLogo}<Lock size={11} /> {$t('app.pro')}{/if}
+						{#if uploadingLogo}<span class="text-accent">{$t('app.products.uploading')}</span>{/if}
 					</span>
+					<div class="flex items-center gap-3">
+						{#if setLogo}{@render imageThumb(setLogo, 'h-12 w-12')}{/if}
+						{@render imageFileInput(onPickLogo, !canLogo || uploadingLogo)}
+					</div>
 					<input
 						bind:value={setLogo}
 						disabled={!canLogo}
 						title={canLogo ? '' : $t('app.settings.logoLocked')}
-						class="{inputClass} disabled:cursor-not-allowed disabled:opacity-40"
+						placeholder={$t('app.settings.logoUrlPh')}
+						class="{inputClass} mt-1 disabled:cursor-not-allowed disabled:opacity-40"
 					/>
 				</label>
 			</div>
