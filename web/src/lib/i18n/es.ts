@@ -1,7 +1,7 @@
 import type { Messages } from './en';
 
 export const es: Messages = {
-	nav: { shop: 'Tienda', collection: 'Colección', about: 'Nosotros', journal: 'Journal', bag: 'Bolsa', catalog: 'Catálogo', home: 'Inicio', account: 'Mi cuenta', menu: 'Menú', faq: 'Preguntas frecuentes', contact: 'Contacto' },
+	nav: { shop: 'Tienda', collection: 'Colección', about: 'Nosotros', journal: 'Journal', bag: 'Bolsa', catalog: 'Catálogo', home: 'Inicio', account: 'Mi cuenta', menu: 'Menú', faq: 'Preguntas frecuentes', contact: 'Contacto', yourStores: 'Tus tiendas' },
 	common: {
 		addToBag: 'Agregar a la bolsa',
 		checkout: 'Finalizar compra',

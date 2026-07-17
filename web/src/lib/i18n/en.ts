@@ -1,6 +1,6 @@
 // English is the source of truth; other locales mirror this shape (enforced by `Messages = typeof en`).
 export const en = {
-	nav: { shop: 'Shop', collection: 'Collection', about: 'About', journal: 'Journal', bag: 'Bag', catalog: 'Catalog', home: 'Home', account: 'Account', menu: 'Menu', faq: 'FAQ', contact: 'Contact' },
+	nav: { shop: 'Shop', collection: 'Collection', about: 'About', journal: 'Journal', bag: 'Bag', catalog: 'Catalog', home: 'Home', account: 'Account', menu: 'Menu', faq: 'FAQ', contact: 'Contact', yourStores: 'Your stores' },
 	common: {
 		addToBag: 'Add to bag',
 		checkout: 'Checkout',

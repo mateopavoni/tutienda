@@ -1,7 +1,7 @@
 import type { Messages } from './en';
 
 export const ptBR: Messages = {
-	nav: { shop: 'Loja', collection: 'Coleção', about: 'Sobre', journal: 'Journal', bag: 'Sacola', catalog: 'Catálogo', home: 'Início', account: 'Minha conta', menu: 'Menu', faq: 'Perguntas frequentes', contact: 'Contato' },
+	nav: { shop: 'Loja', collection: 'Coleção', about: 'Sobre', journal: 'Journal', bag: 'Sacola', catalog: 'Catálogo', home: 'Início', account: 'Minha conta', menu: 'Menu', faq: 'Perguntas frequentes', contact: 'Contato', yourStores: 'Suas lojas' },
 	common: {
 		addToBag: 'Adicionar à sacola',
 		checkout: 'Finalizar compra',

@@ -4,11 +4,18 @@
 	import { BRAND } from '$lib/brand';
 	import { t } from '$lib/i18n';
 	import { Settings, Menu, X } from 'lucide-svelte';
+	import { session } from '$lib/admin/session';
 
 	let { variant = 'full' }: { variant?: 'full' | 'minimal' } = $props();
 	// Below md, the About/FAQ/Contact/login links are hidden (see md:inline below) with no other way to
 	// reach them — this panel is that mobile replacement, same pattern as the storefront Nav.
 	let mobileOpen = $state(false);
+	// localStorage only exists client-side; starts '' to match SSR, $effect fills it in after mount so a
+	// signed-in merchant sees "Tus tiendas" instead of Ingresar/Crear tu tienda on every marketing page.
+	let merchantToken = $state('');
+	$effect(() => {
+		merchantToken = session.merchantToken();
+	});
 </script>
 
 <header class="w-full border-b border-border bg-bg">
@@ -35,13 +42,17 @@
 				>
 					{$t('nav.contact')}
 				</a>
-				<a
-					href="/login"
-					class="hidden font-sans text-label-caps uppercase tracking-[0.1em] text-text-muted transition-colors hover:text-text sm:inline"
-				>
-					{$t('auth.login')}
-				</a>
-				<a href="/signup" class="btn-primary px-4 py-2.5 md:px-6 md:py-4">{$t('landing.cta')}</a>
+				{#if merchantToken}
+					<a href="/app" class="btn-primary px-4 py-2.5 md:px-6 md:py-4">{$t('nav.yourStores')}</a>
+				{:else}
+					<a
+						href="/login"
+						class="hidden font-sans text-label-caps uppercase tracking-[0.1em] text-text-muted transition-colors hover:text-text sm:inline"
+					>
+						{$t('auth.login')}
+					</a>
+					<a href="/signup" class="btn-primary px-4 py-2.5 md:px-6 md:py-4">{$t('landing.cta')}</a>
+				{/if}
 			{/if}
 			<a
 				href="/configuracion"
@@ -86,13 +97,23 @@
 			>
 				{$t('nav.contact')}
 			</a>
-			<a
-				href="/login"
-				onclick={() => (mobileOpen = false)}
-				class="bg-bg px-4 py-3 font-sans text-label-caps uppercase tracking-[0.1em] text-text-muted transition-colors hover:text-text"
-			>
-				{$t('auth.login')}
-			</a>
+			{#if merchantToken}
+				<a
+					href="/app"
+					onclick={() => (mobileOpen = false)}
+					class="bg-bg px-4 py-3 font-sans text-label-caps uppercase tracking-[0.1em] text-text-muted transition-colors hover:text-text"
+				>
+					{$t('nav.yourStores')}
+				</a>
+			{:else}
+				<a
+					href="/login"
+					onclick={() => (mobileOpen = false)}
+					class="bg-bg px-4 py-3 font-sans text-label-caps uppercase tracking-[0.1em] text-text-muted transition-colors hover:text-text"
+				>
+					{$t('auth.login')}
+				</a>
+			{/if}
 		</div>
 	{/if}
 </header>

@@ -43,11 +43,16 @@
 			</a>
 			<a
 				href={account}
-				class="p-2 transition-colors hover:text-text {$customer ? 'text-text' : 'text-text-muted'}"
+				class="flex items-center gap-2 p-2 transition-colors hover:text-text {$customer ? 'text-text' : 'text-text-muted'}"
 				aria-label={$t('account.title')}
-				title={$t('account.title')}
+				title={$customer ? $t('account.greeting', { name: $customer.name || $customer.email }) : $t('account.title')}
 			>
 				<User size={18} strokeWidth={1.5} />
+				{#if $customer}
+					<span class="hidden font-sans text-label-caps uppercase tracking-[0.1em] md:inline">
+						{$customer.name || $customer.email.split('@')[0]}
+					</span>
+				{/if}
 			</a>
 			<a
 				href="/configuracion"
