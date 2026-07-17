@@ -178,10 +178,11 @@ func (h *Handler) removeTenant(w http.ResponseWriter, r *http.Request) {
 	httpx.JSON(w, http.StatusNoContent, nil)
 }
 
-// maxUploadBytes caps an image upload (5 MiB) so a merchant can't push an unbounded blob through the
-// storefront builder. allowedImageExt maps accepted content types to a file extension — the closed set
-// keeps non-image uploads (and surprising content types) out of the public bucket.
-const maxUploadBytes = 5 << 20
+// maxUploadBytes caps an image upload (10 MiB) so a merchant can't push an unbounded blob through the
+// storefront builder — high enough for a full-quality hero/gallery photo. allowedImageExt maps accepted
+// content types to a file extension — the closed set keeps non-image uploads (and surprising content
+// types) out of the public bucket.
+const maxUploadBytes = 10 << 20
 
 var allowedImageExt = map[string]string{
 	"image/jpeg": ".jpg",
@@ -207,7 +208,7 @@ func (h *Handler) upload(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, maxUploadBytes)
 	file, header, err := r.FormFile("file")
 	if err != nil {
-		httpx.Fail(w, http.StatusBadRequest, "expected a multipart 'file' field (max 5MB)")
+		httpx.Fail(w, http.StatusBadRequest, "expected a multipart 'file' field (max 10MB)")
 		return
 	}
 	defer func() { _ = file.Close() }()
