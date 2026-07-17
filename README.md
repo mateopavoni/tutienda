@@ -1,89 +1,171 @@
-<div align="center">
-
 # TuTienda
 
-A multi-store ecommerce builder (SaaS, à la Tienda Nube / Shopify) built around one hard problem:
-never oversell inventory under concurrent load — now isolated per store. Merchants sign up, each
-builds their own storefront and loads their own products. Microservices in Go, a SvelteKit
-marketing site + per-store storefront + merchant dashboard, MongoDB and Redis.
+> **SaaS de ecommerce multi-tienda** (al estilo Tienda Nube / Shopify) construido alrededor de un
+> problema difícil: **nunca sobrevender stock bajo carga concurrente**, con la garantía **aislada
+> por tienda**. Cada comerciante se registra, arma su propio storefront y carga sus propios
+> productos — 5 microservicios en Go, un frontend en SvelteKit y una garantía de inventario que se
+> puede verificar con un test, no solo prometer.
 
-<a href="#quickstart">Quickstart</a> · <a href="#the-concurrency-demo">Concurrency demo</a> · <a href="ARCHITECTURE.md">Architecture</a>
+[![demo](https://img.shields.io/badge/demo-live-brightgreen)](https://tutienda.mateopavoni.com.ar/)
+![stack](https://img.shields.io/badge/stack-Go%20·%20SvelteKit%20·%20MongoDB%20·%20Redis-2b2b2b) · ![license](https://img.shields.io/badge/license-proprietary-red)
 
-</div>
+Stack: **Go · SvelteKit 5 · MongoDB · Redis · Docker**
 
-<!-- Add a capture of the running storefront at docs/screenshots/storefront.png and reference it here. -->
+### 🔗 Demo en vivo
 
-## The problem
+**[tutienda.mateopavoni.com.ar](https://tutienda.mateopavoni.com.ar/)** — recorré una tienda ya
+cargada en [`/store/system-archive`](https://tutienda.mateopavoni.com.ar/store/system-archive) o
+creá la tuya propia en [`/signup`](https://tutienda.mateopavoni.com.ar/signup) (onboarding real,
+sin verificación de email — es una demo). También podés entrar directo al panel del comerciante
+con una cuenta de prueba ya cargada con 4 tiendas de ejemplo:
 
-When a thousand shoppers race for the last ten units, a naive store sells twelve. archive-commerce
-holds the line: stock moves through atomic, guarded operations in MongoDB, so the available count
-never goes negative and exactly the available number of orders succeed — the rest get a clean
-"out of stock". Carts get a real, time-boxed hold on stock; abandoned carts return their units
-automatically.
+```
+https://tutienda.mateopavoni.com.ar/login
+demo@system-archive.store / demo-archive-2026
+```
 
-## Stack
+Deployado en una VPS propia: el gateway y el storefront corren en **Dokku** (TLS), el resto de los
+servicios en `docker compose` en la misma VPS. Deploy automático en cada push a `main`
+(`.github/workflows/deploy.yml`).
 
-| Layer | Choice | Why |
-|-------|--------|-----|
-| Backend | Go 1.22, one module → 4 services | Goroutines and the race detector make concurrency claims testable; a single module shares a `platform` package without four repos |
-| Datastore | MongoDB | Document-level atomic updates (`findOneAndUpdate` with a guard) solve the oversell problem without app locks or distributed transactions |
-| Cache / limiter | Redis | Distributed sliding-window rate limiting at the gateway and cache-aside reads for the catalog |
-| Storefront | SvelteKit 5 + TypeScript + Tailwind | SSR reads over the internal network; small bundle; runes |
-| Orchestration | Docker Compose | One command brings up the full stack |
+### Capturas
 
-## Features
+| Landing (marketing) | Tienda de ejemplo (claro) |
+|---|---|
+| ![Landing](./docs/screenshots/landing.jpg) | ![Storefront claro](./docs/screenshots/storefront.jpg) |
 
-- **No oversell under load** — atomic per-SKU reservations; a load test fires hundreds of concurrent
-  buyers at a scarce SKU and asserts zero oversell.
-- **Time-boxed reservations with compensation** — a background janitor returns stock from expired
-  holds (a TTL index alone would only delete the record and leak the stock).
-- **Checkout saga** — orders reserve, persist, then confirm; any failure triggers a compensating
-  release. No external orchestrator.
-- **Server-authoritative pricing** — totals are computed from the catalog, never trusted from the client.
-- **API gateway** — single entry point with reverse proxying, CORS and Redis sliding-window rate limiting.
-- **Editorial storefront** — a monochrome "refined brutalism" design system, light/dark, in English,
-  Spanish and Brazilian Portuguese.
-- **Multi-store SaaS** — a marketing landing at `/`, merchant onboarding (`/signup` creates the account
-  and the first store), per-store storefront at `/store/[slug]`, and a merchant dashboard at `/app`
-  (products, stock, branding, deleting the store itself). Every store is isolated by `tenantId`.
+| Tienda de ejemplo (oscuro) | Panel del comerciante — sus tiendas |
+|---|---|
+| ![Storefront oscuro](./docs/screenshots/storefront-dark.jpg) | ![Panel](./docs/screenshots/panel.jpg) |
 
-## Quickstart
+**Editor de storefront con vista previa en vivo** — el comerciante arma secciones (hero, galería,
+FAQ, contacto...) y ve el resultado antes de guardar, sin round-trip al backend:
+![Editor de layout](./docs/screenshots/layout-editor.jpg)
 
-Requires Docker. Go is not needed locally — everything builds in containers.
+---
+
+## ¿Qué resuelve?
+
+Cuando mil compradores compiten por las últimas diez unidades, una tienda ingenua vende doce.
+**TuTienda** sostiene la línea: el stock se mueve por operaciones atómicas y guardadas en MongoDB,
+así que el disponible nunca queda negativo y entran exactamente las unidades que hay — el resto
+recibe un "sin stock" limpio. Los carritos tienen una reserva real y con expiración; el stock de un
+carrito abandonado vuelve solo.
+
+**No es un CRUD con formularios.** El valor está en tres piezas de ingeniería real:
+
+1. **No-oversell verificable, no prometido** — la garantía sale de una operación atómica de Mongo
+   (`findOneAndUpdate` con guard `$gte`) y está probada con el race detector de Go y un load test
+   que dispara cientos de compradores concurrentes contra un SKU escaso. Aislada **por tienda**: la
+   carga de una nunca toca el stock de otra.
+2. **Multi-tenancy real, no cosmético** — un mismo `tenantId` atraviesa los 5 servicios y cada
+   colección; el gateway resuelve el tenant desde el slug (o el JWT scopeado a la tienda) e
+   inyecta el header aguas abajo, con anti-spoof explícito. Membresías (free/pro/scale) como
+   **entitlements firmados** en el token, nunca un chequeo suelto del lado del cliente.
+3. **Checkout como saga con compensación** — reservar → persistir → confirmar; si algo falla en el
+   medio, se libera la reserva (acción compensatoria) y la orden queda en `FAILED`, nunca en un
+   estado intermedio. Sin orquestador externo.
+
+### Features
+
+- **No oversell bajo carga**, aislado por tenant — reservas atómicas por SKU; load test con
+  cientos de compradores concurrentes, cero oversell verificable.
+- **Reservas con expiración compensada** — un janitor (goroutine) devuelve el stock de las
+  reservas vencidas antes de borrarlas; un TTL index solo borraría el documento y filtraría stock.
+- **Checkout saga** con compensación automática ante fallo de pago o de confirmación.
+- **Precios server-authoritative** — el total se calcula contra el catálogo, nunca se confía en lo
+  que manda el cliente.
+- **Multi-tenant SaaS de punta a punta** — landing de marketing en `/`, onboarding de comerciante
+  (`/signup` crea la cuenta y la primera tienda), storefront por tienda en `/store/[slug]`, panel
+  del comerciante en `/app`.
+- **Membresías como entitlements firmados** — planes free/pro/scale gatean drops temporizados,
+  secciones extra del storefront y límite de productos, verificado del lado del servidor.
+- **Editor de storefront** — el comerciante reordena/oculta secciones, edita copy e imágenes, con
+  vista previa en vivo (client-side, sin guardar) antes de publicar.
+- **Drops temporizados** — un producto puede salir a la venta en un instante programado; cuenta
+  regresiva + stock en vivo en el storefront, y la compra se bloquea **del lado del servidor**
+  (no solo oculta en la UI) hasta que el drop abre.
+- **Consola super-admin** — rol separado (`/admin`) con visibilidad cross-tenant: stats,
+  todas las tiendas, todos los comerciantes, override de plan — gateado por un claim de rol
+  firmado, no una ruta escondida.
+- **Auth propia** — JWT HS256 hecho a mano con la stdlib + bcrypt, dos scopes de token (comerciante
+  y por-tienda), sin dependencia de un framework de auth.
+- **Gateway** — punto de entrada único con reverse proxy, resolución de tenant, CORS y rate
+  limiting distribuido (sliding window sobre Redis).
+- **Storefront editorial** — sistema de diseño monocromo con acento por tienda (con guarda de
+  contraste automática), tema claro/oscuro, en inglés, español y portugués de Brasil.
+
+### En números
+
+**27 tests Go** (con `-race`) **+ 22 tests Vitest** · load test de concurrencia real (500
+compradores contra un SKU de 10 unidades, 0 oversell) · deploy en producción con CI/CD propio
+(push a `main` → `go test -race` → deploy completo) · 5 servicios Go compartiendo un módulo y un
+paquete `platform` común.
+
+---
+
+## Arquitectura (resumen)
+
+Monorepo de 2 componentes. El detalle —modelo de dominio, contrato de API, algoritmo de reservas y
+decisiones técnicas— está en **[`ARCHITECTURE.md`](./ARCHITECTURE.md)**.
+
+```
+tutienda/
+├── services/                 Go module, un binario por servicio
+│   ├── cmd/{gateway,accounts,catalog,inventory,orders,loadtest}/
+│   └── internal/
+│       ├── platform/         config, mongo, redis, http + tenant + authx (JWT/bcrypt) + plan
+│       ├── accounts/         auth de comerciante + registro de tiendas (tenant) + planes
+│       ├── catalog/          productos + cache Redis (por tenant)
+│       ├── inventory/        stock atómico, reservas, janitor (núcleo de concurrencia, por tenant)
+│       └── orders/           saga de checkout
+├── web/                       SvelteKit: landing + storefront por tienda + panel + super-admin
+├── docker-compose.yml
+└── ARCHITECTURE.md
+```
+
+---
+
+## Cómo correr
+
+### Opción A — Docker (todo junto, recomendado)
+
+Go no hace falta instalarlo local: todo se buildea en contenedores.
 
 ```bash
 cp .env.example .env
 docker compose up --build
 ```
 
-- Marketing landing: http://localhost:3000
-- Demo storefront: http://localhost:3000/store/system-archive
-- Merchant dashboard: http://localhost:3000/app (sign in at `/login`, or create a store at `/signup`)
-- API gateway: http://localhost:8080
+- Landing: http://localhost:3000
+- Tienda demo: http://localhost:3000/store/system-archive
+- Panel del comerciante: http://localhost:3000/app (`/login` o creá una tienda en `/signup`)
+- Gateway: http://localhost:8080
 
 ```bash
-# Health (gateway aggregates each service)
-curl http://localhost:8080/health
-
-# Browse the seeded catalog
-curl http://localhost:8080/api/catalog/products
-
-# Place an order
-curl -X POST http://localhost:8080/api/orders \
-  -H "Content-Type: application/json" \
-  -d '{"items":[{"sku":"UR-OS","qty":1}]}'
+curl http://localhost:8080/health                            # health agregada de los 5 servicios
+curl -H "X-Tenant-Slug: system-archive" \
+  http://localhost:8080/api/catalog/products                 # catálogo de la tienda demo
 ```
 
-The catalog and stock seed themselves on first boot.
+El catálogo y el stock se siembran solos en el primer arranque.
 
-## The concurrency demo
+### Opción B — Solo frontend (dev)
+
+```bash
+cd web && npm install && npm run dev      # http://localhost:5173, apunta al gateway público
+```
+
+---
+
+## La demo de concurrencia
 
 ```bash
 docker compose run --rm loadtest
 ```
 
-Hundreds of buyers compete for a SKU stocked at 10 units. The load test resets stock to seed
-defaults first, so it produces the same result on every run. Sample:
+Cientos de compradores compiten por un SKU con 10 unidades. El load test resetea el stock a los
+valores de seed antes de correr, así que el resultado es el mismo en cada corrida:
 
 ```
 Target SKU AX1-85 — starting available: 10
@@ -99,100 +181,35 @@ Results
 OK: sold exactly 10 of 10 units, zero oversell.
 ```
 
+---
+
 ## Tests
 
 ```bash
-# Go services, with the race detector
-docker compose run --rm backend-test
-
-# Storefront unit tests
-cd web && npm install && npm test
+docker compose run --rm backend-test      # Go, con el race detector
+cd web && npm install && npm test         # Vitest
 ```
 
-The inventory suite covers the central guarantee (no oversell across hundreds of goroutines),
-confirm/release transitions, multi-SKU compensation and janitor expiry.
+La suite de inventario cubre la garantía central (no-oversell con cientos de goroutines
+concurrentes), las transiciones confirm/release, compensación multi-SKU y expiración por el
+janitor — además de aislamiento entre tiendas.
 
-## Project layout
+---
 
-```
-archive-commerce/
-├── services/                 Go module, one binary per service
-│   ├── cmd/{gateway,catalog,inventory,orders,accounts,loadtest}/
-│   └── internal/
-│       ├── platform/         config, mongo, redis, http + tenant + authx (JWT/bcrypt)
-│       ├── accounts/         merchant auth + per-store (tenant) registry
-│       ├── catalog/          products + Redis cache-aside (per tenant)
-│       ├── inventory/        atomic stock, reservations, janitor (concurrency core, per tenant)
-│       └── orders/           checkout saga
-├── web/                      SvelteKit: landing + per-store storefront + merchant dashboard
-├── docker-compose.yml
-└── ARCHITECTURE.md
-```
+## Limitaciones conocidas
 
-## Deployment
+- El pago es simulado: el checkout expone un toggle aprobar/rechazar, no hay gateway real
+  integrado (documentado a propósito, es un proyecto de portfolio).
+- Las llamadas entre servicios son HTTP síncrono — un outbox orientado a eventos es el paso
+  natural siguiente si esto tuviera que escalar de verdad.
+- Una sola instancia de MongoDB, una base lógica por servicio (sin aislamiento físico).
+- Las tiendas comparten colecciones, aisladas por `tenantId` (modelo Shopify/Tienda Nube), no
+  físicamente.
 
-The stack runs anywhere Docker does. For a VPS, put Nginx in front of the gateway (`:8080`) and the
-storefront (`:3000`) with Let's Encrypt for TLS; keep MongoDB and Redis on the internal Docker
-network, not exposed to the public.
+---
 
-### CI/CD (one push, full deploy)
+## Licencia
 
-A push to `main` runs `.github/workflows/deploy.yml`, which after `go test -race` deploys **everything
-in one step**:
-
-1. **Backend** — over SSH the VPS runs `git pull --ff-only && docker compose up -d --build`, rebuilding
-   the compose services (`accounts`, `catalog`, `inventory`, `orders` + the compose `gateway`/`web`).
-   Mongo/Redis/MinIO volumes are **not** touched, so data persists and **no seed runs**.
-2. **Public** — `gateway` (`tutienda-api`) and `storefront` (`tutienda-web`) ship to Dokku (TLS).
-
-The public site is served by the Dokku apps; they reach the backend by Docker DNS (`accounts:8084`, …)
-because the Dokku containers share the compose network (`archive-commerce_default`).
-
-One-time VPS + GitHub setup (so the backend step works). **Order matters**: the deploy key must be on
-GitHub *before* the first SSH fetch, or it fails with `Permission denied (publickey)`.
-
-```bash
-# 1. On the VPS, generate one keypair (used both ways: Actions→VPS and VPS→GitHub):
-cd ~/tutienda
-ssh-keygen -t ed25519 -f ~/.ssh/gha -N "" -C "github-actions"
-cat ~/.ssh/gha.pub >> ~/.ssh/authorized_keys                    # lets GitHub Actions SSH in as ubuntu
-chmod 600 ~/.ssh/authorized_keys
-printf 'Host github.com\n  IdentityFile ~/.ssh/gha\n  IdentitiesOnly yes\n' >> ~/.ssh/config
-git remote set-url origin git@github.com:mateopavoni/tutienda.git
-cat ~/.ssh/gha.pub                                              # copy this PUBLIC key
-```
-
-```text
-# 2. In GitHub (browser), BEFORE the next step:
-#    repo → Settings → Deploy keys → Add deploy key → paste ~/.ssh/gha.pub, leave write access OFF (read-only)
-#    repo → Settings → Secrets → Actions → New secret VPS_SSH_PRIVATE_KEY = contents of ~/.ssh/gha
-#    (copy the private key straight from the terminal into the secret field — never paste it elsewhere)
-```
-
-```bash
-# 3. Back on the VPS, now that the deploy key is registered:
-git fetch origin && git checkout -B main origin/main            # track origin/main for --ff-only pulls
-```
-
-`DOKKU_SSH_PRIVATE_KEY` stays as-is. If the private key ever leaks, regenerate the pair, replace the
-`authorized_keys` line and the deploy key, and rotate the secret.
-
-> ⚠️ **Seeds and data.** The seed (demo + example stores) only runs on an **empty** database — it is a
-> no-op once any merchant exists. The CI deploy never wipes data, so re-seeding requires clearing the
-> Mongo volume by hand. Never run `docker compose down -v` once real customer/store data exists: `-v`
-> deletes the Mongo/Redis/MinIO volumes. To re-seed selectively, drop only the seed documents.
-
-## Known limitations
-
-- Payment is simulated; the saga's confirm step succeeds unless the upstream call fails.
-- Inter-service calls are synchronous HTTP — an event-driven outbox is the natural next step.
-- One MongoDB instance, one logical database per service (no physical isolation).
-- Stores share collections, isolated logically by `tenantId` (Shopify/Tienda Nube model), not physically.
-- No billing/plans yet, and the platform super-admin (`/admin`) is a stub for a later stage.
-
-## License
-
-© 2026 Mateo Pavoni. All rights reserved. This is proprietary, closed-source software made
-available for viewing/evaluation purposes only. Copying, redistribution, or reuse of any part of
-this codebase, design, or branding without prior written permission is strictly prohibited. See
+© 2026 Mateo Pavoni. Todos los derechos reservados. Software propietario, publicado solo con fines
+de evaluación/portfolio. Prohibida su copia, redistribución o reuso sin autorización escrita. Ver
 [LICENSE](./LICENSE).
