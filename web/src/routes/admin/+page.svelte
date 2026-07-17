@@ -109,7 +109,7 @@
 	}
 
 	const labelClass = 'font-mono text-metadata-sm uppercase tracking-[0.05em] text-text-muted';
-	const inputClass = 'brutal-border bg-surface px-4 py-3 font-sans text-body-md text-text focus-ring';
+	const inputClass = 'brutal-border min-w-0 bg-surface px-4 py-3 font-sans text-body-md text-text focus-ring';
 </script>
 
 <svelte:head><title>{BRAND} — Platform console</title></svelte:head>

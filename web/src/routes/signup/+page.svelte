@@ -24,7 +24,7 @@
 		s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
 	const effectiveSlug = $derived(slugTouched ? slug : slugify(storeName));
 
-	const inputClass = 'brutal-border bg-surface px-4 py-3 font-sans text-body-md text-text focus-ring';
+	const inputClass = 'brutal-border min-w-0 bg-surface px-4 py-3 font-sans text-body-md text-text focus-ring';
 	const labelClass = 'font-mono text-metadata-sm uppercase tracking-[0.05em] text-text-muted';
 
 	async function submit(e: SubmitEvent) {

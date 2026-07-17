@@ -592,7 +592,7 @@
 	}
 
 	const inputClass =
-		'brutal-border bg-surface px-4 py-3 font-sans text-body-md text-text focus-ring';
+		'brutal-border min-w-0 bg-surface px-4 py-3 font-sans text-body-md text-text focus-ring';
 	const labelClass = 'font-mono text-metadata-sm uppercase tracking-[0.05em] text-text-muted';
 </script>
 
