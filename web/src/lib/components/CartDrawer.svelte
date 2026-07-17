@@ -206,7 +206,10 @@
 			<p class="mb-6 font-mono text-metadata-sm opacity-60">{$t('cart.demoNote')}</p>
 
 			<!-- Decorative card form — nothing here is sent anywhere; the toggle below simulates the result. -->
-			<div class="flex flex-col gap-4">
+			<div class="relative flex flex-col gap-4">
+				<span class="absolute -top-3 right-0 bg-accent px-2 py-0.5 font-mono text-metadata-sm uppercase tracking-widest text-on-accent">
+					{$t('cart.demoExample')}
+				</span>
 				<label class="flex flex-col gap-1">
 					<span class="font-mono text-metadata-sm uppercase tracking-widest opacity-60">{$t('cart.cardNumber')}</span>
 					<input value="4242 4242 4242 4242" readonly class="checkout-input opacity-70" />
