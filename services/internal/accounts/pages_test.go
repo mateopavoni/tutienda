@@ -77,3 +77,18 @@ func TestSanitizePagesSlug(t *testing.T) {
 		t.Errorf("colliding title-slug should fall back to the type: %q", got3)
 	}
 }
+
+// TestSlugifyAccents pins that accented Latin letters transliterate to their plain base letter instead of
+// being dropped by the dash-collapse rule (the historical bug: "Términos" → "t-rminos", losing the vowel).
+func TestSlugifyAccents(t *testing.T) {
+	cases := map[string]string{
+		"Términos y Condiciones": "terminos-y-condiciones",
+		"Política":               "politica",
+		"Ñandú":                  "nandu",
+	}
+	for in, want := range cases {
+		if got := slugify(in); got != want {
+			t.Errorf("slugify(%q) = %q, want %q", in, got, want)
+		}
+	}
+}

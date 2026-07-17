@@ -8,8 +8,10 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"unicode"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"golang.org/x/text/unicode/norm"
 
 	"github.com/mateopavoni/archive-commerce/internal/platform/authx"
 	"github.com/mateopavoni/archive-commerce/internal/platform/plan"
@@ -429,12 +431,17 @@ func pageSlug(candidate, title, pageType string, seen map[string]bool) string {
 }
 
 // slugify lowercases and keeps only [a-z0-9], collapsing everything else to a single dash — the URL-slug
-// counterpart of catalog's uppercase SKU slugify.
+// counterpart of catalog's uppercase SKU slugify. Decomposes accented Latin letters first (NFD) and drops
+// the resulting combining marks, so "Términos" slugifies to "terminos" instead of losing the vowel
+// entirely to the dash-collapse rule below.
 func slugify(s string) string {
+	decomposed := norm.NFD.String(strings.ToLower(s))
 	var b strings.Builder
 	dash := true
-	for _, r := range strings.ToLower(s) {
+	for _, r := range decomposed {
 		switch {
+		case unicode.Is(unicode.Mn, r):
+			// combining accent mark left behind by NFD — drop it, keep the base letter already written.
 		case r >= 'a' && r <= 'z' || r >= '0' && r <= '9':
 			b.WriteRune(r)
 			dash = false
