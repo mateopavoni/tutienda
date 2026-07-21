@@ -2,7 +2,7 @@
 	// Preferences live here, not in any navbar (deliberate UX decision): language + light/dark/system.
 	import { BRAND } from '$lib/brand';
 	import { t, locale, locales, type Locale } from '$lib/i18n';
-	import { theme, type Theme } from '$lib/stores/theme';
+	import { theme, setTheme, type Theme } from '$lib/stores/theme';
 	import SiteHeader from '$lib/components/SiteHeader.svelte';
 	import { Sun, Moon, Monitor, ArrowLeft } from 'lucide-svelte';
 
@@ -60,7 +60,7 @@
 				<div class="flex gap-px brutal-border bg-border">
 					{#each themes as option (option.value)}
 						<button
-							onclick={() => theme.set(option.value)}
+							onclick={(e) => setTheme(option.value, e)}
 							class="flex flex-1 items-center justify-center gap-2 px-4 py-3 font-sans text-label-caps uppercase tracking-[0.1em] transition-colors
 								{$theme === option.value ? 'bg-primary text-on-primary' : 'bg-bg text-text-muted hover:text-text'}"
 							aria-pressed={$theme === option.value}

@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { theme, type Theme } from '$lib/stores/theme';
+	import { theme, setTheme, type Theme } from '$lib/stores/theme';
 	import { t } from '$lib/i18n';
 	import { Sun, Moon, Monitor } from 'lucide-svelte';
 
 	const order: Theme[] = ['system', 'light', 'dark'];
-	function cycle() {
-		theme.update((current) => order[(order.indexOf(current) + 1) % order.length]);
+	function cycle(e: MouseEvent) {
+		setTheme(order[(order.indexOf($theme) + 1) % order.length], e);
 	}
 
 	const Icon = $derived($theme === 'light' ? Sun : $theme === 'dark' ? Moon : Monitor);

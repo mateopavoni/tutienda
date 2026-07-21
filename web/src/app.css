@@ -230,3 +230,60 @@
 		transform: translateX(300%);
 	}
 }
+
+/* Theme toggle: one of a few reveal animations, picked at random per toggle (see ThemeToggle.svelte). */
+@keyframes theme-reveal-circle {
+	from {
+		clip-path: circle(0% at var(--theme-x, 50%) var(--theme-y, 50%));
+	}
+	to {
+		clip-path: circle(150% at var(--theme-x, 50%) var(--theme-y, 50%));
+	}
+}
+
+@keyframes theme-reveal-wipe-x {
+	from {
+		clip-path: inset(0 100% 0 0);
+	}
+	to {
+		clip-path: inset(0 0 0 0);
+	}
+}
+
+@keyframes theme-reveal-wipe-y {
+	from {
+		clip-path: inset(0 0 100% 0);
+	}
+	to {
+		clip-path: inset(0 0 0 0);
+	}
+}
+
+::view-transition-old(root) {
+	animation: none;
+	z-index: -1;
+}
+
+::view-transition-new(root) {
+	animation-duration: 0.5s;
+	animation-timing-function: ease-in-out;
+}
+
+html[data-theme-anim='circle']::view-transition-new(root) {
+	animation-name: theme-reveal-circle;
+}
+
+html[data-theme-anim='wipe-x']::view-transition-new(root) {
+	animation-name: theme-reveal-wipe-x;
+}
+
+html[data-theme-anim='wipe-y']::view-transition-new(root) {
+	animation-name: theme-reveal-wipe-y;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	::view-transition-old(root),
+	::view-transition-new(root) {
+		animation: none;
+	}
+}
