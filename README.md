@@ -109,6 +109,26 @@ paquete `platform` común.
 Monorepo de 2 componentes. El detalle —modelo de dominio, contrato de API, algoritmo de reservas y
 decisiones técnicas— está en **[`ARCHITECTURE.md`](./ARCHITECTURE.md)**.
 
+```mermaid
+flowchart LR
+    browser["Browser"] --> web["web (SvelteKit)\nlanding · storefront · panel · admin"]
+    web --> gateway["gateway :8080\ntenant resolve · CORS · rate limit"]
+
+    gateway --> accounts["accounts :8081\nauth JWT/bcrypt · tiendas · planes"]
+    gateway --> catalog["catalog :8082\nproductos"]
+    gateway --> inventory["inventory :8083\nstock atómico · reservas"]
+    gateway --> orders["orders\ncheckout saga"]
+
+    orders -- "reservar / confirmar / liberar" --> inventory
+    catalog -- cache --> redis[("Redis")]
+    gateway -- "rate limit (sliding window)" --> redis
+
+    accounts --> mongo[("MongoDB\nDB por servicio")]
+    catalog --> mongo
+    inventory --> mongo
+    orders --> mongo
+```
+
 ```
 tutienda/
 ├── services/                 Go module, un binario por servicio
@@ -196,6 +216,26 @@ janitor — además de aislamiento entre tiendas.
 
 ---
 
+## Performance
+
+Lighthouse contra la demo en vivo (mobile, throttling simulado — configuración por defecto de
+PageSpeed Insights), 2026-07-20:
+
+| Página | Performance | Accessibility | Best Practices | SEO |
+|---|---|---|---|---|
+| `/` (landing) | 90 | 98 | 100 | 100 |
+| `/store/system-archive` (storefront) | 67 | 100 | 100 | 92 |
+
+El storefront pierde puntos por el TTFB del root document (~820ms) — una sola VPS sin CDN ni
+edge cache delante, coherente con el resto de las limitaciones de infra de abajo. Reproducir:
+
+```bash
+npx lighthouse https://tutienda.mateopavoni.com.ar/store/system-archive \
+  --only-categories=performance,accessibility,best-practices,seo
+```
+
+---
+
 ## Limitaciones conocidas
 
 - El pago es simulado: el checkout expone un toggle aprobar/rechazar, no hay gateway real
@@ -205,6 +245,8 @@ janitor — además de aislamiento entre tiendas.
 - Una sola instancia de MongoDB, una base lógica por servicio (sin aislamiento físico).
 - Las tiendas comparten colecciones, aisladas por `tenantId` (modelo Shopify/Tienda Nube), no
   físicamente.
+- Sin CDN/edge cache delante de la VPS — el TTFB del storefront (~820ms) es el mayor lastre de
+  performance hoy (ver sección Performance).
 
 ---
 

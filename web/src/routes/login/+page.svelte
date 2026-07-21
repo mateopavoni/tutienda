@@ -29,6 +29,19 @@
 			busy = false;
 		}
 	}
+
+	async function tryDemo() {
+		busy = true;
+		error = '';
+		try {
+			await login('demo@system-archive.store', 'demo-archive-2026');
+			await goto('/app');
+		} catch (err) {
+			error = (err as ApiError)?.error ?? $t('auth.failed');
+		} finally {
+			busy = false;
+		}
+	}
 </script>
 
 <svelte:head><title>{BRAND} — {$t('auth.login')}</title></svelte:head>
@@ -38,6 +51,16 @@
 	<main class="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-16">
 		<h1 class="mb-2 font-sans text-headline-lg tracking-tighter">{$t('auth.loginTitle')}</h1>
 		<p class="mb-8 {labelClass}">{$t('auth.loginSubtitle')}</p>
+
+		<button
+			type="button"
+			onclick={tryDemo}
+			disabled={busy}
+			class="btn-primary w-full py-4 text-body-lg disabled:opacity-50"
+		>
+			{busy ? '…' : $t('auth.tryDemo')}
+		</button>
+		<p class="mt-2 mb-8 {labelClass}">{$t('auth.tryDemoHint')}</p>
 
 		<form onsubmit={submit} class="flex flex-col gap-4">
 			<label class="flex flex-col gap-1">
@@ -51,7 +74,7 @@
 
 			{#if error}<p class="font-mono text-metadata-sm text-error">{error}</p>{/if}
 
-			<button type="submit" disabled={busy} class="btn-primary mt-2 disabled:opacity-50">
+			<button type="submit" disabled={busy} class="btn-ghost mt-2 disabled:opacity-50">
 				{busy ? '…' : $t('auth.login')}
 			</button>
 		</form>

@@ -98,6 +98,8 @@ export const ptBR: Messages = {
 		loginSubtitle: 'Painel do lojista — gerencie sua loja',
 		signupTitle: 'Crie sua loja',
 		signupSubtitle: 'Uma conta, uma loja, online em minutos',
+		tryDemo: 'Testar demo com dados de exemplo',
+		tryDemoHint: 'Entre direto no painel do comerciante, com 4 lojas já carregadas — sem cadastro.',
 		email: 'Email',
 		password: 'Senha',
 		storeName: 'Nome da loja',

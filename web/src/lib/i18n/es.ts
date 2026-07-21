@@ -98,6 +98,8 @@ export const es: Messages = {
 		loginSubtitle: 'Panel del comerciante — administrá tu tienda',
 		signupTitle: 'Creá tu tienda',
 		signupSubtitle: 'Una cuenta, una tienda, online en minutos',
+		tryDemo: 'Probar demo con datos de ejemplo',
+		tryDemoHint: 'Entrás directo al panel del comerciante, con 4 tiendas ya cargadas — sin registrarte.',
 		email: 'Email',
 		password: 'Contraseña',
 		storeName: 'Nombre de la tienda',

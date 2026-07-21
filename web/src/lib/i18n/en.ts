@@ -97,6 +97,8 @@ export const en = {
 		loginSubtitle: 'Merchant console — manage your store',
 		signupTitle: 'Create your store',
 		signupSubtitle: 'One account, one store, online in minutes',
+		tryDemo: 'Try demo with sample data',
+		tryDemoHint: 'Jump straight into the merchant panel, with 4 stores already loaded — no signup needed.',
 		email: 'Email',
 		password: 'Password',
 		storeName: 'Store name',
