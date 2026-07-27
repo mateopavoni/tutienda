@@ -19,11 +19,12 @@ var (
 	ErrDuplicate = errors.New("already exists")
 )
 
-// Repository persists merchants, stores and storefront customers.
+// Repository persists merchants, stores, storefront customers and their contact-form messages.
 type Repository struct {
 	merchants *mongo.Collection
 	stores    *mongo.Collection
 	customers *mongo.Collection
+	messages  *mongo.Collection
 }
 
 func NewRepository(db *mongo.Database) *Repository {
@@ -31,6 +32,7 @@ func NewRepository(db *mongo.Database) *Repository {
 		merchants: db.Collection("merchants"),
 		stores:    db.Collection("stores"),
 		customers: db.Collection("customers"),
+		messages:  db.Collection("messages"),
 	}
 }
 
@@ -50,9 +52,14 @@ func (r *Repository) EnsureIndexes(ctx context.Context) error {
 	}); err != nil {
 		return err
 	}
-	_, err := r.customers.Indexes().CreateOne(ctx, mongo.IndexModel{
+	if _, err := r.customers.Indexes().CreateOne(ctx, mongo.IndexModel{
 		Keys:    bson.D{{Key: "tenantId", Value: 1}, {Key: "email", Value: 1}},
 		Options: options.Index().SetUnique(true),
+	}); err != nil {
+		return err
+	}
+	_, err := r.messages.Indexes().CreateOne(ctx, mongo.IndexModel{
+		Keys: bson.D{{Key: "tenantId", Value: 1}, {Key: "createdAt", Value: -1}},
 	})
 	return err
 }

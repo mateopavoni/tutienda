@@ -189,6 +189,8 @@ func isPublicAccountsPath(method, path string) bool {
 		return true
 	case method == http.MethodGet && strings.Contains(path, "/stores/by-slug/"):
 		return true
+	case method == http.MethodPost && strings.HasSuffix(path, "/messages"):
+		return true
 	default:
 		return false
 	}

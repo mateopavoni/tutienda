@@ -10,7 +10,8 @@ import (
 )
 
 // Handler exposes the accounts service over HTTP. Routes under /stores assume the gateway has already
-// validated the session token and stamped X-Merchant-ID; /signup, /login and /stores/by-slug are public.
+// validated the session token and stamped X-Merchant-ID; /signup, /login, /stores/by-slug and posting a
+// contact message are public.
 type Handler struct {
 	svc *Service
 }
@@ -30,6 +31,10 @@ func (h *Handler) Routes() http.Handler {
 	mux.HandleFunc("PATCH /stores/{id}", h.updateStore)
 	mux.HandleFunc("DELETE /stores/{id}", h.deleteStore)
 	mux.HandleFunc("GET /stores/by-slug/{slug}", h.storeBySlug)
+	// Contact-form submissions. Posting is public (a storefront visitor has no account); listing is
+	// owner-only, same ownership pattern as updateStore/deleteStore.
+	mux.HandleFunc("POST /stores/{id}/messages", h.submitMessage)
+	mux.HandleFunc("GET /stores/{id}/messages", h.listMessages)
 	// Storefront customers (buyers). Tenant comes from the gateway-resolved slug (signup/login) or the
 	// buyer token's tenant claim (me); never from the client. Distinct buyer-token audience, enforced at
 	// the gateway, keeps these from crossing with merchant routes.
@@ -268,6 +273,45 @@ func (h *Handler) storeBySlug(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpx.JSON(w, http.StatusOK, store)
+}
+
+func (h *Handler) submitMessage(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Name  string `json:"name"`
+		Email string `json:"email"`
+		Body  string `json:"body"`
+	}
+	if err := httpx.Decode(r, &body); err != nil {
+		httpx.Fail(w, http.StatusBadRequest, "invalid body")
+		return
+	}
+	err := h.svc.SubmitMessage(r.Context(), r.PathValue("id"), body.Name, body.Email, body.Body)
+	if errors.Is(err, ErrInvalidInput) {
+		httpx.FailDetail(w, http.StatusBadRequest, "invalid input", err.Error())
+		return
+	}
+	if err != nil {
+		httpx.Fail(w, http.StatusInternalServerError, "could not send message")
+		return
+	}
+	httpx.JSON(w, http.StatusCreated, map[string]string{"status": "ok"})
+}
+
+func (h *Handler) listMessages(w http.ResponseWriter, r *http.Request) {
+	ownerID, ok := h.merchant(w, r)
+	if !ok {
+		return
+	}
+	msgs, err := h.svc.Messages(r.Context(), ownerID, r.PathValue("id"))
+	if errors.Is(err, ErrStoreNotFound) {
+		httpx.Fail(w, http.StatusNotFound, "store not found")
+		return
+	}
+	if err != nil {
+		httpx.Fail(w, http.StatusInternalServerError, "could not list messages")
+		return
+	}
+	httpx.JSON(w, http.StatusOK, map[string]any{"items": msgs})
 }
 
 func (h *Handler) platformStats(w http.ResponseWriter, r *http.Request) {
