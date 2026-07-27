@@ -30,6 +30,7 @@ func (h *Handler) Routes() http.Handler {
 	mux.HandleFunc("POST /products", h.create)
 	mux.HandleFunc("PUT /products/{id}", h.update)
 	mux.HandleFunc("DELETE /products/{id}", h.remove)
+	mux.HandleFunc("POST /products/import", h.importCSV)
 	mux.HandleFunc("POST /uploads", h.upload)
 	mux.HandleFunc("POST /seed", h.seed)
 	mux.HandleFunc("DELETE /admin/tenant", h.removeTenant)
@@ -225,6 +226,33 @@ func (h *Handler) upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpx.JSON(w, http.StatusOK, map[string]any{"url": url})
+}
+
+// maxImportBytes caps a CSV upload — a bulk product list, not a database dump.
+const maxImportBytes = 2 << 20
+
+// importCSV bulk-creates products from an uploaded CSV file (multipart, same "file" field as upload).
+// Every row goes through the same Service.Create as the manual product form, so plan entitlements
+// (product cap, feature gates) apply per row unchanged; a bad row is reported, not fatal to the batch.
+func (h *Handler) importCSV(w http.ResponseWriter, r *http.Request) {
+	tid, ok := tenant.Require(w, r)
+	if !ok {
+		return
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, maxImportBytes)
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		httpx.Fail(w, http.StatusBadRequest, "expected a multipart 'file' field (max 2MB)")
+		return
+	}
+	defer func() { _ = file.Close() }()
+
+	result, err := h.svc.ImportCSV(r.Context(), tid, file)
+	if err != nil {
+		httpx.FailDetail(w, http.StatusBadRequest, "could not import CSV", err.Error())
+		return
+	}
+	httpx.JSON(w, http.StatusOK, result)
 }
 
 func (h *Handler) seed(w http.ResponseWriter, r *http.Request) {
