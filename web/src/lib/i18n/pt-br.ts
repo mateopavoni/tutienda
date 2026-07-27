@@ -44,6 +44,16 @@ export const ptBR: Messages = {
 		reserveNote: 'O estoque é reservado ao finalizar a compra, nunca há venda em excesso.',
 		notFound: 'Produto não encontrado.'
 	},
+	contactForm: {
+		name: 'Nome',
+		email: 'Email',
+		message: 'Mensagem',
+		send: 'Enviar',
+		sending: 'Enviando…',
+		sent: 'Obrigado — recebemos sua mensagem.',
+		error: 'Não foi possível enviar sua mensagem. Tente novamente.',
+		previewNote: 'Formulário desativado na pré-visualização.'
+	},
 	cart: {
 		title: 'Carrinho',
 		subtitle: 'Sua seleção',
@@ -204,7 +214,7 @@ export const ptBR: Messages = {
 			q3Title: 'O que realmente impede vender além do estoque?',
 			q3Body: 'Uma operação atômica no banco de dados a cada compra: ela só é bem-sucedida se ainda houver estoque, restrita à sua própria loja. Sem locks distribuídos, sem condição de corrida, sem pedido vendido a mais para se desculpar depois.',
 			q4Title: 'Posso migrar meu catálogo atual?',
-			q4Body: 'Você pode cadastrar produtos e estoque direto pelo painel do lojista assim que se cadastrar. Importação em massa está no roadmap; fale com a gente e ajudamos com uma migração pontual enquanto isso.',
+			q4Body: 'Você pode cadastrar produtos e estoque direto pelo painel do lojista assim que se cadastrar, um por um ou em lote com uma importação CSV.',
 			q5Title: 'O que acontece com meus dados se eu encerrar a conta?',
 			q5Body: 'Excluir uma loja remove seus produtos e estoque de forma imediata e permanente — veja o detalhe completo nos nossos Termos. É uma ação de um clique no seu painel, sem precisar abrir chamado.',
 			q6Title: 'Vocês ficam com uma porcentagem das minhas vendas?',
@@ -256,6 +266,17 @@ export const ptBR: Messages = {
 		title: 'Painel',
 		viewStore: 'Ver minha loja',
 		pro: 'Pro',
+		palette: {
+			placeholder: 'Digite um comando… (Ctrl/Cmd+K)',
+			empty: 'Nenhuma ação encontrada.',
+			newProduct: 'Novo produto',
+			goStores: 'Ir para Lojas',
+			goMembership: 'Ir para Assinatura',
+			goProducts: 'Ir para Produtos',
+			goMessages: 'Ir para Mensagens',
+			goSettings: 'Ir para Configurações',
+			toggleTheme: 'Alternar tema'
+		},
 		stores: {
 			title: 'Suas lojas',
 			active: 'Gerenciando',
@@ -317,7 +338,16 @@ export const ptBR: Messages = {
 			optional: '(opcional)',
 			dropLocked: 'Drops programados são um recurso Pro — faça upgrade acima',
 			add: 'Adicionar produto',
-			limitHit: 'Você atingiu o limite de {limit} produtos do plano {plan}. Faça upgrade para adicionar mais.'
+			limitHit: 'Você atingiu o limite de {limit} produtos do plano {plan}. Faça upgrade para adicionar mais.',
+			importCsv: 'Importar CSV',
+			importing: 'Importando…',
+			importHint: 'Colunas: name,category,description,price,currency,imageUrl — uma linha por produto. Defina o estoque inicial manualmente depois.',
+			importResult: '{created} produtos criados.',
+			importErrors: '{n} linhas com erro.'
+		},
+		messages: {
+			title: 'Mensagens',
+			empty: 'Ainda não há mensagens — elas aparecem aqui quando alguém usa a seção de contato.'
 		},
 		settings: {
 			title: 'Configurações da loja',

@@ -29,4 +29,4 @@
 	<title>{storeName} — {storeName}</title>
 </svelte:head>
 
-<StorefrontSections {sections} {featured} {base} {catalogHref} {storeName} />
+<StorefrontSections {sections} {featured} {base} {catalogHref} {storeName} storeId={store?.id} />

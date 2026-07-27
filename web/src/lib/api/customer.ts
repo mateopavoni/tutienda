@@ -45,3 +45,12 @@ export async function myOrders(token: string): Promise<Order[]> {
 	const data = await call<{ items: Order[] }>('/api/orders/mine', { method: 'GET' }, token);
 	return data.items ?? [];
 }
+
+// sendMessage submits the storefront "contact" section's form. Public, no token — storeId comes from
+// the already-resolved store (see StorefrontSections.svelte), not from X-Tenant-Slug.
+export async function sendMessage(storeId: string, name: string, email: string, body: string): Promise<void> {
+	await call<void>('/api/accounts/stores/' + encodeURIComponent(storeId) + '/messages', {
+		method: 'POST',
+		body: JSON.stringify({ name, email, body })
+	});
+}

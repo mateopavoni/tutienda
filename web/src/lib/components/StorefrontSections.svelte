@@ -5,18 +5,48 @@
 	import ProductCard from '$lib/components/ProductCard.svelte';
 	import { t } from '$lib/i18n';
 	import { ArrowRight, ChevronDown } from 'lucide-svelte';
+	import { sendMessage } from '$lib/api/customer';
 
 	// Renders a store's enabled sections in order, around the fixed product grid. Shared by the real
 	// storefront (store/[slug]/+page.svelte) and the live preview in the /app layout editor, so a
-	// merchant's unsaved edits render with the exact markup visitors will see.
+	// merchant's unsaved edits render with the exact markup visitors will see. storeId is only present
+	// on the real storefront — the /app preview omits it, which the contact form below treats as
+	// "preview only" (nothing there is saved yet, so there's nothing real to submit to).
 	let {
 		sections,
 		featured,
 		base,
 		catalogHref,
-		storeName
-	}: { sections: Section[]; featured: Product[]; base: string; catalogHref: string; storeName: string } =
-		$props();
+		storeName,
+		storeId
+	}: {
+		sections: Section[];
+		featured: Product[];
+		base: string;
+		catalogHref: string;
+		storeName: string;
+		storeId?: string;
+	} = $props();
+
+	let contactName = $state('');
+	let contactEmail = $state('');
+	let contactBody = $state('');
+	let contactStatus: 'idle' | 'sending' | 'sent' | 'error' = $state('idle');
+
+	async function submitContact(e: SubmitEvent) {
+		e.preventDefault();
+		if (!storeId || contactStatus === 'sending') return;
+		contactStatus = 'sending';
+		try {
+			await sendMessage(storeId, contactName, contactEmail, contactBody);
+			contactStatus = 'sent';
+			contactName = '';
+			contactEmail = '';
+			contactBody = '';
+		} catch {
+			contactStatus = 'error';
+		}
+	}
 </script>
 
 {#each sections as section (section.type)}
@@ -94,12 +124,61 @@
 	{:else if section.type === 'contact'}
 		<section class="border-b border-border bg-surface">
 			<div class="mx-auto grid w-full max-w-container grid-cols-1 gap-8 px-4 py-16 md:grid-cols-12 md:px-12">
-				<h2 class="font-sans uppercase leading-none tracking-tighter text-headline-md md:col-span-4">
-					{section.heading}
-				</h2>
-				<p class="whitespace-pre-line font-mono text-body-md leading-relaxed text-text-muted md:col-span-8">
-					{section.body}
-				</p>
+				<div class="md:col-span-4">
+					<h2 class="font-sans uppercase leading-none tracking-tighter text-headline-md">
+						{section.heading}
+					</h2>
+					<p class="mt-4 whitespace-pre-line font-mono text-body-md leading-relaxed text-text-muted">
+						{section.body}
+					</p>
+				</div>
+				<form class="flex max-w-md flex-col gap-3 md:col-span-8" onsubmit={submitContact}>
+					<label class="flex flex-col gap-1">
+						<span class="font-mono text-metadata-sm uppercase tracking-[0.1em] text-text-muted">
+							{$t('contactForm.name')}
+						</span>
+						<input
+							bind:value={contactName}
+							required
+							disabled={!storeId || contactStatus === 'sending'}
+							class="border border-border bg-bg px-3 py-2 text-body-md text-text disabled:opacity-50"
+						/>
+					</label>
+					<label class="flex flex-col gap-1">
+						<span class="font-mono text-metadata-sm uppercase tracking-[0.1em] text-text-muted">
+							{$t('contactForm.email')}
+						</span>
+						<input
+							type="email"
+							bind:value={contactEmail}
+							required
+							disabled={!storeId || contactStatus === 'sending'}
+							class="border border-border bg-bg px-3 py-2 text-body-md text-text disabled:opacity-50"
+						/>
+					</label>
+					<label class="flex flex-col gap-1">
+						<span class="font-mono text-metadata-sm uppercase tracking-[0.1em] text-text-muted">
+							{$t('contactForm.message')}
+						</span>
+						<textarea
+							bind:value={contactBody}
+							required
+							rows="4"
+							disabled={!storeId || contactStatus === 'sending'}
+							class="border border-border bg-bg px-3 py-2 text-body-md text-text disabled:opacity-50"
+						></textarea>
+					</label>
+					<button type="submit" disabled={!storeId || contactStatus === 'sending'} class="btn-accent self-start">
+						{contactStatus === 'sending' ? $t('contactForm.sending') : $t('contactForm.send')}
+					</button>
+					{#if !storeId}
+						<p class="font-mono text-metadata-sm text-text-muted">{$t('contactForm.previewNote')}</p>
+					{:else if contactStatus === 'sent'}
+						<p class="font-mono text-metadata-sm text-accent">{$t('contactForm.sent')}</p>
+					{:else if contactStatus === 'error'}
+						<p class="font-mono text-metadata-sm text-red-600">{$t('contactForm.error')}</p>
+					{/if}
+				</form>
 			</div>
 		</section>
 	{:else if section.type === 'gallery'}

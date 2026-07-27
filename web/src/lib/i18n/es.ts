@@ -44,6 +44,16 @@ export const es: Messages = {
 		reserveNote: 'El stock se reserva al finalizar la compra, nunca se sobrevende.',
 		notFound: 'Producto no encontrado.'
 	},
+	contactForm: {
+		name: 'Nombre',
+		email: 'Email',
+		message: 'Mensaje',
+		send: 'Enviar',
+		sending: 'Enviando…',
+		sent: 'Gracias — recibimos tu mensaje.',
+		error: 'No pudimos enviar tu mensaje. Probá de nuevo.',
+		previewNote: 'Formulario deshabilitado en la vista previa.'
+	},
 	cart: {
 		title: 'Carrito',
 		subtitle: 'Tu selección',
@@ -204,7 +214,7 @@ export const es: Messages = {
 			q3Title: '¿Qué evita realmente la sobreventa?',
 			q3Body: 'Una operación atómica en la base de datos en cada compra: solo tiene éxito si todavía hay stock, acotada a tu propia tienda. Sin locks distribuidos, sin condición de carrera, sin un pedido de más que pedir disculpas.',
 			q4Title: '¿Puedo migrar mi catálogo actual?',
-			q4Body: 'Podés cargar productos y stock directo desde el panel del comerciante apenas te registrás. La importación masiva está en el roadmap; escribinos y te ayudamos con una migración puntual mientras tanto.',
+			q4Body: 'Podés cargar productos y stock directo desde el panel del comerciante apenas te registrás, uno por uno o en bloque con una importación CSV.',
 			q5Title: '¿Qué pasa con mis datos si cierro la cuenta?',
 			q5Body: 'Borrar una tienda elimina sus productos y stock de forma inmediata y permanente — el detalle completo está en nuestros Términos. Es una acción de un clic desde tu panel, sin necesidad de abrir un ticket.',
 			q6Title: '¿Se quedan con un porcentaje de mis ventas?',
@@ -256,6 +266,17 @@ export const es: Messages = {
 		title: 'Panel',
 		viewStore: 'Ver mi tienda',
 		pro: 'Pro',
+		palette: {
+			placeholder: 'Escribí un comando… (Ctrl/Cmd+K)',
+			empty: 'Ninguna acción coincide.',
+			newProduct: 'Nuevo producto',
+			goStores: 'Ir a Tiendas',
+			goMembership: 'Ir a Membresía',
+			goProducts: 'Ir a Productos',
+			goMessages: 'Ir a Mensajes',
+			goSettings: 'Ir a Configuración',
+			toggleTheme: 'Cambiar tema'
+		},
 		stores: {
 			title: 'Tus tiendas',
 			active: 'Gestionando',
@@ -317,7 +338,16 @@ export const es: Messages = {
 			optional: '(opcional)',
 			dropLocked: 'Los drops programados son una función Pro — mejorá arriba',
 			add: 'Agregar producto',
-			limitHit: 'Llegaste al límite de {limit} productos del plan {plan}. Mejorá para agregar más.'
+			limitHit: 'Llegaste al límite de {limit} productos del plan {plan}. Mejorá para agregar más.',
+			importCsv: 'Importar CSV',
+			importing: 'Importando…',
+			importHint: 'Columnas: name,category,description,price,currency,imageUrl — una fila por producto. El stock inicial se carga a mano después.',
+			importResult: '{created} productos creados.',
+			importErrors: '{n} filas con errores.'
+		},
+		messages: {
+			title: 'Mensajes',
+			empty: 'Todavía no hay mensajes — aparecen acá cuando alguien usa la sección de contacto.'
 		},
 		settings: {
 			title: 'Configuración de la tienda',

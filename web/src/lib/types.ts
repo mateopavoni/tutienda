@@ -61,6 +61,15 @@ export interface Order {
 	createdAt: string;
 }
 
+/** A submission from a store's storefront "contact" section (see /app "Messages"). */
+export interface Message {
+	id: string;
+	name: string;
+	email: string;
+	body: string;
+	createdAt: string;
+}
+
 export interface ApiError {
 	error: string;
 	detail?: string;

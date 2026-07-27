@@ -19,9 +19,11 @@
 		setStock,
 		listStock,
 		uploadImage,
+		listMessages,
+		importProducts,
 		type Store
 	} from '$lib/admin/api';
-	import type { ApiError, Product } from '$lib/types';
+	import type { ApiError, Message, Product } from '$lib/types';
 	import { PLANS, TIERS, hasFeature, productLimit, normalizeTier, UNLIMITED } from '$lib/plan';
 	import { THEMES, normalizeTheme } from '$lib/theme';
 	import { theme } from '$lib/stores/theme';
@@ -48,6 +50,7 @@
 	let stores = $state<Store[]>([]);
 	let active = $state(session.activeStore());
 	let products = $state<Product[]>([]);
+	let messages = $state<Message[]>([]);
 	let error = $state('');
 	let notice = $state('');
 	// True until the initial onMount fetch settles — the dashboard is pure client-side (ssr disabled),
@@ -304,6 +307,7 @@
 		try {
 			if (active && session.storeToken()) {
 				await refreshProducts();
+				await refreshMessages();
 				const s = stores.find((x) => x.id === active?.id);
 				if (s) loadStoreSettings(s);
 			}
@@ -311,6 +315,15 @@
 			loading = false;
 		}
 	});
+
+	async function refreshMessages() {
+		if (!active) return;
+		try {
+			messages = await listMessages(active.id);
+		} catch (err) {
+			fail(err);
+		}
+	}
 
 	async function refreshProducts() {
 		try {
@@ -367,6 +380,7 @@
 			active = session.activeStore();
 			loadStoreSettings(store);
 			await refreshProducts();
+			await refreshMessages();
 			ok($t('app.toast.managing', { name: store.displayName }));
 		} catch (err) {
 			fail(err);
@@ -594,6 +608,28 @@
 	const inputClass =
 		'brutal-border min-w-0 bg-surface px-4 py-3 font-sans text-body-md text-text focus-ring';
 	const labelClass = 'font-mono text-metadata-sm uppercase tracking-[0.05em] text-text-muted';
+
+	let importing = $state(false);
+
+	async function onImportCsv(e: Event) {
+		const input = e.currentTarget as HTMLInputElement;
+		const file = input.files?.[0];
+		if (!file) return;
+		importing = true;
+		try {
+			const result = await importProducts(file);
+			await refreshProducts();
+			ok(
+				$t('app.products.importResult', { created: result.created }) +
+					(result.errors.length ? ' ' + $t('app.products.importErrors', { n: result.errors.length }) : '')
+			);
+		} catch (err) {
+			fail(err);
+		} finally {
+			importing = false;
+			input.value = ''; // allow re-picking the same file after an error
+		}
+	}
 </script>
 
 <!-- Shared by the 3 image-upload spots below (product images, section image, item image) — same accept
@@ -638,7 +674,7 @@
 {/if}
 
 <!-- Stores -->
-<section class="mb-12">
+<section id="app-stores" class="mb-12">
 	<h2 class="mb-4 font-sans uppercase leading-none tracking-tight text-headline-md">{$t('app.stores.title')}</h2>
 	<div class="grid gap-px brutal-border bg-border sm:grid-cols-2 lg:grid-cols-3">
 		{#if loading}
@@ -702,7 +738,7 @@
 
 {#if active && session.storeToken()}
 	<!-- Membership -->
-	<section class="mb-12">
+	<section id="app-membership" class="mb-12">
 		<h2 class="mb-4 font-sans uppercase leading-none tracking-tight text-headline-md">{$t('app.membership.title')}</h2>
 		<div class="grid gap-px brutal-border bg-border md:grid-cols-3">
 			{#each TIERS as pt (pt)}
@@ -736,13 +772,20 @@
 	</section>
 
 	<!-- Products -->
-	<section class="mb-12">
-		<h2 class="mb-4 font-sans uppercase leading-none tracking-tight text-headline-md">
-			{$t('app.products.title')} — {active.displayName}
-			<span class="ml-2 font-mono text-metadata-sm text-text-muted">
-				{products.length}{limit === UNLIMITED ? '' : '/' + limit}
-			</span>
-		</h2>
+	<section id="app-products" class="mb-12">
+		<div class="mb-1 flex flex-wrap items-baseline justify-between gap-3">
+			<h2 class="font-sans uppercase leading-none tracking-tight text-headline-md">
+				{$t('app.products.title')} — {active.displayName}
+				<span class="ml-2 font-mono text-metadata-sm text-text-muted">
+					{products.length}{limit === UNLIMITED ? '' : '/' + limit}
+				</span>
+			</h2>
+			<label class="flex items-center gap-2">
+				<span class="btn-ghost cursor-pointer">{importing ? $t('app.products.importing') : $t('app.products.importCsv')}</span>
+				<input type="file" accept=".csv,text/csv" onchange={onImportCsv} disabled={importing} class="hidden" />
+			</label>
+		</div>
+		<p class="mb-4 font-mono text-metadata-sm text-text-muted">{$t('app.products.importHint')}</p>
 
 		<div class="mb-6 flex flex-col gap-px brutal-border bg-border">
 			{#each products as product (product.id)}
@@ -806,7 +849,7 @@
 		<form onsubmit={doSubmitProduct} class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
 			<label class="flex flex-col gap-1">
 				<span class={labelClass}>{$t('app.products.name')}</span>
-				<input bind:value={pName} required class={inputClass} />
+				<input id="app-product-name" bind:value={pName} required class={inputClass} />
 			</label>
 			<label class="flex flex-col gap-1">
 				<span class={labelClass}>{$t('app.products.category')}</span>
@@ -924,8 +967,29 @@
 		{/if}
 	</section>
 
+	<!-- Messages -->
+	<section id="app-messages" class="mb-12">
+		<h2 class="mb-4 font-sans uppercase leading-none tracking-tight text-headline-md">
+			{$t('app.messages.title')}
+			<span class="ml-2 font-mono text-metadata-sm text-text-muted">{messages.length}</span>
+		</h2>
+		<div class="flex flex-col gap-px brutal-border bg-border">
+			{#each messages as msg (msg.id)}
+				<div class="flex flex-col gap-1 bg-bg p-4">
+					<div class="flex items-baseline justify-between gap-4">
+						<span class="font-sans text-body-md">{msg.name} · <a href={'mailto:' + msg.email} class="text-accent hover:underline">{msg.email}</a></span>
+						<span class="font-mono text-metadata-sm text-text-muted">{new Date(msg.createdAt).toLocaleString()}</span>
+					</div>
+					<p class="whitespace-pre-line font-mono text-body-md text-text-muted">{msg.body}</p>
+				</div>
+			{:else}
+				<p class="bg-bg p-4 font-mono text-metadata-sm text-text-muted">{$t('app.messages.empty')}</p>
+			{/each}
+		</div>
+	</section>
+
 	<!-- Settings -->
-	<section class="mb-12">
+	<section id="app-settings" class="mb-12">
 		<h2 class="mb-4 font-sans uppercase leading-none tracking-tight text-headline-md">{$t('app.settings.title')}</h2>
 		<p class="mb-6 font-mono text-metadata-sm text-text-muted">{$t('app.settings.contentHint')}</p>
 		<form onsubmit={doSaveSettings} class="flex flex-col gap-8">

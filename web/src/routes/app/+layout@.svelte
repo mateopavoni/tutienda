@@ -7,6 +7,7 @@
 	import { onMount } from 'svelte';
 	import { session } from '$lib/admin/session';
 	import { BRAND } from '$lib/brand';
+	import CommandPalette from '$lib/components/CommandPalette.svelte';
 
 	let { children } = $props();
 
@@ -42,3 +43,4 @@
 		{@render children()}
 	</main>
 </div>
+<CommandPalette />

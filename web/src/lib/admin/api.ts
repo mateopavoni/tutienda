@@ -3,7 +3,7 @@
 import { env } from '$env/dynamic/public';
 import { browser } from '$app/environment';
 import { goto } from '$app/navigation';
-import type { ApiError, Product, Stock } from '$lib/types';
+import type { ApiError, Message, Product, Stock } from '$lib/types';
 import type { Section } from '$lib/layout';
 import type { Page } from '$lib/pages';
 import { session, type ActiveStore } from './session';
@@ -170,6 +170,40 @@ export async function selectStore(store: Store): Promise<void> {
 	);
 	const active: ActiveStore = { id: store.id, slug: store.slug, displayName: store.displayName };
 	session.setStore(s.token, active);
+}
+
+export interface ImportRowError {
+	row: number;
+	message: string;
+}
+export interface ImportResult {
+	created: number;
+	errors: ImportRowError[];
+}
+
+// importProducts bulk-creates products from a CSV file. Same non-`call()` multipart approach as
+// uploadImage (the browser must set its own Content-Type boundary).
+export async function importProducts(file: File): Promise<ImportResult> {
+	const form = new FormData();
+	form.append('file', file);
+	const headers = new Headers();
+	const token = session.storeToken();
+	if (token) headers.set('Authorization', 'Bearer ' + token);
+	const res = await fetch(base() + '/api/admin/catalog/products/import', { method: 'POST', body: form, headers });
+	const data = (await res.json().catch(() => ({}))) as Partial<ImportResult> & ApiError;
+	if (!res.ok) throw data as ApiError;
+	return { created: data.created ?? 0, errors: data.errors ?? [] };
+}
+
+// listMessages returns a store's contact-form submissions, newest first (merchant token, ownership
+// checked server-side — no store token needed since this doesn't touch catalog/inventory).
+export async function listMessages(storeId: string): Promise<Message[]> {
+	const data = await call<{ items: Message[] }>(
+		'/api/accounts/stores/' + encodeURIComponent(storeId) + '/messages',
+		{ method: 'GET' },
+		session.merchantToken()
+	);
+	return data.items ?? [];
 }
 
 // --- Catalog + inventory (store token) ---

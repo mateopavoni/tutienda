@@ -43,6 +43,16 @@ export const en = {
 		reserveNote: 'Stock is held the moment you check out, never oversold.',
 		notFound: 'Product not found.'
 	},
+	contactForm: {
+		name: 'Name',
+		email: 'Email',
+		message: 'Message',
+		send: 'Send',
+		sending: 'Sending…',
+		sent: 'Thanks — we got your message.',
+		error: 'Could not send your message. Try again.',
+		previewNote: 'Form disabled in preview.'
+	},
 	cart: {
 		title: 'Cart',
 		subtitle: 'Your selection',
@@ -208,7 +218,7 @@ export const en = {
 			q3Title: 'What actually stops overselling?',
 			q3Body: 'An atomic database operation on every purchase: it only succeeds if there’s still stock, scoped to your store alone. No distributed locks, no race condition, no oversold order to apologize for.',
 			q4Title: 'Can I migrate my existing catalog?',
-			q4Body: 'You can add products and stock straight from the merchant dashboard as soon as you sign up. Bulk import is on our roadmap; reach out and we’ll help with a one-off migration in the meantime.',
+			q4Body: 'You can add products and stock straight from the merchant dashboard as soon as you sign up, one by one or in bulk with a CSV import.',
 			q5Title: 'What happens to my data if I close my account?',
 			q5Body: 'Deleting a store removes its products and stock immediately and permanently — see our Terms for the full policy. It’s a one-click action from your dashboard, no support ticket needed.',
 			q6Title: 'Do you take a cut of my sales?',
@@ -262,6 +272,17 @@ export const en = {
 		title: 'Dashboard',
 		viewStore: 'View my store',
 		pro: 'Pro',
+		palette: {
+			placeholder: 'Type a command… (Ctrl/Cmd+K)',
+			empty: 'No matching action.',
+			newProduct: 'New product',
+			goStores: 'Go to Stores',
+			goMembership: 'Go to Membership',
+			goProducts: 'Go to Products',
+			goMessages: 'Go to Messages',
+			goSettings: 'Go to Settings',
+			toggleTheme: 'Toggle theme'
+		},
 		stores: {
 			title: 'Your stores',
 			active: 'Managing',
@@ -323,7 +344,16 @@ export const en = {
 			optional: '(optional)',
 			dropLocked: 'Timed drops are a Pro feature — upgrade above',
 			add: 'Add product',
-			limitHit: "You've hit the {plan} plan limit of {limit} products. Upgrade to add more."
+			limitHit: "You've hit the {plan} plan limit of {limit} products. Upgrade to add more.",
+			importCsv: 'Import CSV',
+			importing: 'Importing…',
+			importHint: 'Columns: name,category,description,price,currency,imageUrl — one row per product. Set starting stock manually afterward.',
+			importResult: '{created} products created.',
+			importErrors: '{n} rows had errors.'
+		},
+		messages: {
+			title: 'Messages',
+			empty: 'No messages yet — they show up here when a visitor uses the contact section.'
 		},
 		settings: {
 			title: 'Store settings',
