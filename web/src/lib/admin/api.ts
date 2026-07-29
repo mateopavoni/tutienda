@@ -199,7 +199,7 @@ export async function importProducts(file: File): Promise<ImportResult> {
 // checked server-side — no store token needed since this doesn't touch catalog/inventory).
 export async function listMessages(storeId: string): Promise<Message[]> {
 	const data = await call<{ items: Message[] }>(
-		'/api/accounts/stores/' + encodeURIComponent(storeId) + '/messages',
+		'/api/accounts/stores/messages/' + encodeURIComponent(storeId),
 		{ method: 'GET' },
 		session.merchantToken()
 	);

@@ -33,8 +33,12 @@ func (h *Handler) Routes() http.Handler {
 	mux.HandleFunc("GET /stores/by-slug/{slug}", h.storeBySlug)
 	// Contact-form submissions. Posting is public (a storefront visitor has no account); listing is
 	// owner-only, same ownership pattern as updateStore/deleteStore.
+	// GET uses /stores/messages/{id} (not /stores/{id}/messages): that shape is ambiguous with
+	// GET /stores/by-slug/{slug} (net/http's ServeMux panics at startup — neither pattern is more
+	// specific than the other, e.g. both match "/stores/by-slug/messages"). POST keeps the
+	// {id}-first shape since it doesn't collide with any other POST route.
 	mux.HandleFunc("POST /stores/{id}/messages", h.submitMessage)
-	mux.HandleFunc("GET /stores/{id}/messages", h.listMessages)
+	mux.HandleFunc("GET /stores/messages/{id}", h.listMessages)
 	// Storefront customers (buyers). Tenant comes from the gateway-resolved slug (signup/login) or the
 	// buyer token's tenant claim (me); never from the client. Distinct buyer-token audience, enforced at
 	// the gateway, keeps these from crossing with merchant routes.
