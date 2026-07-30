@@ -26,6 +26,12 @@
 <svelte:head>
 	<title>{BRAND} — {$t('landing.tagline')}</title>
 	<meta name="description" content={$t('landing.subtitle')} />
+	<meta property="og:title" content="{BRAND} — {$t('landing.tagline')}" />
+	<meta property="og:description" content={$t('landing.subtitle')} />
+	<meta property="og:type" content="website" />
+	<meta name="twitter:card" content="summary" />
+	<meta name="twitter:title" content="{BRAND} — {$t('landing.tagline')}" />
+	<meta name="twitter:description" content={$t('landing.subtitle')} />
 </svelte:head>
 
 <div class="flex min-h-screen flex-col bg-bg text-text">
