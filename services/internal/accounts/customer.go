@@ -103,7 +103,7 @@ func (s *Service) CustomerLogin(ctx context.Context, tenantID, email, password s
 	email = strings.TrimSpace(strings.ToLower(email))
 	c, err := s.repo.customerByEmail(ctx, tenantID, email)
 	if errors.Is(err, ErrCustomerNotFound) {
-		return "", nil, ErrInvalidCredentials
+		return "", nil, ErrUnknownEmail // still ErrInvalidCredentials to every caller (it wraps it)
 	}
 	if err != nil {
 		return "", nil, err

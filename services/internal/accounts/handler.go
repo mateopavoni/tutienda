@@ -65,6 +65,28 @@ type credentials struct {
 	Password string `json:"password"`
 }
 
+// loginFailure is the 401 body both login endpoints return. It keeps the exact envelope httpx.Fail
+// writes ("error": "invalid credentials") and only adds clear_email, a UX hint for the form: true when
+// no account exists for that address, so the field is worth blanking; false when the account exists and
+// the password was wrong, so the user keeps what they typed and only retries the password. The message,
+// the status and everything else the user can see stay identical in both cases.
+//
+// Trade-off, on purpose: this does let a caller probe which emails are registered (the classic reason
+// the message alone is generic). Accepted here for the UX win — every login form is already behind the
+// gateway's rate limiter, and signup already leaks the same fact with its 409 "email already registered".
+type loginFailure struct {
+	Error      string `json:"error"`
+	ClearEmail bool   `json:"clear_email"`
+}
+
+// failInvalidCredentials writes the single, always-identical login rejection.
+func failInvalidCredentials(w http.ResponseWriter, err error) {
+	httpx.JSON(w, http.StatusUnauthorized, loginFailure{
+		Error:      "invalid credentials",
+		ClearEmail: errors.Is(err, ErrUnknownEmail),
+	})
+}
+
 type session struct {
 	Token    string    `json:"token"`
 	Merchant *Merchant `json:"merchant,omitempty"`
@@ -100,7 +122,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	}
 	token, m, err := h.svc.Login(r.Context(), c.Email, c.Password)
 	if errors.Is(err, ErrInvalidCredentials) {
-		httpx.Fail(w, http.StatusUnauthorized, "invalid credentials")
+		failInvalidCredentials(w, err)
 		return
 	}
 	if err != nil {
@@ -429,7 +451,7 @@ func (h *Handler) customerLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	token, c, err := h.svc.CustomerLogin(r.Context(), tid, body.Email, body.Password)
 	if errors.Is(err, ErrInvalidCredentials) {
-		httpx.Fail(w, http.StatusUnauthorized, "invalid credentials")
+		failInvalidCredentials(w, err)
 		return
 	}
 	if err != nil {

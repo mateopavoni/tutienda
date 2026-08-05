@@ -17,9 +17,15 @@ import (
 	"github.com/mateopavoni/archive-commerce/internal/platform/plan"
 )
 
-// ErrInvalidCredentials is returned for a wrong email/password pair (deliberately not distinguishing
-// which, to avoid leaking which emails exist).
+// ErrInvalidCredentials is returned for a wrong email/password pair. The API answer is the same either
+// way (401 + the same message), so the user is never told which half was wrong.
 var ErrInvalidCredentials = errors.New("invalid credentials")
+
+// ErrUnknownEmail is ErrInvalidCredentials for an address that has no account at all. It *wraps*
+// ErrInvalidCredentials, so every errors.Is check keeps treating it as the same failure — the only
+// consumer of the distinction is the login handler's clear_email flag, which tells the form whether
+// re-typing the email could possibly help. Nothing visible (status, message, timing path) changes.
+var ErrUnknownEmail = fmt.Errorf("%w: email not registered", ErrInvalidCredentials)
 
 // ErrInvalidInput is returned for malformed signup/store payloads.
 var ErrInvalidInput = errors.New("invalid input")
@@ -70,7 +76,7 @@ func (s *Service) Login(ctx context.Context, email, password string) (string, *M
 	email = strings.TrimSpace(strings.ToLower(email))
 	m, err := s.repo.merchantByEmail(ctx, email)
 	if errors.Is(err, ErrMerchantNotFound) {
-		return "", nil, ErrInvalidCredentials
+		return "", nil, ErrUnknownEmail // still ErrInvalidCredentials to every caller (it wraps it)
 	}
 	if err != nil {
 		return "", nil, err
