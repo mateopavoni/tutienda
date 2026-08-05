@@ -14,7 +14,9 @@ export const en = {
 		quantity: 'Quantity',
 		close: 'Close',
 		remove: 'Remove',
-		back: 'Back'
+		back: 'Back',
+		showPassword: 'Show password',
+		hidePassword: 'Hide password'
 	},
 	catalog: {
 		title: 'Dynamic Catalog',

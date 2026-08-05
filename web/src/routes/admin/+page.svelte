@@ -5,6 +5,7 @@
 	import { onMount } from 'svelte';
 	import { BRAND } from '$lib/brand';
 	import SiteHeader from '$lib/components/SiteHeader.svelte';
+	import PasswordInput from '$lib/components/PasswordInput.svelte';
 	import { session } from '$lib/admin/session';
 	import {
 		login,
@@ -80,6 +81,9 @@
 			await load();
 		} catch (err) {
 			fail(err);
+			// Same rule as /login: only an email with no account behind it gets wiped (clear_email); a
+			// wrong password leaves the field alone so the retry is one field, not two.
+			if ((err as ApiError)?.clear_email) email = '';
 		}
 	}
 
@@ -152,7 +156,7 @@
 				</label>
 				<label class="flex flex-col gap-1">
 					<span class={labelClass}>Password</span>
-					<input bind:value={password} type="password" required class={inputClass} />
+					<PasswordInput bind:value={password} required class={inputClass} />
 				</label>
 				<button type="submit" class="btn-accent">Enter console</button>
 			</form>

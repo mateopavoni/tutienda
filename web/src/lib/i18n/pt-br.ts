@@ -15,7 +15,9 @@ export const ptBR: Messages = {
 		quantity: 'Quantidade',
 		close: 'Fechar',
 		remove: 'Remover',
-		back: 'Voltar'
+		back: 'Voltar',
+		showPassword: 'Mostrar senha',
+		hidePassword: 'Ocultar senha'
 	},
 	catalog: {
 		title: 'Catálogo Dinâmico',

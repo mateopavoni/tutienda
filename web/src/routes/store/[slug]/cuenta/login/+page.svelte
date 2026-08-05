@@ -3,6 +3,7 @@
 	import { t } from '$lib/i18n';
 	import { customerLogin } from '$lib/api/customer';
 	import { setCustomerSession } from '$lib/stores/customer';
+	import PasswordInput from '$lib/components/PasswordInput.svelte';
 	import type { ApiError } from '$lib/types';
 
 	let { data } = $props();
@@ -27,7 +28,12 @@
 			setCustomerSession(slug, s.token, s.customer);
 			await goto(accountHome);
 		} catch (err) {
-			error = (err as ApiError)?.error ?? $t('account.failed');
+			const e = err as ApiError;
+			error = e?.error ?? $t('account.failed');
+			// Same rule as the merchant login: keep the email so a wrong password only costs a retype of
+			// the password, and blank it only when the API says no account exists for it (clear_email).
+			// The error text above is identical in both cases.
+			if (e?.clear_email) email = '';
 		} finally {
 			busy = false;
 		}
@@ -47,7 +53,7 @@
 		</label>
 		<label class="flex flex-col gap-1">
 			<span class={labelClass}>{$t('account.password')}</span>
-			<input type="password" bind:value={password} required class={inputClass} />
+			<PasswordInput bind:value={password} required class={inputClass} />
 		</label>
 
 		{#if error}<p class="font-mono text-metadata-sm text-error">{error}</p>{/if}

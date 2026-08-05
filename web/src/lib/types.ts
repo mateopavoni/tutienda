@@ -76,4 +76,8 @@ export interface ApiError {
 	sku?: string;
 	/** HTTP status of the failed response, stamped by the client — not sent by the server. */
 	status?: number;
+	/** Only on a 401 from either login endpoint: true when no account exists for the submitted email, so
+	 *  the form blanks that field. False (wrong password) keeps it filled — the user only retypes the
+	 *  password. It changes nothing else: the `error` message is the same generic one in both cases. */
+	clear_email?: boolean;
 }

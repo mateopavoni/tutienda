@@ -15,7 +15,9 @@ export const es: Messages = {
 		quantity: 'Cantidad',
 		close: 'Cerrar',
 		remove: 'Quitar',
-		back: 'Volver'
+		back: 'Volver',
+		showPassword: 'Mostrar contraseña',
+		hidePassword: 'Ocultar contraseña'
 	},
 	catalog: {
 		title: 'Catálogo Dinámico',

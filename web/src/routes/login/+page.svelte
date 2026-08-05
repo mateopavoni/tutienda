@@ -6,6 +6,7 @@
 	import { BRAND } from '$lib/brand';
 	import { t } from '$lib/i18n';
 	import SiteHeader from '$lib/components/SiteHeader.svelte';
+	import PasswordInput from '$lib/components/PasswordInput.svelte';
 	import type { ApiError } from '$lib/types';
 
 	let email = $state('');
@@ -24,7 +25,13 @@
 			await login(email, password);
 			await goto('/app');
 		} catch (err) {
-			error = (err as ApiError)?.error ?? $t('auth.failed');
+			const e = err as ApiError;
+			error = e?.error ?? $t('auth.failed');
+			// A failed login never wipes what was typed — the usual case is a wrong password, and making
+			// someone retype their email for that is pure friction. The one exception is an address with
+			// no account at all (clear_email from the API), where the email is the thing to fix. The
+			// message the user reads is the same either way; only the field differs.
+			if (e?.clear_email) email = '';
 		} finally {
 			busy = false;
 		}
@@ -69,7 +76,7 @@
 			</label>
 			<label class="flex flex-col gap-1">
 				<span class={labelClass}>{$t('auth.password')}</span>
-				<input type="password" bind:value={password} required minlength="8" class={inputClass} />
+				<PasswordInput bind:value={password} required minlength={8} class={inputClass} />
 			</label>
 
 			{#if error}<p class="font-mono text-metadata-sm text-error">{error}</p>{/if}

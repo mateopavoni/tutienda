@@ -3,6 +3,7 @@
 	import { t } from '$lib/i18n';
 	import { customerSignup } from '$lib/api/customer';
 	import { setCustomerSession } from '$lib/stores/customer';
+	import PasswordInput from '$lib/components/PasswordInput.svelte';
 	import type { ApiError } from '$lib/types';
 
 	let { data } = $props();
@@ -52,7 +53,13 @@
 		</label>
 		<label class="flex flex-col gap-1">
 			<span class={labelClass}>{$t('account.password')}</span>
-			<input type="password" bind:value={password} required minlength="8" class={inputClass} />
+			<PasswordInput
+				bind:value={password}
+				required
+				minlength={8}
+				autocomplete="new-password"
+				class={inputClass}
+			/>
 		</label>
 
 		{#if error}<p class="font-mono text-metadata-sm text-error">{error}</p>{/if}
