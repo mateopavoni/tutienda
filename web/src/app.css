@@ -151,12 +151,23 @@
 		-webkit-font-smoothing: antialiased;
 	}
 	/* Minimal, monochrome scrollbar in keeping with the flat language. */
+	* {
+		scrollbar-width: thin;
+		scrollbar-color: rgb(var(--outline)) rgb(var(--surface-variant));
+	}
 	::-webkit-scrollbar {
 		width: 6px;
 		height: 6px;
 	}
+	::-webkit-scrollbar-track {
+		background: rgb(var(--surface-variant));
+	}
 	::-webkit-scrollbar-thumb {
 		background: rgb(var(--outline));
+		border-radius: var(--radius-control);
+	}
+	::-webkit-scrollbar-thumb:hover {
+		background: rgb(var(--text-muted));
 	}
 	/* Visible keyboard focus everywhere. Previously inputs used `focus:outline-none` with no replacement,
 	   which hid focus entirely (an accessibility/contrast defect). This restores a legible accent ring. */
