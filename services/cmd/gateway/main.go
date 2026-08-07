@@ -16,6 +16,7 @@ func main() {
 	log := httpx.NewLogger("gateway")
 
 	common := config.LoadCommon()
+	common.RequireJWTSecret(log) // gateway verifies store/admin/customer JWTs; never boot in prod with the dev default
 	addr := config.EnvString("GATEWAY_ADDR", ":8080")
 	webOrigin := config.EnvString("WEB_ORIGIN", "http://localhost:5173")
 	rateMax := config.EnvInt("RATE_LIMIT_MAX", 100)

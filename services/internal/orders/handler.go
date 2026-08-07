@@ -87,9 +87,19 @@ func (h *Handler) mine(w http.ResponseWriter, r *http.Request) {
 	httpx.JSON(w, http.StatusOK, map[string]any{"items": orders})
 }
 
+// get returns a single order by id, scoped to the requesting customer — same ownership rule as mine():
+// compare the authenticated customer against the order's CustomerID. Without this, any authenticated
+// customer of the store could read another customer's order (name, address, email, items, total) by
+// guessing/enumerating a Mongo ObjectID. Mismatched or missing auth returns 404 (not 403), same
+// existence-leak-avoidance pattern used elsewhere in this codebase (e.g. accounts' updateStore).
 func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
 	tid, ok := tenant.Require(w, r)
 	if !ok {
+		return
+	}
+	cid, ok := authx.CustomerFromContext(r.Context())
+	if !ok {
+		httpx.Fail(w, http.StatusUnauthorized, "authentication required")
 		return
 	}
 	id, err := primitive.ObjectIDFromHex(r.PathValue("id"))
@@ -104,6 +114,10 @@ func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		httpx.Fail(w, http.StatusInternalServerError, "could not read order")
+		return
+	}
+	if order.CustomerID != cid {
+		httpx.Fail(w, http.StatusNotFound, "order not found")
 		return
 	}
 	httpx.JSON(w, http.StatusOK, order)

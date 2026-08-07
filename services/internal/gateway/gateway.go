@@ -31,10 +31,16 @@ type Config struct {
 // Router builds the public gateway. Three families of routes, each with its own identity handling:
 //
 //   - Storefront (read + checkout): "/api/{catalog,inventory,orders}". The store is resolved from the
-//     request slug and stamped as X-Tenant-ID. Public, rate-limited, tenant-scoped.
+//     request slug and stamped as X-Tenant-ID. Public, rate-limited, tenant-scoped. catalog/inventory are
+//     additionally locked to GET/HEAD here (readOnly) — the backends only check tenant.Require, so
+//     writes must go through the store-JWT-gated admin mount instead.
 //   - Admin (writes): "/api/admin/{catalog,inventory}". A store-scoped JWT is required; the tenant
 //     comes from the signed token, so a merchant can only touch a store they own.
 //   - Accounts (identity): "/api/accounts". signup/login/by-slug are public; the rest need a token.
+//
+// Both catalog/inventory mounts (public and admin) also block any request path containing
+// "/admin/tenant" (blockInternalAdminPath): that route cascade-deletes a whole store's data and is meant
+// to only be reachable on the internal docker network, never through this gateway.
 //
 // catalog and inventory expose resource paths under their own prefix (/products, /stock), so that
 // prefix is stripped entirely; orders' own resource is already "/orders", so only "/api" is stripped.
@@ -83,6 +89,16 @@ func Router(cfg Config) (http.Handler, error) {
 	identity := accountsAuth(cfg.Issuer)
 	platformAdmin := requirePlatformAdmin(cfg.Issuer)
 	buyer := customerAuth(cfg.Issuer, cfg.Resolver, cfg.Log)
+	// noInternalAdmin blocks the catalog/inventory "/admin/tenant" cascade-delete route: it must only be
+	// reachable on the internal docker network (accounts calls it directly), never through either the
+	// public or the store-scoped gateway mount. See blockInternalAdminPath in auth.go.
+	noInternalAdmin := blockInternalAdminPath()
+	// readOnly restricts the public (unauthenticated, slug-resolved) catalog/inventory mount to safe read
+	// methods — writes must go through /api/admin/{catalog,inventory}, which requires requireStore. See
+	// readOnly in auth.go for why this matters: the backends only check tenant.Require, which trusts
+	// whatever X-Tenant-ID the gateway stamped, so without this gate a bare X-Tenant-Slug would be enough
+	// to write to any tenant.
+	readOnlyMethods := readOnly()
 
 	mux := http.NewServeMux()
 	mount := func(prefix string, h http.Handler, mw ...httpx.Middleware) {
@@ -92,10 +108,10 @@ func Router(cfg Config) (http.Handler, error) {
 	}
 	// Admin routes are registered before the storefront ones, but ServeMux matches the longest pattern
 	// regardless of order; the distinct "/api/admin/..." prefix keeps them unambiguous.
-	mount("/api/admin/catalog", adminCatalog, admin)
-	mount("/api/admin/inventory", adminInventory, admin)
-	mount("/api/catalog", catalog, storefront)
-	mount("/api/inventory", inventory, storefront)
+	mount("/api/admin/catalog", adminCatalog, noInternalAdmin, admin)
+	mount("/api/admin/inventory", adminInventory, noInternalAdmin, admin)
+	mount("/api/catalog", catalog, noInternalAdmin, readOnlyMethods, storefront)
+	mount("/api/inventory", inventory, noInternalAdmin, readOnlyMethods, storefront)
 	mount("/api/orders", ordersProxy, storeOrders)
 	mount("/api/accounts", accounts, identity)
 	mount("/api/platform", platform, platformAdmin)

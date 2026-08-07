@@ -63,6 +63,17 @@ func requireStore(issuer *authx.Issuer) httpx.Middleware {
 	}
 }
 
+// requireAdminRole writes 403 and returns false unless claims carry the platform super-admin role.
+// Shared by requirePlatformAdmin (the whole /api/platform mount) and accountsAuth (the /api/accounts
+// mount's /platform/* alias, see isAccountsPlatformPath) so the two gates can never diverge again.
+func requireAdminRole(w http.ResponseWriter, claims *authx.Claims) bool {
+	if claims.Role != authx.RoleAdmin {
+		httpx.Fail(w, http.StatusForbidden, "platform admin only")
+		return false
+	}
+	return true
+}
+
 // requirePlatformAdmin guards the cross-tenant /api/platform routes: a valid token whose Role claim is
 // RoleAdmin. A regular merchant token (or none) is rejected, so only the SaaS super-admin gets through.
 func requirePlatformAdmin(issuer *authx.Issuer) httpx.Middleware {
@@ -74,8 +85,7 @@ func requirePlatformAdmin(issuer *authx.Issuer) httpx.Middleware {
 				httpx.Fail(w, http.StatusUnauthorized, "authentication required")
 				return
 			}
-			if claims.Role != authx.RoleAdmin {
-				httpx.Fail(w, http.StatusForbidden, "platform admin only")
+			if !requireAdminRole(w, claims) {
 				return
 			}
 			r.Header.Set(authx.MerchantHeader, claims.MerchantID)
@@ -86,6 +96,13 @@ func requirePlatformAdmin(issuer *authx.Issuer) httpx.Middleware {
 
 // accountsAuth guards the accounts service: signup, login and the public by-slug lookup pass through;
 // everything else requires a valid token and gets X-Merchant-ID stamped from its claims.
+//
+// The accounts service also registers the cross-tenant /platform/* routes (stats, all stores, all
+// merchants, cross-tenant plan override) on the very same mux as /stores/*, and this mount reaches them
+// too — it strips only "/api", same as the dedicated /api/platform mount does. Those handlers trust the
+// gateway to have already checked Role == RoleAdmin (see requirePlatformAdmin) and don't re-check
+// ownership themselves, so this mount must enforce the exact same rule for its /platform/* alias, or any
+// merchant JWT holder reaches super-admin-only data through it.
 func accountsAuth(issuer *authx.Issuer) httpx.Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -97,6 +114,9 @@ func accountsAuth(issuer *authx.Issuer) httpx.Middleware {
 			claims, err := verifyBearer(issuer, r)
 			if err != nil || claims.Aud == authx.AudCustomer {
 				httpx.Fail(w, http.StatusUnauthorized, "authentication required")
+				return
+			}
+			if isAccountsPlatformPath(r.URL.Path) && !requireAdminRole(w, claims) {
 				return
 			}
 			r.Header.Set(authx.MerchantHeader, claims.MerchantID)
@@ -193,6 +213,49 @@ func isPublicAccountsPath(method, path string) bool {
 		return true
 	default:
 		return false
+	}
+}
+
+// isAccountsPlatformPath reports whether a path reaching the /api/accounts mount targets the
+// cross-tenant /platform/* routes that the accounts service also serves off the same mux (see
+// accountsAuth's doc comment). Paths still carry the public /api/accounts prefix here, same as
+// isPublicAccountsPath.
+func isAccountsPlatformPath(path string) bool {
+	rest := strings.TrimPrefix(path, "/api/accounts")
+	return rest == "/platform" || strings.HasPrefix(rest, "/platform/")
+}
+
+// blockInternalAdminPath rejects any request whose path targets a backend's internal-only
+// "/admin/tenant" route (catalog/inventory's cascade-delete-a-store endpoint, called by accounts over
+// the internal docker network). It must never be reachable through the public gateway — not even with a
+// valid store JWT — so this is checked ahead of any auth/tenant middleware on both the public and the
+// admin catalog/inventory mounts. 404, not 403/405, so its existence isn't confirmed to a prober.
+func blockInternalAdminPath() httpx.Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if strings.Contains(r.URL.Path, "/admin/tenant") {
+				httpx.Fail(w, http.StatusNotFound, "not found")
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// readOnly restricts a mount to safe read methods (GET/HEAD), rejecting everything else with 405. Used
+// on the public /api/catalog and /api/inventory mounts: those backends only check tenant.Require (no
+// auth), trusting whatever X-Tenant-ID the gateway stamped from a client-supplied, unauthenticated slug —
+// so without this gate, any caller could write to any tenant's catalog/inventory by just naming its slug.
+// Writes belong on /api/admin/{catalog,inventory}, which requires a store-scoped JWT (requireStore).
+func readOnly() httpx.Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != http.MethodGet && r.Method != http.MethodHead {
+				httpx.Fail(w, http.StatusMethodNotAllowed, "read-only")
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
 	}
 }
 

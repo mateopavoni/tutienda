@@ -17,6 +17,7 @@ func main() {
 	log := httpx.NewLogger("accounts")
 
 	common := config.LoadCommon()
+	common.RequireJWTSecret(log) // accounts issues/signs merchant/store/customer JWTs; never boot in prod with the dev default
 	addr := config.EnvString("ACCOUNTS_ADDR", ":8084")
 	tokenTTL := config.EnvDuration("ACCOUNTS_TOKEN_TTL_SECONDS", 24*60*60)
 	maxStores := config.EnvInt("MAX_STORES_PER_MERCHANT", 2) // demo anti-abuse; 0 = unlimited
@@ -41,10 +42,19 @@ func main() {
 	svc := accounts.NewService(repo, issuer, log, maxStores,
 		accounts.NewCatalogClient(catalogURL), accounts.NewInventoryClient(inventoryURL))
 
-	if seeded, err := svc.SeedDemoIfEmpty(ctx); err != nil {
-		log.Warn("seed-demo failed", "error", err)
-	} else if seeded {
-		log.Info("seeded demo store", "slug", "system-archive")
+	// Demo/admin seeding creates a publicly documented super-admin login (admin@tutienda.store) on any
+	// empty DB. Fine for the portfolio demo; opt out in a real deployment by setting SEED_DEMO_DATA=false.
+	// Defaults to on outside prod (dev/demo convenience) and off in prod, so a plain `ENV=prod` deploy
+	// doesn't need to remember this flag to be safe.
+	if config.EnvBool("SEED_DEMO_DATA", !common.IsProd()) {
+		if seeded, err := svc.SeedDemoIfEmpty(ctx); err != nil {
+			log.Warn("seed-demo failed", "error", err)
+		} else if seeded {
+			log.Warn("seeded demo store and super-admin login — rotate the documented demo/admin passwords before any real use",
+				"slug", "system-archive", "admin_email", "admin@tutienda.store")
+		}
+	} else {
+		log.Info("demo/admin seed skipped (SEED_DEMO_DATA=false)")
 	}
 
 	handler := httpx.Chain(accounts.NewHandler(svc).Routes(),
