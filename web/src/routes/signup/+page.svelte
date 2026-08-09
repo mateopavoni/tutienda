@@ -36,7 +36,12 @@
 		try {
 			await signup(email, password);
 		} catch (err) {
-			error = (err as ApiError)?.error ?? $t('auth.failed');
+			// The backend's `.error` is an internal English string — never render it raw, map the couple of
+			// cases worth distinguishing and fall back to the generic localized message otherwise.
+			error =
+				(err as ApiError)?.error === 'email already registered'
+					? $t('auth.emailTaken')
+					: $t('auth.failed');
 			busy = false;
 			return;
 		}
@@ -61,7 +66,7 @@
 				}
 				slugError = $t('auth.slugTaken');
 			} else {
-				error = apiErr?.error ?? $t('auth.failed');
+				error = $t('auth.failed');
 			}
 		} finally {
 			busy = false;

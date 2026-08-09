@@ -23,7 +23,7 @@
 		importProducts,
 		type Store
 	} from '$lib/admin/api';
-	import type { ApiError, Message, Product } from '$lib/types';
+	import type { Message, Product } from '$lib/types';
 	import { PLANS, TIERS, hasFeature, productLimit, normalizeTier, UNLIMITED } from '$lib/plan';
 	import { THEMES, normalizeTheme } from '$lib/theme';
 	import { theme } from '$lib/stores/theme';
@@ -285,9 +285,11 @@
 	// the user is scrolled well past it and never sees the confirmation. Auto-dismiss both so a stale
 	// message doesn't linger past its relevance.
 	let noticeTimer: ReturnType<typeof setTimeout> | undefined;
-	function fail(err: unknown) {
+	function fail(_err: unknown) {
 		clearTimeout(noticeTimer);
-		error = (err as ApiError)?.error ?? get(t)('app.toast.requestFailed');
+		// The backend's `.error` is an internal English string (see httpx.Fail callers) — never render it,
+		// always show the localized generic message so a non-English session doesn't flash English text.
+		error = get(t)('app.toast.requestFailed');
 		notice = '';
 		noticeTimer = setTimeout(() => (error = ''), 5000);
 	}

@@ -26,7 +26,10 @@
 			await goto('/app');
 		} catch (err) {
 			const e = err as ApiError;
-			error = e?.error ?? $t('auth.failed');
+			// The backend's `.error` is an internal English string (see httpx.Fail callers) — never render
+			// it, always show the localized copy so a Spanish/Portuguese session doesn't suddenly flash
+			// English text.
+			error = $t('auth.failed');
 			// A failed login never wipes what was typed — the usual case is a wrong password, and making
 			// someone retype their email for that is pure friction. The one exception is an address with
 			// no account at all (clear_email from the API), where the email is the thing to fix. The
@@ -43,8 +46,8 @@
 		try {
 			await login('demo@system-archive.store', 'demo-archive-2026');
 			await goto('/app');
-		} catch (err) {
-			error = (err as ApiError)?.error ?? $t('auth.failed');
+		} catch {
+			error = $t('auth.failed');
 		} finally {
 			busy = false;
 		}

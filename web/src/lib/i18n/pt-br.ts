@@ -120,7 +120,8 @@ export const ptBR: Messages = {
 		toLogin: 'Já tem conta? Entrar',
 		failed: 'Falha na autenticação',
 		sessionExpired: 'Sua sessão expirou — entre novamente',
-		slugTaken: 'Essa URL de loja já está em uso — tente outra'
+		slugTaken: 'Essa URL de loja já está em uso — tente outra',
+		emailTaken: 'Esse email já está registrado — tente entrar'
 	},
 	settings: { title: 'Configurações', language: 'Idioma', theme: 'Aparência' },
 	account: {
@@ -138,6 +139,7 @@ export const ptBR: Messages = {
 		toRegister: 'Ainda não tem conta? Crie uma',
 		toLogin: 'Já tem conta? Entre',
 		failed: 'Não foi possível entrar',
+		emailTaken: 'Esse email já está registrado — tente entrar',
 		logout: 'Sair',
 		guestNote: 'Você também pode finalizar como convidado — a conta apenas guarda seu histórico de pedidos.',
 		greeting: 'Olá {name}',

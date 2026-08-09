@@ -29,7 +29,8 @@
 			await goto(accountHome);
 		} catch (err) {
 			const e = err as ApiError;
-			error = e?.error ?? $t('account.failed');
+			// The backend's `.error` is an internal English string — never render it raw.
+			error = $t('account.failed');
 			// Same rule as the merchant login: keep the email so a wrong password only costs a retype of
 			// the password, and blank it only when the API says no account exists for it (clear_email).
 			// The error text above is identical in both cases.

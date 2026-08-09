@@ -120,7 +120,8 @@ export const es: Messages = {
 		toLogin: '¿Ya tenés cuenta? Ingresá',
 		failed: 'Falló la autenticación',
 		sessionExpired: 'Tu sesión expiró — iniciá sesión de nuevo',
-		slugTaken: 'Esa URL de tienda ya está en uso — probá con otra'
+		slugTaken: 'Esa URL de tienda ya está en uso — probá con otra',
+		emailTaken: 'Ese email ya está registrado — probá iniciar sesión'
 	},
 	settings: { title: 'Configuración', language: 'Idioma', theme: 'Apariencia' },
 	account: {
@@ -138,6 +139,7 @@ export const es: Messages = {
 		toRegister: '¿No tenés cuenta? Creá una',
 		toLogin: '¿Ya tenés cuenta? Iniciá sesión',
 		failed: 'No pudimos iniciar tu sesión',
+		emailTaken: 'Ese email ya está registrado — probá iniciar sesión',
 		logout: 'Cerrar sesión',
 		guestNote: 'También podés comprar como invitado — la cuenta solo guarda tu historial de pedidos.',
 		greeting: 'Hola {name}',

@@ -119,7 +119,8 @@ export const en = {
 		toLogin: 'Have an account? Sign in',
 		failed: 'Authentication failed',
 		sessionExpired: 'Your session expired — sign in again',
-		slugTaken: 'That store URL is already taken — try another one'
+		slugTaken: 'That store URL is already taken — try another one',
+		emailTaken: 'That email is already registered — try signing in instead'
 	},
 	settings: { title: 'Settings', language: 'Language', theme: 'Appearance' },
 	// Storefront customer accounts (/store/[slug]/cuenta). A shopper's own account, separate from the
@@ -140,6 +141,7 @@ export const en = {
 		toRegister: "No account yet? Create one",
 		toLogin: 'Already have an account? Sign in',
 		failed: 'Could not sign you in',
+		emailTaken: 'That email is already registered — try signing in instead',
 		logout: 'Sign out',
 		guestNote: 'You can also check out as a guest — an account just saves your order history.',
 		greeting: 'Hi {name}',

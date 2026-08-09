@@ -29,7 +29,12 @@
 			setCustomerSession(slug, s.token, s.customer);
 			await goto(accountHome);
 		} catch (err) {
-			error = (err as ApiError)?.error ?? $t('account.failed');
+			// The backend's `.error` is an internal English string — never render it raw, map the one case
+			// worth distinguishing and fall back to the generic localized message otherwise.
+			error =
+				(err as ApiError)?.error === 'email already registered'
+					? $t('account.emailTaken')
+					: $t('account.failed');
 		} finally {
 			busy = false;
 		}
