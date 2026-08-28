@@ -12,7 +12,7 @@
 	// The storefront passes its slug so we can gate checkout behind a customer account and link to sign-in.
 	let { slug = '' }: { slug?: string } = $props();
 
-	// ponytail: mirror of orders.flatShippingCents (Go is source of truth; the server total is authoritative).
+	// mirror of orders.flatShippingCents (Go is source of truth; the server total is authoritative).
 	const SHIPPING_FLAT_CENTS = 1500;
 
 	type Phase = 'idle' | 'shipping' | 'payment' | 'processing' | 'confirmed' | 'failed';

@@ -3,7 +3,7 @@ import type { Order } from '$lib/types';
 // Simulated fulfillment timeline. This is a portfolio project — there's no real logistics. A paid order
 // advances through these stages purely as a function of time elapsed since checkout, so the buyer can
 // watch it progress on the confirmation screen and in their order history.
-// ponytail: derived client-side from createdAt; no backend job, no cron, no persisted fulfillment state.
+// derived client-side from createdAt; no backend job, no cron, no persisted fulfillment state.
 export const FULFILLMENT_STAGES = ['paid', 'preparing', 'shipped', 'delivered'] as const;
 export type FulfillmentStage = (typeof FULFILLMENT_STAGES)[number];
 

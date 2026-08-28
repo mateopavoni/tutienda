@@ -3,7 +3,7 @@ import type { RequestHandler } from './$types';
 const BASE = 'https://tienda.mateopavoni.com.ar';
 
 // Landing (SaaS) + las tiendas demo semilla (mismas que muestra src/routes/+page.svelte).
-// ponytail: lista estática = espejo del seed del backend. Si las demo stores dejan de ser
+// lista estática = espejo del seed del backend. Si las demo stores dejan de ser
 // fijas, reemplazar por un fetch a `${PUBLIC_API_BASE}` de tenants públicos.
 const DEMO_STORES = ['system-archive', 'casa-bruta', 'papel-y-tinta', 'cafe-noventa'];
 
