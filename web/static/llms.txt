@@ -1,0 +1,18 @@
+# TuTienda
+
+> Constructor de ecommerce multi-tienda: creá tu tienda online, cargá productos y vendé sin sobrevender stock bajo carga concurrente.
+
+TuTienda es un SaaS tipo Tienda Nube/Shopify: cada comerciante se registra, arma su propia tienda (storefront editorial personalizable por secciones) y carga sus productos. El motor central garantiza cero sobreventa incluso con compras simultáneas por las últimas unidades de stock, gracias a operaciones atómicas en base de datos.
+
+## Páginas principales
+
+- [Inicio](https://tutienda.com.ar/): landing de la plataforma (planes, features, no-sobreventa).
+- [Preguntas frecuentes](https://tutienda.com.ar/faq): dudas comunes de comerciantes antes de registrarse.
+- [Acerca de](https://tutienda.com.ar/about): qué es TuTienda.
+- [Contacto](https://tutienda.com.ar/contact): contacto directo.
+- [Registro](https://tutienda.com.ar/signup): crear cuenta y tienda propia.
+
+## Notas
+
+- Las tiendas de cada comerciante viven en `/store/<slug>` y son contenido independiente por tenant.
+- El panel del comerciante (`/app`) y la consola de administración (`/admin`) están detrás de login y excluidos de indexación (ver `robots.txt`).

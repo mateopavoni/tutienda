@@ -19,8 +19,8 @@ type CheckoutItem struct {
 	Qty int    `json:"qty"`
 }
 
-// flatShippingCents is a single simulated flat shipping rate, in the store's currency. ponytail: flat
-// rate; swap for per-store/zone rates if shipping ever becomes a real feature.
+// flatShippingCents is a single simulated flat shipping rate, in the store's currency;
+// swap for per-store/zone rates if shipping ever becomes a real feature.
 const flatShippingCents int64 = 1500
 
 // ErrInvalidShipping is returned when a required shipping field is missing.

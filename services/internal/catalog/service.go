@@ -123,9 +123,8 @@ func (s *Service) Create(ctx context.Context, tenant string, p Product) (*Produc
 		}
 	}
 	p.TenantID = tenant
-	if p.ID == "" {
-		p.ID = primitive.NewObjectID().Hex()
-	}
+	// El id siempre se genera server-side, nunca se acepta el que mande el cliente.
+	p.ID = primitive.NewObjectID().Hex()
 	if p.Currency == "" {
 		p.Currency = "USD"
 	}
