@@ -1,6 +1,6 @@
 import type { RequestHandler } from './$types';
 
-const BASE = 'https://tienda.mateopavoni.com.ar';
+const BASE = 'https://tutienda.mateopavoni.com.ar';
 
 // Landing (SaaS) + las tiendas demo semilla (mismas que muestra src/routes/+page.svelte).
 // lista estática = espejo del seed del backend. Si las demo stores dejan de ser

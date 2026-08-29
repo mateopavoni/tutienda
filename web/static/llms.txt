@@ -6,11 +6,11 @@ TuTienda es un SaaS tipo Tienda Nube/Shopify: cada comerciante se registra, arma
 
 ## Páginas principales
 
-- [Inicio](https://tutienda.com.ar/): landing de la plataforma (planes, features, no-sobreventa).
-- [Preguntas frecuentes](https://tutienda.com.ar/faq): dudas comunes de comerciantes antes de registrarse.
-- [Acerca de](https://tutienda.com.ar/about): qué es TuTienda.
-- [Contacto](https://tutienda.com.ar/contact): contacto directo.
-- [Registro](https://tutienda.com.ar/signup): crear cuenta y tienda propia.
+- [Inicio](https://tutienda.mateopavoni.com.ar/): landing de la plataforma (planes, features, no-sobreventa).
+- [Preguntas frecuentes](https://tutienda.mateopavoni.com.ar/faq): dudas comunes de comerciantes antes de registrarse.
+- [Acerca de](https://tutienda.mateopavoni.com.ar/about): qué es TuTienda.
+- [Contacto](https://tutienda.mateopavoni.com.ar/contact): contacto directo.
+- [Registro](https://tutienda.mateopavoni.com.ar/signup): crear cuenta y tienda propia.
 
 ## Notas
 
