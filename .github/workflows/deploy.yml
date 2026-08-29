@@ -1,12 +1,16 @@
 name: deploy
 
 # Push a main en GitHub -> deploy completo en un solo paso:
-#   1. backend del compose (mongo/redis/minio quedan; rebuild de accounts/catalog/inventory/orders
-#      + gateway/web del compose) por SSH como ubuntu@VPS: git pull + docker compose up -d --build.
+#   1. backend del compose (mongo/redis/minio quedan; rebuild de accounts/catalog/inventory/orders)
+#      por SSH como ubuntu@VPS: git pull + docker compose up -d --build <servicios>.
 #   2. gateway (api) + storefront (web) a Dokku (lo público con SSL).
 # Requiere en el VPS: ~/tutienda como checkout git con remote SSH (deploy key) y branch main trackeando
 # origin/main; y el secret VPS_SSH_PRIVATE_KEY (clave de ubuntu@VPS). Ver README § Deployment.
 # OJO: NO corre seeds ni toca volúmenes. Mongo/Redis/MinIO persisten entre deploys (no se pierde data).
+# gateway/web del compose se excluyen a propósito del `up` en el VPS (auditoría de seguridad
+# 2026-08-28): son redundantes con tutienda-api/tutienda-web de Dokku, no tienen TLS ni pasan por
+# nginx, y quedaban expuestos directo en :8080/:3000. Siguen definidos en el compose porque hacen
+# falta para `docker compose up --build` completo en dev local — no se tocan, solo no se levantan acá.
 on:
   push:
     branches: [main]
@@ -68,7 +72,8 @@ jobs:
 
       # 2) Backend: el VPS hace pull del código nuevo y rebuildea los servicios del compose.
       #    NO usa -v (no borra volúmenes) y NO corre seeds: la data persiste.
+      #    Servicios explícitos a propósito — gateway/web quedan afuera (ver comentario arriba).
       - name: Deploy backend (compose en el VPS)
         run: |
           ssh -i ~/.ssh/vps -o IdentitiesOnly=yes ubuntu@146.181.35.182 \
-            'cd ~/tutienda && git pull --ff-only && docker compose up -d --build'
+            'cd ~/tutienda && git pull --ff-only && docker compose up -d --build mongo redis minio minio-init accounts catalog inventory orders'
