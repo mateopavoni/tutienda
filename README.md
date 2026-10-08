@@ -91,8 +91,8 @@ carrito abandonado vuelve solo.
 ### En números
 
 **27 tests Go** (con `-race`) **+ 22 tests Vitest** · load test de concurrencia real (500
-compradores contra un SKU de 10 unidades, 0 oversell) · deploy en producción con CI/CD propio
-(push a `main` → `go test -race` → deploy completo) · 5 servicios Go compartiendo un módulo y un
+compradores contra un SKU de 10 unidades, 0 oversell) · CI en GitHub Actions
+(`go vet`, `go test -race` con Mongo, check/test/build del front) · 5 servicios Go compartiendo un módulo y un
 paquete `platform` común.
 
 ---

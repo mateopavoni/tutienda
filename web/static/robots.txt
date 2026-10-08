@@ -6,5 +6,3 @@ Disallow: /configuracion
 Disallow: /login
 Disallow: /signup
 Disallow: /store/*/cuenta
-
-Sitemap: https://tutienda.mateopavoni.com.ar/sitemap.xml

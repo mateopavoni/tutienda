@@ -1,14 +1,14 @@
 <script lang="ts">
 	// Platform contact page (marketing). No form/backend — an honest mailto link instead of a contact
 	// form that would silently go nowhere (there's no endpoint to receive it).
-	import { BRAND, ROOT_DOMAIN } from '$lib/brand';
+	import { BRAND } from '$lib/brand';
 	import { t } from '$lib/i18n';
 	import SiteHeader from '$lib/components/SiteHeader.svelte';
 	import SiteFooter from '$lib/components/SiteFooter.svelte';
 	import { Mail, Clock, ArrowRight } from 'lucide-svelte';
 	import { fly } from 'svelte/transition';
 
-	const email = 'hola@' + ROOT_DOMAIN;
+	const email = 'mateopavoni905@gmail.com';
 </script>
 
 <svelte:head>

@@ -6,4 +6,4 @@
 - **FACT** Multi-tenancy por colecciones compartidas + `tenantId` (modelo Shopify), no por base física.
 - **FACT** Las escrituras de catálogo/stock pasan solo por `/api/admin/*` con token de tienda; la ruta pública es de solo lectura porque los backends confían en el tenant que estampa el gateway.
 - **FACT** En `ENV=prod`, accounts y gateway no arrancan con `JWT_SECRET` ausente o igual al default de dev.
-- **FACT** Al archivar: puertos publicados solo en `127.0.0.1`, se sacaron GA4 y la verificación de Search Console del HTML, y se eliminó el workflow de deploy.
+- **FACT** Al archivar: puertos publicados solo en `127.0.0.1`, se sacaron GA4 y la verificación de Search Console del HTML, y se eliminó el workflow de deploy, y se limpiaron robots/llms/sitemap/JSON-LD, el dominio por defecto (`localhost:3000`) y el mail de contacto. La guard de prod ahora rechaza también el placeholder `change-me*` del `.env.example` (test en `platform/config`).

@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -30,12 +31,18 @@ type Common struct {
 // IsProd reports whether the service is running in production mode (ENV=prod).
 func (c Common) IsProd() bool { return c.Env == "prod" }
 
+// jwtSecretUnsafe reports a prod deploy whose JWT_SECRET is the dev default or a copied .env.example
+// placeholder ("change-me..."), both of which are public.
+func (c Common) jwtSecretUnsafe() bool {
+	return c.IsProd() && (c.JWTSecret == DevJWTSecret || strings.HasPrefix(c.JWTSecret, "change-me"))
+}
+
 // RequireJWTSecret refuses to start the process (logs and os.Exit(1)) when running in production with an
 // unset or still-default JWT_SECRET. Call this from any service that actually signs/verifies tokens
 // (accounts, gateway) immediately after LoadCommon — services that never touch JWTSecret don't need it.
 func (c Common) RequireJWTSecret(log *slog.Logger) {
-	if c.IsProd() && c.JWTSecret == DevJWTSecret {
-		log.Error("refusing to start: JWT_SECRET is unset or still the known dev default while ENV=prod " +
+	if c.jwtSecretUnsafe() {
+		log.Error("refusing to start: JWT_SECRET is unset, the known dev default or a change-me placeholder while ENV=prod " +
 			"(anyone could forge a JWT for any role) — set a long random JWT_SECRET")
 		os.Exit(1)
 	}

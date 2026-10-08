@@ -1,6 +1,7 @@
 import type { RequestHandler } from './$types';
 
-const BASE = 'https://tutienda.mateopavoni.com.ar';
+// Proyecto archivado: sin dominio público. Cambiar BASE si se vuelve a desplegar.
+const BASE = 'http://localhost:3000';
 
 // Landing (SaaS) + las tiendas demo semilla (mismas que muestra src/routes/+page.svelte).
 // lista estática = espejo del seed del backend. Si las demo stores dejan de ser
