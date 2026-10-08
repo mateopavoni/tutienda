@@ -85,6 +85,15 @@ func main() {
 		fmt.Printf("OVERSOLD: %d confirmed against %d available\n", confirmed, before.Available)
 		os.Exit(1)
 	}
+	// A run where requests errored out proves nothing about the guarantee, so it must not pass.
+	if failed > 0 {
+		fmt.Printf("INVALID RUN: %d requests failed for reasons other than out-of-stock\n", failed)
+		os.Exit(1)
+	}
+	if int64(*total) >= int64(before.Available) && confirmed != int64(before.Available) {
+		fmt.Printf("UNDERSOLD: %d confirmed against %d available with %d buyers\n", confirmed, before.Available, *total)
+		os.Exit(1)
+	}
 	fmt.Printf("OK: sold exactly %d of %d units, zero oversell.\n", confirmed, before.Available)
 }
 
@@ -131,7 +140,9 @@ func readStock(client *http.Client, inventoryURL, sku string) (stock, error) {
 // buy posts a one-unit checkout and returns the HTTP status.
 func buy(client *http.Client, ordersURL, sku string) int {
 	body, _ := json.Marshal(map[string]any{
-		"items": []map[string]any{{"sku": sku, "qty": 1}},
+		"items":    []map[string]any{{"sku": sku, "qty": 1}},
+		"shipping": map[string]string{"name": "Load Test", "line1": "Calle 1", "city": "CABA", "postalCode": "1000", "country": "AR"},
+		"approve":  true,
 	})
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, ordersURL+"/orders", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
