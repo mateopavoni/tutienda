@@ -6,27 +6,20 @@
 > productos — 5 microservicios en Go, un frontend en SvelteKit y una garantía de inventario que se
 > puede verificar con un test, no solo prometer.
 
-[![demo](https://img.shields.io/badge/demo-live-brightgreen)](https://tutienda.mateopavoni.com.ar/)
+![estado](https://img.shields.io/badge/estado-archivado-lightgrey)
 ![stack](https://img.shields.io/badge/stack-Go%20·%20SvelteKit%20·%20MongoDB%20·%20Redis-2b2b2b) · ![license](https://img.shields.io/badge/license-proprietary-red)
 
 Stack: **Go · SvelteKit 5 · MongoDB · Redis · Docker**
 
-### 🔗 Demo en vivo
+### Estado: archivado
 
-**[tutienda.mateopavoni.com.ar](https://tutienda.mateopavoni.com.ar/)** — recorré una tienda ya
-cargada en [`/store/system-archive`](https://tutienda.mateopavoni.com.ar/store/system-archive) o
-creá la tuya propia en [`/signup`](https://tutienda.mateopavoni.com.ar/signup) (onboarding real,
-sin verificación de email — es una demo). También podés entrar directo al panel del comerciante
-con una cuenta de prueba ya cargada con 4 tiendas de ejemplo:
+La demo pública y su deploy (Dokku + `docker compose` en un VPS propio) fueron dados de baja: el
+proyecto ya no está desplegado en ningún lado. Se corre completo en local, con una tienda de ejemplo
+ya cargada, con un solo comando (ver [Cómo correr](#cómo-correr)). El CI (`.github/workflows/ci.yml`)
+corre `go vet`, los tests de Go con el race detector y los checks, tests y build del front.
 
-```
-https://tutienda.mateopavoni.com.ar/login
-demo@system-archive.store / demo-archive-2026
-```
-
-Deployado en una VPS propia: el gateway y el storefront corren en **Dokku** (TLS), el resto de los
-servicios en `docker compose` en la misma VPS. Deploy automático en cada push a `main`
-(`.github/workflows/deploy.yml`).
+Con el stack local arriba, el panel del comerciante entra con la cuenta de prueba que siembra el
+backend (`demo@system-archive.store` / `demo-archive-2026`, solo en entornos que no son `prod`).
 
 ### Capturas
 
@@ -173,7 +166,7 @@ El catálogo y el stock se siembran solos en el primer arranque.
 ### Opción B — Solo frontend (dev)
 
 ```bash
-cd web && npm install && npm run dev      # http://localhost:5173, apunta al gateway público
+cd web && npm install && npm run dev      # http://localhost:5173, apunta al gateway local (PUBLIC_API_BASE, :8080)
 ```
 
 ---
@@ -218,7 +211,7 @@ janitor — además de aislamiento entre tiendas.
 
 ## Performance
 
-Lighthouse contra la demo en vivo (mobile, throttling simulado — configuración por defecto de
+Lighthouse contra la demo que estuvo en vivo (mobile, throttling simulado — configuración por defecto de
 PageSpeed Insights), 2026-07-20:
 
 | Página | Performance | Accessibility | Best Practices | SEO |
@@ -227,10 +220,11 @@ PageSpeed Insights), 2026-07-20:
 | `/store/system-archive` (storefront) | 67 | 100 | 100 | 92 |
 
 El storefront pierde puntos por el TTFB del root document (~820ms) — una sola VPS sin CDN ni
-edge cache delante, coherente con el resto de las limitaciones de infra de abajo. Reproducir:
+edge cache delante, coherente con el resto de las limitaciones de infra de abajo. Para
+reproducirlo hay que levantar el stack en algún host público, ya que la demo se dio de baja:
 
 ```bash
-npx lighthouse https://tutienda.mateopavoni.com.ar/store/system-archive \
+npx lighthouse https://<tu-host>/store/system-archive \
   --only-categories=performance,accessibility,best-practices,seo
 ```
 
@@ -245,7 +239,7 @@ npx lighthouse https://tutienda.mateopavoni.com.ar/store/system-archive \
 - Una sola instancia de MongoDB, una base lógica por servicio (sin aislamiento físico).
 - Las tiendas comparten colecciones, aisladas por `tenantId` (modelo Shopify/Tienda Nube), no
   físicamente.
-- Sin CDN/edge cache delante de la VPS — el TTFB del storefront (~820ms) es el mayor lastre de
+- Sin CDN/edge cache delante de la VPS (cuando estuvo desplegado) — el TTFB del storefront (~820ms) es el mayor lastre de
   performance hoy (ver sección Performance).
 
 ---
